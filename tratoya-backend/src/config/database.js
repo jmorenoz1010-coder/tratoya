@@ -176,6 +176,66 @@ const Pago = sequelize.define('Pago', {
 }, { tableName: 'pagos', timestamps: true });
 
 // ══════════════════════════════════════
+// MODELO: PAYMENT INTENT
+// ══════════════════════════════════════
+const PaymentIntent = sequelize.define('PaymentIntent', {
+  id:          { type: DataTypes.UUID, defaultValue: DataTypes.UUIDV4, primaryKey: true },
+  deal_id:     { type: DataTypes.UUID, allowNull: false },
+  provider:    { type: DataTypes.STRING(30), defaultValue: 'wompi', allowNull: false },
+  reference:   { type: DataTypes.STRING(160), allowNull: false, unique: true },
+  amount_cents:{ type: DataTypes.INTEGER, allowNull: false },
+  amount_cop:  { type: DataTypes.DECIMAL(15,2), allowNull: false },
+  currency:    { type: DataTypes.STRING(3), defaultValue: 'COP', allowNull: false },
+  status:      { type: DataTypes.STRING(40), defaultValue: 'CREATED', allowNull: false },
+  wompi_transaction_id: { type: DataTypes.STRING(120) },
+  checkout_url: { type: DataTypes.TEXT },
+  raw_response: { type: DataTypes.JSONB, defaultValue: {} },
+  created_by_user_id: { type: DataTypes.UUID },
+}, { tableName: 'payment_intents', timestamps: true, underscored: true });
+
+// ══════════════════════════════════════
+// MODELO: PAYMENT EVENT
+// ══════════════════════════════════════
+const PaymentEvent = sequelize.define('PaymentEvent', {
+  id:          { type: DataTypes.UUID, defaultValue: DataTypes.UUIDV4, primaryKey: true },
+  provider:    { type: DataTypes.STRING(30), defaultValue: 'wompi', allowNull: false },
+  event_type:  { type: DataTypes.STRING(80) },
+  event_checksum: { type: DataTypes.STRING(128) },
+  wompi_transaction_id: { type: DataTypes.STRING(120) },
+  reference:   { type: DataTypes.STRING(160) },
+  status:      { type: DataTypes.STRING(40) },
+  raw_payload: { type: DataTypes.JSONB, defaultValue: {} },
+  received_at: { type: DataTypes.DATE, defaultValue: DataTypes.NOW },
+  processed_at:{ type: DataTypes.DATE },
+  is_valid_signature: { type: DataTypes.BOOLEAN, defaultValue: false },
+  processing_error: { type: DataTypes.TEXT },
+}, { tableName: 'payment_events', timestamps: false, underscored: true });
+
+// ══════════════════════════════════════
+// MODELO: LEDGER ENTRY
+// ══════════════════════════════════════
+const LedgerEntry = sequelize.define('LedgerEntry', {
+  id:          { type: DataTypes.UUID, defaultValue: DataTypes.UUIDV4, primaryKey: true },
+  deal_id:     { type: DataTypes.UUID, allowNull: false },
+  payment_intent_id: { type: DataTypes.UUID },
+  type:        { type: DataTypes.STRING(60), allowNull: false },
+  amount_cents:{ type: DataTypes.INTEGER, allowNull: false },
+  description: { type: DataTypes.TEXT },
+}, { tableName: 'ledger_entries', timestamps: true, createdAt: 'created_at', updatedAt: false });
+
+// ══════════════════════════════════════
+// MODELO: AUDIT LOG
+// ══════════════════════════════════════
+const AuditLog = sequelize.define('AuditLog', {
+  id:          { type: DataTypes.UUID, defaultValue: DataTypes.UUIDV4, primaryKey: true },
+  user_id:     { type: DataTypes.UUID },
+  action:      { type: DataTypes.STRING(120), allowNull: false },
+  entity_type: { type: DataTypes.STRING(80), allowNull: false },
+  entity_id:   { type: DataTypes.UUID },
+  metadata:    { type: DataTypes.JSONB, defaultValue: {} },
+}, { tableName: 'audit_logs', timestamps: true, createdAt: 'created_at', updatedAt: false });
+
+// ══════════════════════════════════════
 // MODELO: DISPUTA
 // ══════════════════════════════════════
 const Disputa = sequelize.define('Disputa', {
@@ -276,6 +336,12 @@ User.hasMany(Trato, { as: 'tratos_vendedor',  foreignKey: 'vendedor_id' });
 Trato.hasMany(Pago,    { foreignKey: 'trato_id' });
 Pago.belongsTo(Trato,  { foreignKey: 'trato_id' });
 Pago.belongsTo(User,   { foreignKey: 'usuario_id' });
+Trato.hasMany(PaymentIntent, { foreignKey: 'deal_id' });
+PaymentIntent.belongsTo(Trato, { foreignKey: 'deal_id' });
+PaymentIntent.belongsTo(User, { as: 'creator', foreignKey: 'created_by_user_id' });
+PaymentIntent.hasMany(LedgerEntry, { foreignKey: 'payment_intent_id' });
+LedgerEntry.belongsTo(PaymentIntent, { foreignKey: 'payment_intent_id' });
+LedgerEntry.belongsTo(Trato, { foreignKey: 'deal_id' });
 Trato.hasMany(Mensaje, { foreignKey: 'trato_id' });
 Mensaje.belongsTo(User, { as: 'remitente', foreignKey: 'remitente_id' });
 Trato.hasOne(Disputa,  { foreignKey: 'trato_id' });
@@ -288,5 +354,6 @@ TicketSoporte.belongsTo(User, { as: 'usuario', foreignKey: 'usuario_id' });
 
 module.exports = {
   sequelize, connectDB,
-  User, Trato, Pago, Disputa, Mensaje, Resena, CuentaBancaria, Notificacion, TicketSoporte
+  User, Trato, Pago, PaymentIntent, PaymentEvent, LedgerEntry, AuditLog,
+  Disputa, Mensaje, Resena, CuentaBancaria, Notificacion, TicketSoporte
 };

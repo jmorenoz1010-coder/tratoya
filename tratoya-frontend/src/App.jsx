@@ -795,17 +795,12 @@ function TratoDetalle({ tratoId, setPage, setDisputeTratoId, user, toast }) {
   };
 
   const pagarWompi = async () => {
+    if (!window.confirm(`Vas a pagar ${fmt(trato?.monto)} COP por este acuerdo en TratoYa. Este pago se procesará por Wompi.`)) return;
     setBusy(true);
     try {
-      const r = await api.post(`/payments/create-order/${tratoId}`);
+      const r = await api.post(`/payments/wompi/create`, { dealId: tratoId });
       if (!r.data?.checkoutUrl) throw new Error("No se pudo generar el checkout de Wompi");
       setPaymentOrder(r.data);
-      if (r.data.demoMode) {
-        toast("Orden creada en modo beta. Usa la simulación para probar el flujo completo.", "info");
-        await load();
-        setBusy(false);
-        return;
-      }
       window.location.href = r.data.checkoutUrl;
     } catch (e) { toast(e.message, "error"); }
     setBusy(false);
@@ -914,13 +909,10 @@ function TratoDetalle({ tratoId, setPage, setDisputeTratoId, user, toast }) {
 
             {["activo","pago_pendiente"].includes(trato.estado) && esC && (
               <div style={{ marginTop: 13, padding: "12px 13px", background: "var(--cr)", borderRadius: 9 }}>
-                <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 4 }}>Pago seguro beta</div>
-                <p style={{ fontSize: 12.5, color: "var(--s600)", marginBottom: 10 }}>Paga con Wompi Sandbox. Desde el checkout podrás probar PSE, Nequi, Daviplata y tarjetas cuando tengas las llaves configuradas.</p>
+                <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 4 }}>Pago seguro con Wompi</div>
+                <p style={{ fontSize: 12.5, color: "var(--s600)", marginBottom: 10 }}>Tu pago se procesa en Wompi y solo el webhook confirmado marca los fondos como recibidos en TratoYA.</p>
                 <button className="btn bp" style={{ width: "100%" }} onClick={pagarWompi} disabled={busy}>
                   {busy ? <div className="spin" /> : "💳 Pagar con Wompi"}
-                </button>
-                <button className="btn bo bsm" style={{ width: "100%", marginTop: 8 }} onClick={simularPago} disabled={busy}>
-                  Aprobar pago beta sin salir
                 </button>
                 {paymentOrder?.reference && <div style={{ marginTop: 8, fontSize: 11, color: "var(--s600)", wordBreak: "break-all" }}>Referencia: {paymentOrder.reference}</div>}
               </div>
@@ -1540,15 +1532,12 @@ function PublicTratoPage({ link, session, goAuth, toast }) {
     setBusy(false);
   };
   const pagar = async () => {
+    if (!window.confirm(`Vas a pagar ${fmt(trato?.monto)} COP por este acuerdo en TratoYa. Este pago se procesará por Wompi.`)) return;
     setBusy(true);
     try {
-      const r = await api.post(`/payments/create-order/${trato.id}`);
+      const r = await api.post(`/payments/wompi/create`, { dealId: trato.id });
       setOrder(r.data);
-      if (r.data.demoMode) {
-        toast("Orden creada en modo beta. Puedes simular aprobación sin salir.", "info");
-      } else {
-        window.location.href = r.data.checkoutUrl;
-      }
+      window.location.href = r.data.checkoutUrl;
     } catch (e) { toast(e.message, "error"); }
     setBusy(false);
   };
@@ -1617,7 +1606,6 @@ function PublicTratoPage({ link, session, goAuth, toast }) {
           ) : canPay ? (
             <div>
               <button className="btn bp blg" style={{ width: "100%" }} onClick={pagar} disabled={busy}>{busy ? <div className="spin" /> : "Pagar con Wompi"}</button>
-              <button className="btn bo" style={{ width: "100%", marginTop: 9 }} onClick={simularPago} disabled={busy}>Aprobar pago beta sin salir</button>
               {order?.reference && <div style={{ fontSize: 11, color: "var(--s600)", marginTop: 8 }}>Referencia: {order.reference}</div>}
             </div>
           ) : (
@@ -1632,30 +1620,40 @@ function PublicTratoPage({ link, session, goAuth, toast }) {
 function PaymentResultPage({ session, goAuth, toast }) {
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(true);
-  const transactionId = new URLSearchParams(window.location.search).get("id");
+  const reference = new URLSearchParams(window.location.search).get("reference");
   useEffect(() => {
-    if (!session || !transactionId) { setLoading(false); return; }
-    api.get(`/payments/status/${transactionId}`)
-      .then(r => {
-        setResult(r.data);
-        if (r.data?.transaction?.status === "APPROVED" || r.data?.trato_estado === "pago_retenido") {
-          toast("Pago confirmado. Volviendo a tu dashboard.", "success");
-          setTimeout(() => { window.location.href = "/"; }, 1200);
-        }
-      })
+    if (!session || !reference) { setLoading(false); return; }
+    const check = () => api.get(`/payments/status?reference=${encodeURIComponent(reference)}`)
+      .then(r => setResult(r.data))
       .catch(e => toast(e.message, "error"))
       .finally(() => setLoading(false));
-  }, [session, transactionId]);
+    check();
+    const t = setInterval(check, 5000);
+    return () => clearInterval(t);
+  }, [session, reference]);
+
+  const status = result?.status;
+  const statusCopy = {
+    PAID: ["✅", "Pago recibido", "Tus fondos quedaron registrados en TratoYA."],
+    PAYMENT_PENDING: ["⏳", "Pago pendiente", "Tu pago está pendiente de confirmación."],
+    CREATED: ["⏳", "Verificando pago", "Estamos verificando tu pago con Wompi..."],
+    PAYMENT_DECLINED: ["❌", "Pago rechazado", "El pago fue rechazado. Puedes intentar nuevamente."],
+    PAYMENT_ERROR: ["⚠️", "Error en el pago", "Hubo un error procesando el pago."],
+    PAYMENT_VOIDED: ["↩️", "Pago anulado", "El pago fue anulado por Wompi."],
+  }[status] || ["💳", "Resultado del pago", "Estamos verificando tu pago con Wompi..."];
+
   return (
     <div className="land" style={{ minHeight: "100vh", display: "grid", placeItems: "center", background: "var(--s50)", padding: 20 }}>
       <div className="card" style={{ padding: "26px 28px", maxWidth: 460, textAlign: "center" }}>
-        <div style={{ fontSize: 42, marginBottom: 10 }}>{result?.transaction?.status === "APPROVED" ? "✅" : "💳"}</div>
-        <h1 style={{ fontSize: 24, marginBottom: 8 }}>Resultado del pago</h1>
+        <div style={{ fontSize: 42, marginBottom: 10 }}>{statusCopy[0]}</div>
+        <h1 style={{ fontSize: 24, marginBottom: 8 }}>{statusCopy[1]}</h1>
         {!session ? <p style={{ color: "var(--s600)", marginBottom: 16 }}>Inicia sesión para verificar el estado de la transacción.</p>
           : loading ? <div className="spin" style={{ margin: "18px auto" }} />
-          : !transactionId ? <p style={{ color: "var(--s600)" }}>Wompi no envió un id de transacción.</p>
-          : <p style={{ color: "var(--s600)" }}>Estado Wompi: <strong>{result?.transaction?.status || "consultado"}</strong>. Estado del trato: <strong>{result?.trato_estado || "actualizado"}</strong>.</p>}
+          : !reference ? <p style={{ color: "var(--s600)" }}>Wompi no envió una referencia de pago.</p>
+          : <p style={{ color: "var(--s600)" }}>{statusCopy[2]}</p>}
+        {reference && <div style={{ fontSize: 11, color: "var(--s400)", wordBreak: "break-all", marginTop: 10 }}>Referencia: {reference}</div>}
         {!session && <button className="btn bp" onClick={() => goAuth("login")}>Iniciar sesión</button>}
+        {session && <button className="btn bp" style={{ marginTop: 16 }} onClick={() => { window.location.href = "/"; }}>Volver al acuerdo</button>}
       </div>
     </div>
   );
@@ -1786,7 +1784,7 @@ export default function TratoYaApp() {
   const toast = useCallback((m, type = "info") => show(m, type), [show]);
   const isAdminRoute = window.location.pathname === "/admin" || window.location.pathname.startsWith("/admin/");
   const publicMatch = window.location.pathname.match(/^\/t\/([^/]+)/);
-  const isPaymentResult = window.location.pathname === "/pagos/respuesta";
+  const isPaymentResult = window.location.pathname === "/pagos/respuesta" || window.location.pathname === "/pago/resultado";
 
   return (
     <>

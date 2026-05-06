@@ -92,9 +92,183 @@ module.exports.users = usersRouter;
 // PAYMENTS ROUTE — src/routes/payments.js
 // =============================================
 const paymentsRouter = express.Router();
-const { Pago, Trato } = require('../config/database');
+const {
+  Pago, Trato, PaymentIntent, PaymentEvent, LedgerEntry, AuditLog
+} = require('../config/database');
+
+const normalizeWompiStatus = (status) => ({
+  APPROVED: 'PAID',
+  DECLINED: 'PAYMENT_DECLINED',
+  ERROR: 'PAYMENT_ERROR',
+  VOIDED: 'PAYMENT_VOIDED',
+  PENDING: 'PAYMENT_PENDING',
+}[String(status || '').toUpperCase()] || 'PAYMENT_PENDING');
+
+const paymentFailedStatuses = ['PAYMENT_DECLINED', 'PAYMENT_ERROR', 'PAYMENT_VOIDED'];
+
+function getWompiConfig() {
+  const env = process.env.WOMPI_ENV || (process.env.NODE_ENV === 'production' ? 'production' : 'sandbox');
+  const publicKey = process.env.WOMPI_PUBLIC_KEY || '';
+  const integritySecret = process.env.WOMPI_INTEGRITY_SECRET || process.env.WOMPI_INTEGRITY_KEY || '';
+  const eventsSecret = process.env.WOMPI_EVENTS_SECRET || '';
+  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+  const realEnabled = process.env.PAYMENTS_REAL_ENABLED === 'true';
+  const maxTestAmountCop = Number(process.env.PAYMENTS_MAX_TEST_AMOUNT_COP || 50000);
+
+  if (!publicKey || !integritySecret) {
+    const err = new Error('Faltan variables Wompi: WOMPI_PUBLIC_KEY y WOMPI_INTEGRITY_SECRET');
+    err.statusCode = 500;
+    throw err;
+  }
+  if (env === 'production' && !publicKey.startsWith('pub_prod_')) {
+    const err = new Error('WOMPI_ENV=production requiere WOMPI_PUBLIC_KEY con prefijo pub_prod_');
+    err.statusCode = 500;
+    throw err;
+  }
+  if (env === 'sandbox' && !publicKey.startsWith('pub_test_')) {
+    const err = new Error('WOMPI_ENV=sandbox requiere WOMPI_PUBLIC_KEY con prefijo pub_test_');
+    err.statusCode = 500;
+    throw err;
+  }
+  return { env, publicKey, integritySecret, eventsSecret, frontendUrl, realEnabled, maxTestAmountCop };
+}
+
+function createWompiSignature(reference, amountInCents, currency, integritySecret) {
+  return require('crypto')
+    .createHash('sha256')
+    .update(`${reference}${amountInCents}${currency}${integritySecret}`)
+    .digest('hex');
+}
+
+function canAccessDeal(trato, user) {
+  const rol = user.rol || (user.is_admin ? 'admin' : 'user');
+  return trato.comprador_id === user.id || trato.vendedor_id === user.id || user.is_admin || ['admin', 'superadmin', 'soporte'].includes(rol);
+}
 
 paymentsRouter.use(auth);
+
+paymentsRouter.post('/wompi/create', async (req, res, next) => {
+  try {
+    logger.info('WOMPI_CREATE_PAYMENT_START');
+    const { dealId } = req.body || {};
+    if (!dealId) return res.status(400).json({ success: false, message: 'dealId requerido' });
+
+    const config = getWompiConfig();
+    if (config.env === 'production' && !config.realEnabled) {
+      return res.status(403).json({ success: false, message: 'Pagos reales deshabilitados por configuración' });
+    }
+
+    const trato = await Trato.findByPk(dealId);
+    if (!trato) return res.status(404).json({ success: false, message: 'Trato no encontrado' });
+    if (trato.comprador_id !== req.user.id) {
+      return res.status(403).json({ success: false, message: 'Solo el comprador puede pagar este trato' });
+    }
+    if (!canAccessDeal(trato, req.user)) {
+      return res.status(403).json({ success: false, message: 'No tienes permiso para pagar este trato' });
+    }
+    if (!['borrador', 'activo', 'pago_pendiente'].includes(trato.estado)) {
+      return res.status(400).json({ success: false, message: `No se puede pagar un trato en estado ${trato.estado}` });
+    }
+
+    const amountCop = Math.round(Number(trato.monto || 0));
+    if (!Number.isFinite(amountCop) || amountCop <= 0) {
+      return res.status(400).json({ success: false, message: 'El monto del trato no es válido' });
+    }
+    if (amountCop > config.maxTestAmountCop) {
+      return res.status(400).json({
+        success: false,
+        message: `Durante pruebas reales solo se permiten pagos hasta ${config.maxTestAmountCop} COP.`,
+      });
+    }
+
+    const currency = 'COP';
+    const amountInCents = amountCop * 100;
+    const random = require('crypto').randomBytes(3).toString('hex').toUpperCase();
+    const reference = `TRATOYA-${String(trato.id).slice(0, 8)}-${Date.now()}-${random}`;
+    const signature = createWompiSignature(reference, amountInCents, currency, config.integritySecret);
+    const redirectUrl = `${config.frontendUrl}/pago/resultado?reference=${encodeURIComponent(reference)}`;
+    const checkoutParams = new URLSearchParams({
+      'public-key': config.publicKey,
+      currency,
+      'amount-in-cents': String(amountInCents),
+      reference,
+      'signature:integrity': signature,
+      'redirect-url': redirectUrl,
+    });
+    const checkoutUrl = `https://checkout.wompi.co/p/?${checkoutParams.toString()}`;
+
+    const intent = await PaymentIntent.create({
+      provider: 'wompi',
+      reference,
+      amount_cents: amountInCents,
+      amount_cop: amountCop,
+      currency,
+      status: 'CREATED',
+      deal_id: trato.id,
+      created_by_user_id: req.user.id,
+      checkout_url: checkoutUrl,
+      raw_response: { redirectUrl, env: config.env },
+    });
+    await trato.update({ estado: 'pago_pendiente' });
+    await AuditLog.create({
+      user_id: req.user.id,
+      action: 'WOMPI_PAYMENT_CREATED',
+      entity_type: 'payment_intent',
+      entity_id: intent.id,
+      metadata: { reference, deal_id: trato.id, amount_cents: amountInCents },
+    });
+
+    logger.info(`WOMPI_CREATE_PAYMENT_SUCCESS ${reference}`);
+    res.json({
+      success: true,
+      ok: true,
+      data: { checkoutUrl, reference, amountInCents, amountCop, currency, provider: 'wompi' },
+      checkoutUrl,
+      reference,
+      amountInCents,
+      amountCop,
+      currency,
+      provider: 'wompi',
+    });
+  } catch (err) { next(err); }
+});
+
+paymentsRouter.get('/status', async (req, res, next) => {
+  try {
+    const { reference } = req.query;
+    if (!reference) return res.status(400).json({ success: false, message: 'reference requerido' });
+    const intent = await PaymentIntent.findOne({ where: { reference }, include: [{ model: Trato }] });
+    if (!intent) return res.status(404).json({ success: false, message: 'Pago no encontrado' });
+    const trato = intent.Trato || await Trato.findByPk(intent.deal_id);
+    if (!trato || !canAccessDeal(trato, req.user)) {
+      return res.status(403).json({ success: false, message: 'No tienes permiso para ver este pago' });
+    }
+    res.json({
+      success: true,
+      ok: true,
+      data: {
+        provider: 'wompi',
+        reference: intent.reference,
+        status: intent.status,
+        amountCop: Number(intent.amount_cop),
+        amountInCents: intent.amount_cents,
+        currency: intent.currency,
+        dealId: intent.deal_id,
+        wompiTransactionId: intent.wompi_transaction_id,
+        updatedAt: intent.updated_at || intent.updatedAt,
+      },
+      provider: 'wompi',
+      reference: intent.reference,
+      status: intent.status,
+      amountCop: Number(intent.amount_cop),
+      amountInCents: intent.amount_cents,
+      currency: intent.currency,
+      dealId: intent.deal_id,
+      wompiTransactionId: intent.wompi_transaction_id,
+      updatedAt: intent.updated_at || intent.updatedAt,
+    });
+  } catch (err) { next(err); }
+});
 
 paymentsRouter.post('/create-order/:trato_id', async (req, res, next) => {
   try {
@@ -973,51 +1147,160 @@ const crypto = require('crypto');
 const logger = require('../utils/logger');
 
 webhooksRouter.post('/wompi', async (req, res) => {
+  let savedEvent = null;
   try {
-    const rawBody = Buffer.isBuffer(req.body) ? req.body.toString() : JSON.stringify(req.body);
-    const signature = req.headers['x-event-checksum'];
-
-    if (process.env.WOMPI_EVENTS_SECRET && signature) {
-      const hash = crypto.createHash('sha256')
-        .update(rawBody + process.env.WOMPI_EVENTS_SECRET)
-        .digest('hex');
-      if (hash !== signature) {
-        logger.warn('[WEBHOOK] Firma Wompi inválida');
-        return res.status(401).json({ received: false });
-      }
-    }
-
+    logger.info('WOMPI_WEBHOOK_RECEIVED');
+    const rawBody = Buffer.isBuffer(req.body) ? req.body.toString('utf8') : JSON.stringify(req.body || {});
     const event = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
-    if (event.event === 'transaction.updated') {
-      const { transaction } = event.data;
-      const { status, reference, id: tid, amount_in_cents } = transaction;
-      const codigo = reference.split('-')[0]; // TY-XXXXX
+    const payload = Buffer.isBuffer(req.body) ? JSON.parse(rawBody || '{}') : event;
+    const headerChecksum = req.headers['x-event-checksum'];
+    const bodyChecksum = payload?.signature?.checksum;
+    const checksum = bodyChecksum || headerChecksum || null;
+    const properties = payload?.signature?.properties || [];
+    const timestamp = payload?.timestamp || '';
+    const tx = payload?.data?.transaction || {};
+    const eventType = payload?.event || payload?.event_type || null;
+    const txId = tx.id || null;
+    const status = tx.status || null;
+    const reference = tx.reference || null;
 
-      const trato = await Trato.findOne({ where: { codigo } });
-      if (!trato) return res.json({ received: true });
+    const getByPath = (root, path) => String(path.split('.').reduce((acc, key) => acc?.[key], root) ?? '');
+    const signedValues = Array.isArray(properties)
+      ? properties.map(path => getByPath(payload.data || {}, path)).join('')
+      : '';
+    const expectedChecksum = process.env.WOMPI_EVENTS_SECRET
+      ? crypto.createHash('sha256').update(`${signedValues}${timestamp}${process.env.WOMPI_EVENTS_SECRET}`).digest('hex')
+      : null;
+    const isValidSignature = Boolean(expectedChecksum && checksum && expectedChecksum === checksum);
 
-      if (status === 'APPROVED') {
-        const { registrarPagoAprobado } = require('../services/pagoService');
-        await registrarPagoAprobado({
-          trato,
-          reference,
-          transactionId: tid,
-          amountInCents: amount_in_cents,
-          payload: transaction,
-          metodoPago: transaction.payment_method_type || null,
-        });
-        const { notificar } = require('../services/notificacionService');
-        await notificar(trato.vendedor_id, 'pago_retenido', {
-          titulo: '🔒 ¡Pago retenido!',
-          cuerpo: `$${(amount_in_cents / 100).toLocaleString('es-CO')} están seguros. Procede a entregar.`,
-          metadata: { trato_id: trato.id },
-        });
-        logger.info(`[WEBHOOK] Pago aprobado → trato ${trato.codigo}`);
-      }
+    const duplicateBefore = checksum && txId && status
+      ? await PaymentEvent.findOne({
+        where: {
+          provider: 'wompi',
+          wompi_transaction_id: txId,
+          status,
+          event_checksum: checksum,
+          is_valid_signature: true,
+        },
+      })
+      : null;
+
+    savedEvent = await PaymentEvent.create({
+      provider: 'wompi',
+      event_type: eventType,
+      event_checksum: checksum,
+      wompi_transaction_id: txId,
+      reference,
+      status,
+      raw_payload: payload,
+      received_at: new Date(),
+      is_valid_signature: isValidSignature,
+    });
+
+    if (!isValidSignature) {
+      logger.warn(`WOMPI_WEBHOOK_SIGNATURE_INVALID ${reference || 'sin-reference'}`);
+      await savedEvent.update({ processing_error: 'Firma Wompi inválida' });
+      return res.status(401).json({ received: false });
     }
+    logger.info(`WOMPI_WEBHOOK_SIGNATURE_VALID ${reference || 'sin-reference'}`);
+
+    if (eventType !== 'transaction.updated') {
+      await savedEvent.update({ processed_at: new Date() });
+      return res.json({ received: true });
+    }
+
+    const intent = await PaymentIntent.findOne({ where: { reference } });
+    if (!intent) {
+      await savedEvent.update({ processed_at: new Date(), processing_error: 'payment_intent no encontrado' });
+      return res.json({ received: true });
+    }
+    if (Number(tx.amount_in_cents) !== Number(intent.amount_cents)) {
+      await savedEvent.update({ processed_at: new Date(), processing_error: 'Monto no coincide' });
+      return res.status(400).json({ received: false });
+    }
+    if (tx.currency !== intent.currency || tx.currency !== 'COP') {
+      await savedEvent.update({ processed_at: new Date(), processing_error: 'Moneda no válida' });
+      return res.status(400).json({ received: false });
+    }
+
+    const internalStatus = normalizeWompiStatus(status);
+    const trato = await Trato.findByPk(intent.deal_id);
+    const alreadyPaid = intent.status === 'PAID' && internalStatus === 'PAID';
+
+    await intent.update({
+      status: internalStatus,
+      wompi_transaction_id: txId,
+      raw_response: payload,
+    });
+
+    if (!duplicateBefore && !alreadyPaid && internalStatus === 'PAID') {
+      if (trato) {
+        await trato.update({
+          estado: 'pago_retenido',
+          fecha_pago: new Date(),
+          metadata: { ...(trato.metadata || {}), payment_status: 'FONDOS_RECIBIDOS', wompi_reference: reference },
+        });
+      }
+      await LedgerEntry.create({
+        deal_id: intent.deal_id,
+        payment_intent_id: intent.id,
+        type: 'PAYMENT_RECEIVED',
+        amount_cents: tx.amount_in_cents,
+        description: 'Pago recibido por Wompi',
+      });
+      await Pago.create({
+        trato_id: intent.deal_id,
+        usuario_id: intent.created_by_user_id,
+        tipo: 'retencion',
+        monto: Number(tx.amount_in_cents) / 100,
+        moneda: 'COP',
+        pasarela: 'wompi',
+        pasarela_ref: txId || reference,
+        pasarela_estado: status,
+        estado: 'aprobado',
+        fecha_aprobacion: new Date(),
+        webhook_payload: payload,
+        metadata: { reference, payment_intent_id: intent.id, real: true },
+      });
+      await AuditLog.create({
+        user_id: intent.created_by_user_id,
+        action: 'WOMPI_PAYMENT_APPROVED',
+        entity_type: 'payment_intent',
+        entity_id: intent.id,
+        metadata: { reference, deal_id: intent.deal_id, wompi_transaction_id: txId },
+      });
+      if (trato) {
+        const { notificarAmbos } = require('../services/notificacionService');
+        await notificarAmbos(trato.comprador_id, trato.vendedor_id, 'pago_retenido', {
+          titulo: 'Pago en custodia de TratoYA',
+          cuerpo: `Tu pago de $${(tx.amount_in_cents / 100).toLocaleString('es-CO')} COP fue recibido por Wompi.`,
+          metadata: { trato_id: trato.id, reference },
+        }, {
+          titulo: 'Pago en custodia de TratoYA',
+          cuerpo: `El pago del trato ${trato.codigo} fue recibido. Puedes proceder con la entrega.`,
+          metadata: { trato_id: trato.id, reference },
+        });
+      }
+      logger.info(`WOMPI_PAYMENT_APPROVED ${reference}`);
+    } else if (paymentFailedStatuses.includes(internalStatus)) {
+      if (trato) await trato.update({ estado: 'activo' });
+      await AuditLog.create({
+        user_id: intent.created_by_user_id,
+        action: 'WOMPI_PAYMENT_FAILED',
+        entity_type: 'payment_intent',
+        entity_id: intent.id,
+        metadata: { reference, deal_id: intent.deal_id, wompi_transaction_id: txId, status },
+      });
+      logger.info(`${internalStatus === 'PAYMENT_DECLINED' ? 'WOMPI_PAYMENT_DECLINED' : 'WOMPI_PAYMENT_ERROR'} ${reference}`);
+    }
+
+    await savedEvent.update({ processed_at: new Date() });
     res.json({ received: true });
   } catch (err) {
     logger.error('[WEBHOOK] Error: ' + err.message);
+    if (savedEvent) {
+      try { await savedEvent.update({ processed_at: new Date(), processing_error: err.message }); } catch {}
+    }
     res.status(500).json({ received: false });
   }
 });
