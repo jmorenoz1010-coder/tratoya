@@ -16,7 +16,8 @@ const sequelize = new Sequelize(
 
 async function connectDB() {
   await sequelize.authenticate();
-  if (process.env.NODE_ENV !== 'production') {
+  const shouldSync = process.env.DB_SYNC === 'true' || process.env.NODE_ENV !== 'production';
+  if (shouldSync) {
     await sequelize.sync({ alter: true }); // Crea/actualiza tablas automáticamente
   }
 }
