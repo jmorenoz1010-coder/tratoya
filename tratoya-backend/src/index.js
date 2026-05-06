@@ -19,6 +19,7 @@ const app = express();
 const PORT = process.env.PORT || 4000;
 
 // ── Seguridad ──────────────────────────────────
+app.set('trust proxy', 1);
 app.use(helmet({ contentSecurityPolicy: false }));
 
 app.use(cors({
