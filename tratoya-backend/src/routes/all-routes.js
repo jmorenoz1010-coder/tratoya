@@ -162,7 +162,7 @@ paymentsRouter.get('/status/:transaction_id', async (req, res, next) => {
 
 paymentsRouter.post('/sandbox-approve/:trato_id', async (req, res, next) => {
   try {
-    if (process.env.NODE_ENV === 'production') {
+    if (process.env.NODE_ENV === 'production' && process.env.BETA_ALLOW_SANDBOX_PAYMENTS !== 'true') {
       return res.status(403).json({ success: false, message: 'Simulación no disponible en producción' });
     }
     const trato = await Trato.findByPk(req.params.trato_id);
