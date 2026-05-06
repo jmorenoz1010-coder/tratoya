@@ -1,0 +1,33 @@
+# Dependencies
+node_modules/
+*/node_modules/
+
+# Builds
+dist/
+*/dist/
+.vercel/
+
+# Logs
+*.log
+logs/
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+JWT SECRET.txt
+*.pem
+*.key
+
+# OS / editors
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Local scratch
+backend.log
+frontend.log
+.claude/
+tratoya/
+tratoya-backend/{src/

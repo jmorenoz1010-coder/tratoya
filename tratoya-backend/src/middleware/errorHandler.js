@@ -1,0 +1,30 @@
+const logger = require('../utils/logger');
+
+// eslint-disable-next-line no-unused-vars
+module.exports = (err, req, res, next) => {
+  const status = err.status || err.statusCode || 500;
+
+  logger.error(`[${req.method}] ${req.originalUrl} → ${status}: ${err.message}`);
+
+  // Errores de Sequelize
+  if (err.name === 'SequelizeUniqueConstraintError') {
+    return res.status(409).json({
+      success: false,
+      message: 'Ya existe un registro con esos datos (email, cédula o código duplicado)',
+    });
+  }
+  if (err.name === 'SequelizeValidationError') {
+    return res.status(400).json({
+      success: false,
+      message: 'Datos inválidos: ' + err.errors.map(e => e.message).join(', '),
+    });
+  }
+
+  res.status(status).json({
+    success: false,
+    message: process.env.NODE_ENV === 'production'
+      ? 'Error interno del servidor'
+      : err.message,
+    ...(process.env.NODE_ENV === 'development' && { stack: err.stack }),
+  });
+};
