@@ -1,5 +1,6 @@
 const { Sequelize, DataTypes } = require('sequelize');
 const bcrypt = require('bcryptjs');
+const pg = require('pg');
 const logger = require('../utils/logger');
 
 const sequelize = new Sequelize(
@@ -7,6 +8,7 @@ const sequelize = new Sequelize(
   `postgresql://${process.env.DB_USER}:${process.env.DB_PASSWORD}@${process.env.DB_HOST}:${process.env.DB_PORT}/${process.env.DB_NAME}`,
   {
     dialect: 'postgres',
+    dialectModule: pg,
     logging: process.env.NODE_ENV === 'development' ? (msg) => logger.debug(msg) : false,
     pool: { max: 10, min: 2, acquire: 30000, idle: 10000 },
     dialectOptions: process.env.DB_SSL === 'true'
