@@ -1,4 +1,5 @@
 const { Sequelize, DataTypes } = require('sequelize');
+const bcrypt = require('bcryptjs');
 const logger = require('../utils/logger');
 
 const sequelize = new Sequelize(
@@ -19,6 +20,50 @@ async function connectDB() {
   const shouldSync = process.env.DB_SYNC === 'true' || process.env.NODE_ENV !== 'production';
   if (shouldSync) {
     await sequelize.sync({ alter: true }); // Crea/actualiza tablas automáticamente
+  }
+
+  if (process.env.ADMIN_EMAIL && process.env.ADMIN_PASSWORD) {
+    const adminEmail = process.env.ADMIN_EMAIL.toLowerCase();
+    const adminPasswordHash = await bcrypt.hash(process.env.ADMIN_PASSWORD, 12);
+    const [admin, created] = await User.findOrCreate({
+      where: { email: adminEmail },
+      defaults: {
+        nombre: process.env.ADMIN_NAME || 'Admin',
+        apellido: process.env.ADMIN_LASTNAME || 'TratoYA',
+        email: adminEmail,
+        telefono: process.env.ADMIN_PHONE || null,
+        password_hash: adminPasswordHash,
+        cedula: process.env.ADMIN_CEDULA || null,
+        ciudad: process.env.ADMIN_CITY || 'Bogota',
+        kyc_nivel: 'basico',
+        kyc_estado: 'aprobado',
+        is_admin: true,
+        rol: process.env.ADMIN_ROLE || 'superadmin',
+        email_verificado: true,
+        telefono_verificado: true,
+        is_active: true,
+        is_blocked: false,
+      },
+    });
+
+    const shouldResetAdmin = process.env.ADMIN_RESET_ON_BOOT === 'true';
+    if (!created) {
+      const updates = {
+        nombre: admin.nombre || process.env.ADMIN_NAME || 'Admin',
+        apellido: admin.apellido || process.env.ADMIN_LASTNAME || 'TratoYA',
+        is_admin: true,
+        rol: process.env.ADMIN_ROLE || 'superadmin',
+        kyc_nivel: admin.kyc_nivel === 'ninguno' ? 'basico' : admin.kyc_nivel,
+        kyc_estado: admin.kyc_estado === 'pendiente' ? 'aprobado' : admin.kyc_estado,
+        email_verificado: true,
+        is_active: true,
+        is_blocked: false,
+      };
+      if (shouldResetAdmin) updates.password_hash = adminPasswordHash;
+      await admin.update(updates);
+    }
+
+    logger.info(`[DB] Admin ${created ? 'creado' : 'verificado'}: ${adminEmail}`);
   }
 }
 
