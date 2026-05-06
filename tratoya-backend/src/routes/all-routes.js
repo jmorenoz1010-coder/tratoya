@@ -117,17 +117,20 @@ function getWompiConfig() {
 
   if (!publicKey || !integritySecret) {
     const err = new Error('Faltan variables Wompi: WOMPI_PUBLIC_KEY y WOMPI_INTEGRITY_SECRET');
-    err.statusCode = 500;
+    err.statusCode = 503;
+    err.expose = true;
     throw err;
   }
   if (env === 'production' && !publicKey.startsWith('pub_prod_')) {
     const err = new Error('WOMPI_ENV=production requiere WOMPI_PUBLIC_KEY con prefijo pub_prod_');
-    err.statusCode = 500;
+    err.statusCode = 503;
+    err.expose = true;
     throw err;
   }
   if (env === 'sandbox' && !publicKey.startsWith('pub_test_')) {
     const err = new Error('WOMPI_ENV=sandbox requiere WOMPI_PUBLIC_KEY con prefijo pub_test_');
-    err.statusCode = 500;
+    err.statusCode = 503;
+    err.expose = true;
     throw err;
   }
   return { env, publicKey, integritySecret, eventsSecret, frontendUrl, realEnabled, maxTestAmountCop };

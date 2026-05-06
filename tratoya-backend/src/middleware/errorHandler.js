@@ -22,9 +22,9 @@ module.exports = (err, req, res, next) => {
 
   res.status(status).json({
     success: false,
-    message: process.env.NODE_ENV === 'production'
-      ? 'Error interno del servidor'
-      : err.message,
+    message: err.expose || status < 500 || process.env.NODE_ENV !== 'production'
+      ? err.message
+      : 'Error interno del servidor',
     ...(process.env.NODE_ENV === 'development' && { stack: err.stack }),
   });
 };
