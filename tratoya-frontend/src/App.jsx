@@ -31,7 +31,15 @@ const api = {
       throw new Error("No se pudo conectar con TratoYA. Verifica que el PC y el celular estén en la misma red Wi-Fi.");
     }
     const d = await r.json().catch(() => ({ success: false, message: "Error de conexión" }));
-    if (!r.ok) throw new Error(d.message || `Error ${r.status}`);
+    if (!r.ok) {
+      const err = new Error(d.message || `Error ${r.status}`);
+      err.status = r.status;
+      if (r.status === 401 && tok) {
+        clearSession();
+        setTimeout(() => { window.location.href = "/"; }, 250);
+      }
+      throw err;
+    }
     return d;
   },
   get:    (p)       => api.req("GET",  p),
@@ -410,8 +418,8 @@ function Dashboard({ setPage, setTratoId, user, toast, setUser }) {
       setTratos(t.data || []);
       setNotifs((n.data || []).slice(0, 5));
       if (me.data) { setUserStats(me.data); setUser?.(me.data); }
-    } catch {
-      if (!silent) toast("Error cargando dashboard", "error");
+    } catch (e) {
+      if (!silent) toast(e?.message || "Error cargando dashboard", "error");
     } finally {
       if (!silent) setLoading(false);
     }
