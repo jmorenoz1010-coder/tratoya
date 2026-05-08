@@ -63,7 +63,7 @@ const getSavedUser = () => { try { return JSON.parse(sessionStore().getItem("ty_
 const fmt = (n) => new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", minimumFractionDigits: 0 }).format(n || 0);
 const fmtDate = (d) => d ? new Date(d).toLocaleDateString("es-CO", { day: "2-digit", month: "short", year: "numeric" }) : "—";
 const timeAgo = (d) => { if (!d) return ""; const diff = Date.now() - new Date(d); const m = Math.floor(diff/60000); if (m < 1) return "ahora"; if (m < 60) return `hace ${m}m`; const h = Math.floor(m/60); if (h < 24) return `hace ${h}h`; return `hace ${Math.floor(h/24)}d`; };
-const MONTO_MINIMO_TRATO = 50000;
+const MONTO_MINIMO_TRATO = 5000;
 const calcularCostoEpaycoUI = (totalCobrado) => {
   const iva = 1.19;
   if (totalCobrado <= 60000) return Math.ceil(2200 * iva);
@@ -116,6 +116,11 @@ const openEpaycoCheckout = async (order) => {
   });
   handler.open(order.checkoutData);
 };
+const EpaycoMark = ({ compact = false }) => (
+  <span style={{ display: "inline-flex", alignItems: "center", gap: compact ? 4 : 7, fontWeight: 800, letterSpacing: "-.4px" }}>
+    <span style={{ color: "#111", fontStyle: "italic" }}>e</span><span style={{ color: "#f15a24", fontStyle: "italic" }}>Payco</span>
+  </span>
+);
 
 const ESTADO = {
   borrador:               { l: "Borrador",          c: "bg" },
@@ -983,10 +988,10 @@ function TratoDetalle({ tratoId, setPage, setDisputeTratoId, user, toast }) {
 
             {["activo","pago_pendiente"].includes(trato.estado) && esC && (
               <div style={{ marginTop: 13, padding: "12px 13px", background: "var(--cr)", borderRadius: 9 }}>
-                <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 4 }}>Pago seguro con ePayco</div>
+                <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 4, display: "flex", alignItems: "center", gap: 7 }}>Pago seguro con <EpaycoMark compact /></div>
                 <p style={{ fontSize: 12.5, color: "var(--s600)", marginBottom: 10 }}>Tu pago se procesa en ePayco y solo la confirmación oficial marca los fondos como recibidos en TratoYA.</p>
                 <button className="btn bp" style={{ width: "100%" }} onClick={pagarEpayco} disabled={busy}>
-                  {busy ? <div className="spin" /> : "💳 Pagar con ePayco"}
+                  {busy ? <div className="spin" /> : <><span>💳 Pagar con</span><EpaycoMark compact /></>}
                 </button>
                 {paymentOrder?.reference && <div style={{ marginTop: 8, fontSize: 11, color: "var(--s600)", wordBreak: "break-all" }}>Referencia: {paymentOrder.reference}</div>}
               </div>
@@ -1680,7 +1685,7 @@ function PublicTratoPage({ link, session, goAuth, toast }) {
             <button className="btn bp blg" onClick={aceptar} disabled={busy}>{busy ? <div className="spin" /> : "Aceptar trato y continuar al pago"}</button>
           ) : canPay ? (
             <div>
-              <button className="btn bp blg" style={{ width: "100%" }} onClick={pagar} disabled={busy}>{busy ? <div className="spin" /> : "Pagar con ePayco"}</button>
+              <button className="btn bp blg" style={{ width: "100%" }} onClick={pagar} disabled={busy}>{busy ? <div className="spin" /> : <><span>Pagar con</span><EpaycoMark /></>}</button>
               {order?.reference && <div style={{ fontSize: 11, color: "var(--s600)", marginTop: 8 }}>Referencia: {order.reference}</div>}
             </div>
           ) : (

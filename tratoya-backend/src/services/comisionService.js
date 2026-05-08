@@ -11,7 +11,7 @@ const TRAMOS = [
   { max: 50000000, fijo: null,  pct: 0.029, label: '2.9%' },
 ];
 
-const MONTO_MINIMO_TRATO = 50000;
+const MONTO_MINIMO_TRATO = 5000;
 const MONTO_MAXIMO_AUTOMATICO = 50000000;
 const IVA_COLOMBIA = 0.19;
 const EPAYCO_DAVIVIENDA_PCT = 0.0264;
