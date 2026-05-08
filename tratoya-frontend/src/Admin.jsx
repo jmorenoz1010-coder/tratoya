@@ -1148,7 +1148,7 @@ function AdminTratoDetailModal({ detail, loading, onClose, onRefresh, onLiberar,
 
               {[
                 ["Pagos registrados", data.pagos, p => [p.tipo, fmt(p.monto), p.pasarela, p.estado, p.referencia_externa || "—", fmtTime(p.createdAt)]],
-                ["Intenciones de pago", data.payment_intents, p => [p.provider, p.reference, fmt(p.amount_cop), p.status, p.epayco_transaction_id || p.wompi_transaction_id || "—", fmtTime(p.updated_at || p.created_at)]],
+                ["Intenciones de pago", data.payment_intents, p => [p.provider, p.reference, fmt(p.amount_cop), p.status, p.wompi_transaction_id || p.raw_response?.ref_payco || p.raw_response?.transaction_id || "—", fmtTime(p.updatedAt || p.createdAt || p.updated_at || p.created_at)]],
                 ["Eventos pasarela", data.payment_events, e => [e.provider, e.event_type, e.reference, e.status, e.is_valid_signature ? "Firma OK" : "Sin firma/pendiente", fmtTime(e.received_at)]],
                 ["Ledger", data.ledger, l => [l.type, fmt((l.amount_cents || 0) / 100), l.description || "—", fmtTime(l.created_at)]],
               ].map(([title, rows = [], map]) => (
