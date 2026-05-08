@@ -22,6 +22,21 @@ const sequelize = new Sequelize(
   }
 );
 
+async function ensureUserRegistrationColumns() {
+  await sequelize.query(`
+    DO $$
+    BEGIN
+      IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'enum_users_tipo_identificacion') THEN
+        CREATE TYPE enum_users_tipo_identificacion AS ENUM ('CC','CE','TI','PA','PEP','NIT','OTRO');
+      END IF;
+    END
+    $$;
+  `);
+  await sequelize.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS usuario_unico VARCHAR(40);`);
+  await sequelize.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS tipo_identificacion enum_users_tipo_identificacion DEFAULT 'CC';`);
+  await sequelize.query(`CREATE UNIQUE INDEX IF NOT EXISTS users_usuario_unico_unique ON users (usuario_unico) WHERE usuario_unico IS NOT NULL;`);
+}
+
 async function connectDB() {
   await sequelize.authenticate();
   const isProductionRuntime = process.env.NODE_ENV === 'production' || process.env.VERCEL === '1';
@@ -31,6 +46,7 @@ async function connectDB() {
   } else if (process.env.DB_SYNC !== 'false') {
     await sequelize.sync();
   }
+  await ensureUserRegistrationColumns();
 
   if (process.env.ADMIN_EMAIL && process.env.ADMIN_PASSWORD) {
     const adminEmail = process.env.ADMIN_EMAIL.toLowerCase();
@@ -85,8 +101,10 @@ const User = sequelize.define('User', {
   nombre:        { type: DataTypes.STRING(100), allowNull: false },
   apellido:      { type: DataTypes.STRING(100), allowNull: false },
   email:         { type: DataTypes.STRING(255), allowNull: false, unique: true },
+  usuario_unico: { type: DataTypes.STRING(40), unique: true },
   telefono:      { type: DataTypes.STRING(20) },
   password_hash: { type: DataTypes.STRING(255), allowNull: false },
+  tipo_identificacion: { type: DataTypes.ENUM('CC','CE','TI','PA','PEP','NIT','OTRO'), defaultValue: 'CC' },
   cedula:        { type: DataTypes.STRING(20), unique: true },
   fecha_nacimiento: { type: DataTypes.DATEONLY },
   ciudad:        { type: DataTypes.STRING(100) },

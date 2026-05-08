@@ -7,7 +7,7 @@ const dayjs = require('dayjs');
 
 const auth = require('../middleware/auth');
 const kycRequired = require('../middleware/kycRequired');
-const { Trato, User, Pago } = require('../config/database');
+const { Trato, User, Pago, Mensaje } = require('../config/database');
 const { calcularComision, MONTO_MINIMO_TRATO } = require('../services/comisionService');
 const { notificar } = require('../services/notificacionService');
 const { generarCodigo } = require('../utils/helpers');
@@ -99,15 +99,23 @@ router.post('/', kycRequired, [
   const errors = validationResult(req);
   if (!errors.isEmpty()) return res.status(400).json({ success: false, errors: errors.array() });
   try {
-    const { titulo, descripcion, tipo, monto, dias_inspeccion = 7, quien_paga_comision = 'comprador', notas } = req.body;
+    const { titulo, descripcion, tipo, monto, dias_inspeccion = 7, quien_paga_comision = 'comprador', notas, contraparte_usuario_unico } = req.body;
     const montoNumero = parseFloat(monto);
     const { porcentaje, monto_comision, monto_neto } = calcularComision(montoNumero, quien_paga_comision);
     const codigo = await generarCodigo();
+    let contraparte = null;
+    const handle = String(contraparte_usuario_unico || '').toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 24);
+    if (handle) {
+      contraparte = await User.findOne({ where: { usuario_unico: handle, is_active: true, is_blocked: false } });
+      if (!contraparte) return res.status(404).json({ success: false, message: 'No encontramos un usuario registrado con ese ID único' });
+      if (contraparte.id === req.user.id) return res.status(400).json({ success: false, message: 'No puedes enviarte un trato a ti mismo' });
+    }
 
     const trato = await Trato.create({
       codigo,
       titulo, descripcion, tipo,
       vendedor_id: req.user.id,
+      comprador_id: contraparte?.id || null,
       monto,
       comision_pct: porcentaje,
       comision_monto: monto_comision,
@@ -115,10 +123,12 @@ router.post('/', kycRequired, [
       quien_paga_comision,
       dias_inspeccion,
       notas,
-      estado: 'borrador',
+      estado: contraparte ? 'activo' : 'borrador',
       link_compartir: uuidv4().substring(0, 10),
+      fecha_activado: contraparte ? new Date() : null,
       fecha_expiracion: dayjs().add(12, 'hour').toDate(),
       ip_creacion: req.ip,
+      metadata: contraparte ? { invitacion_directa: true, contraparte_usuario_unico: contraparte.usuario_unico } : {},
     });
 
     await notificar(req.user.id, 'trato_creado', {
@@ -127,10 +137,25 @@ router.post('/', kycRequired, [
       metadata: { trato_id: trato.id },
     });
 
+    if (contraparte) {
+      await Mensaje.create({
+        trato_id: trato.id,
+        remitente_id: req.user.id,
+        tipo: 'sistema',
+        contenido: `Te enviaron el trato directo ${codigo}: ${titulo}. Puedes revisarlo y continuar con el pago desde Mis Tratos.`,
+      });
+      await notificar(contraparte.id, 'trato_directo', {
+        titulo: 'Nuevo trato directo',
+        cuerpo: `${req.user.nombre} te envió "${titulo}". Revisa el trato para aceptarlo y pagar.`,
+        accion_url: `/trato/${trato.id}`,
+        metadata: { trato_id: trato.id, codigo },
+      });
+    }
+
     logger.info(`[TRATO] Creado ${codigo} por ${req.user.email}`);
     res.status(201).json({
       success: true,
-      message: 'Trato creado exitosamente',
+      message: contraparte ? 'Trato creado y enviado a tu contraparte' : 'Trato creado exitosamente',
       data: { ...trato.toJSON(), link_publico: `${process.env.FRONTEND_URL}/t/${trato.link_compartir}` },
     });
   } catch (err) { next(err); }

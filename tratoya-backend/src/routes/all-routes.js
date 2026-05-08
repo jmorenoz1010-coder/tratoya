@@ -10,6 +10,19 @@ const { User, CuentaBancaria, Notificacion } = require('../config/database');
 
 usersRouter.use(auth);
 
+const normalizeHandle = (value) => String(value || '')
+  .normalize('NFD')
+  .replace(/[\u0300-\u036f]/g, '')
+  .toLowerCase()
+  .replace(/[^a-z0-9]/g, '')
+  .slice(0, 24);
+
+const maskName = (value) => {
+  const clean = String(value || '').trim();
+  if (!clean) return '***';
+  return `${clean.slice(0, 3)}*****`;
+};
+
 usersRouter.get('/profile', async (req, res, next) => {
   try {
     const user = await User.findByPk(req.user.id, {
@@ -21,9 +34,53 @@ usersRouter.get('/profile', async (req, res, next) => {
 
 usersRouter.put('/profile', async (req, res, next) => {
   try {
-    const { nombre, apellido, telefono, ciudad } = req.body;
-    await req.user.update({ nombre, apellido, telefono, ciudad });
-    res.json({ success: true, message: 'Perfil actualizado' });
+    const { nombre, apellido, telefono, ciudad, usuario_unico, tipo_identificacion, cedula } = req.body;
+    const updates = { nombre, apellido, telefono, ciudad, tipo_identificacion, cedula };
+    Object.keys(updates).forEach(k => updates[k] === undefined && delete updates[k]);
+
+    if (usuario_unico !== undefined) {
+      const handle = normalizeHandle(usuario_unico);
+      if (!/^[a-z0-9]{5,24}$/.test(handle)) {
+        return res.status(400).json({ success: false, message: 'El ID único debe tener entre 5 y 24 letras/números, sin espacios ni símbolos' });
+      }
+      const existing = await User.findOne({ where: { usuario_unico: handle, id: { [Op.ne]: req.user.id } } });
+      if (existing) return res.status(409).json({ success: false, message: 'Ese ID único ya está en uso' });
+      updates.usuario_unico = handle;
+    }
+
+    if (cedula !== undefined) {
+      const existingDoc = await User.findOne({ where: { cedula, id: { [Op.ne]: req.user.id } } });
+      if (existingDoc) return res.status(409).json({ success: false, message: 'Ese número de identificación ya está registrado' });
+    }
+
+    await req.user.update(updates);
+    const fresh = await User.findByPk(req.user.id, { attributes: { exclude: ['password_hash', 'refresh_token', 'two_factor_secret'] } });
+    res.json({ success: true, message: 'Perfil actualizado', data: fresh });
+  } catch (err) { next(err); }
+});
+
+usersRouter.get('/lookup/:usuario_unico', async (req, res, next) => {
+  try {
+    const handle = normalizeHandle(req.params.usuario_unico);
+    if (!/^[a-z0-9]{5,24}$/.test(handle)) {
+      return res.status(400).json({ success: false, message: 'ID único inválido' });
+    }
+    const user = await User.findOne({
+      where: { usuario_unico: handle, is_active: true, is_blocked: false },
+      attributes: ['id','nombre','apellido','usuario_unico','reputacion','total_tratos'],
+    });
+    if (!user) return res.status(404).json({ success: false, message: 'No encontramos un usuario con ese ID' });
+    if (user.id === req.user.id) return res.status(400).json({ success: false, message: 'No puedes enviarte un trato a ti mismo' });
+    res.json({
+      success: true,
+      data: {
+        usuario_unico: user.usuario_unico,
+        nombre_mask: maskName(user.nombre),
+        apellido_mask: maskName(user.apellido),
+        reputacion: user.reputacion,
+        total_tratos: user.total_tratos,
+      },
+    });
   } catch (err) { next(err); }
 });
 
@@ -80,7 +137,17 @@ usersRouter.get('/bank-accounts', async (req, res, next) => {
 usersRouter.post('/bank-accounts', async (req, res, next) => {
   try {
     const { banco, tipo, numero, titular } = req.body;
-    const cuenta = await CuentaBancaria.create({ usuario_id: req.user.id, banco, tipo, numero, titular });
+    if (!banco || !tipo || !numero) return res.status(400).json({ success: false, message: 'Banco, tipo y número son requeridos' });
+    if (!['ahorros','corriente','nequi','daviplata'].includes(tipo)) return res.status(400).json({ success: false, message: 'Tipo de cuenta inválido' });
+    const cuenta = await CuentaBancaria.create({
+      usuario_id: req.user.id,
+      banco,
+      tipo,
+      numero,
+      titular: titular || `${req.user.nombre} ${req.user.apellido}`,
+      cedula_titular: req.user.cedula,
+      principal: true,
+    });
     res.status(201).json({ success: true, data: cuenta });
   } catch (err) { next(err); }
 });

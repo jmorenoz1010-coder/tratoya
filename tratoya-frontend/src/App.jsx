@@ -63,6 +63,23 @@ const getSavedUser = () => { try { return JSON.parse(sessionStore().getItem("ty_
 const fmt = (n) => new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", minimumFractionDigits: 0 }).format(n || 0);
 const fmtDate = (d) => d ? new Date(d).toLocaleDateString("es-CO", { day: "2-digit", month: "short", year: "numeric" }) : "—";
 const timeAgo = (d) => { if (!d) return ""; const diff = Date.now() - new Date(d); const m = Math.floor(diff/60000); if (m < 1) return "ahora"; if (m < 60) return `hace ${m}m`; const h = Math.floor(m/60); if (h < 24) return `hace ${h}h`; return `hace ${Math.floor(h/24)}d`; };
+const DOC_TYPES = [["CC","Cédula de ciudadanía"],["CE","Cédula de extranjería"],["TI","Tarjeta de identidad"],["PA","Pasaporte"],["PEP","Permiso especial"],["NIT","NIT"],["OTRO","Otro"]];
+const FINANCIAL_ENTITIES = [
+  "Bancolombia","Nequi","Davivienda","Daviplata","Banco de Bogotá","Banco de Occidente","Banco Popular","Banco AV Villas",
+  "BBVA Colombia","Scotiabank Colpatria","Itaú Colombia","Banco Caja Social","Banco Agrario","Banco Falabella","Banco Pichincha",
+  "Bancoomeva","Banco W","Banco Serfinanza","Banco GNB Sudameris","Lulo Bank","Nu Colombia","RappiPay","Movii","Dale!","Coink"
+];
+const passwordChecks = (password, f = {}) => [
+  ["length", "Mínimo 12 caracteres", String(password || "").length >= 12],
+  ["upper", "Una mayúscula", /[A-Z]/.test(password || "")],
+  ["lower", "Una minúscula", /[a-z]/.test(password || "")],
+  ["number", "Un número", /\d/.test(password || "")],
+  ["special", "Un carácter especial", /[^A-Za-z0-9]/.test(password || "")],
+  ["spaces", "Sin espacios", !/\s/.test(password || "") && Boolean(password)],
+  ["personal", "No usar tu nombre o correo", Boolean(password) && !String(password).toLowerCase().includes(String(f.nombre || "").toLowerCase()) && !String(password).toLowerCase().includes(String(f.email || "").split("@")[0].toLowerCase())],
+];
+const strongPasswordOk = (password, f) => passwordChecks(password, f).every(([, , ok]) => ok);
+const normalizeHandle = (value) => String(value || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]/g, "").slice(0, 24);
 const MONTO_MINIMO_TRATO = 5000;
 const calcularCostoEpaycoUI = (totalCobrado) => {
   const iva = 1.19;
@@ -792,14 +809,28 @@ function CrearTrato({ setPage, toast, user }) {
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState(null);
-  const [f, setF_] = useState({ tipo: "producto", titulo: "", descripcion: "", monto: "", dias: "7", quien: "comprador", notas: "" });
+  const [f, setF_] = useState({ tipo: "producto", titulo: "", descripcion: "", monto: "", dias: "7", quien: "comprador", notas: "", directo: false, contraparte: "" });
+  const [lookup, setLookup] = useState({ loading: false, data: null, error: "" });
   const sf = (k, v) => setF_(p => ({ ...p, [k]: v }));
   const monto = parseInt((f.monto || "").replace(/\D/g, "")) || 0;
+  const buscarContraparte = async () => {
+    const handle = normalizeHandle(f.contraparte);
+    if (!handle || handle.length < 5) { setLookup({ loading: false, data: null, error: "El ID debe tener mínimo 5 letras/números." }); return; }
+    setLookup({ loading: true, data: null, error: "" });
+    try {
+      const r = await api.get(`/users/lookup/${encodeURIComponent(handle)}`);
+      setLookup({ loading: false, data: r.data, error: "" });
+      sf("contraparte", handle);
+    } catch (e) {
+      setLookup({ loading: false, data: null, error: e.message });
+    }
+  };
 
   const create = async () => {
+    if (f.directo && !lookup.data) { toast("Busca y confirma el ID único de tu contraparte.", "error"); return; }
     setLoading(true);
     try {
-      const res = await api.post("/tratos", { titulo: f.titulo, descripcion: f.descripcion, tipo: f.tipo, monto, dias_inspeccion: parseInt(f.dias), quien_paga_comision: f.quien, notas: f.notas });
+      const res = await api.post("/tratos", { titulo: f.titulo, descripcion: f.descripcion, tipo: f.tipo, monto, dias_inspeccion: parseInt(f.dias), quien_paga_comision: f.quien, notas: f.notas, contraparte_usuario_unico: f.directo ? f.contraparte : undefined });
       setDone(res.data); toast("¡Trato creado!", "success");
     } catch (e) { toast(e.message, "error"); }
     setLoading(false);
@@ -813,7 +844,7 @@ function CrearTrato({ setPage, toast, user }) {
       <div className="popi" style={{ textAlign: "center", maxWidth: 420 }}>
         <div style={{ width: 68, height: 68, borderRadius: "50%", background: "var(--cr)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px", fontSize: 30 }}>✅</div>
         <h2 style={{ fontSize: 24, marginBottom: 7 }}>¡Trato creado!</h2>
-        <p style={{ color: "var(--s600)", marginBottom: 16, lineHeight: 1.6, fontSize: 14 }}>Comparte el link o el código QR con tu contraparte.</p>
+        <p style={{ color: "var(--s600)", marginBottom: 16, lineHeight: 1.6, fontSize: 14 }}>{done.comprador_id ? "Tu contraparte recibió una notificación directa. También puedes compartir el link." : "Comparte el link o el código QR con tu contraparte."}</p>
         <div style={{ background: "var(--n)", color: "var(--g)", borderRadius: 9, padding: "9px 15px", fontFamily: "Manrope", fontWeight: 800, fontSize: 17, marginBottom: 12 }}>{done.codigo}</div>
         <div style={{ background: "var(--s50)", borderRadius: 9, padding: "9px 13px", display: "flex", alignItems: "center", gap: 8, marginBottom: 14, border: "1.5px dashed var(--s200)" }}>
           <span style={{ fontSize: 11.5, color: "var(--s600)", flex: 1, wordBreak: "break-all", fontFamily: "monospace" }}>{done.link_publico}</span>
@@ -833,7 +864,7 @@ function CrearTrato({ setPage, toast, user }) {
         </div>
         <div style={{ display: "flex", gap: 9 }}>
           <button className="btn bp" style={{ flex: 1 }} onClick={() => setPage("tratos")}>Ver tratos</button>
-          <button className="btn bo" onClick={() => { setDone(null); setStep(1); setF_({ tipo: "producto", titulo: "", descripcion: "", monto: "", dias: "7", quien: "comprador", notas: "" }); }}>Crear otro</button>
+          <button className="btn bo" onClick={() => { setDone(null); setStep(1); setLookup({ loading: false, data: null, error: "" }); setF_({ tipo: "producto", titulo: "", descripcion: "", monto: "", dias: "7", quien: "comprador", notas: "", directo: false, contraparte: "" }); }}>Crear otro</button>
         </div>
       </div>
     </div>
@@ -921,6 +952,26 @@ function CrearTrato({ setPage, toast, user }) {
               note="El valor que verá ePayco es el total que paga el comprador. La comisión de TratoYa queda incluida en este cálculo."
             />
             <div className="fg"><label className="fl">Notas adicionales</label><textarea className="inp" rows="2" placeholder="Condiciones especiales, punto de entrega, etc." value={f.notas} onChange={e => sf("notas", e.target.value)} /></div>
+            <div className="card" style={{ padding: 14, marginTop: 12, border: "1px solid var(--s100)" }}>
+              <label style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer", fontWeight: 800, fontSize: 13 }}>
+                <input type="checkbox" checked={f.directo} onChange={e => { sf("directo", e.target.checked); setLookup({ loading: false, data: null, error: "" }); }} />
+                Enviar este trato directamente a un usuario registrado
+              </label>
+              {f.directo && (
+                <div style={{ marginTop: 12 }}>
+                  <div className="fg" style={{ marginBottom: 8 }}>
+                    <label className="fl">ID único de la contraparte</label>
+                    <div style={{ display: "flex", gap: 8 }}>
+                      <input className="inp" placeholder="ej: juanperez123" value={f.contraparte} onChange={e => { sf("contraparte", normalizeHandle(e.target.value)); setLookup({ loading: false, data: null, error: "" }); }} />
+                      <button className="btn bo" onClick={buscarContraparte} disabled={lookup.loading}>{lookup.loading ? <div className="spin" /> : "Buscar"}</button>
+                    </div>
+                    <div className="fh">Solo se muestra una versión protegida del nombre por seguridad.</div>
+                  </div>
+                  {lookup.data && <div style={{ background: "var(--cr)", border: "1px solid var(--g)", borderRadius: 9, padding: "10px 12px", fontSize: 13, color: "var(--g2)", fontWeight: 800 }}>Encontrado: {lookup.data.nombre_mask} {lookup.data.apellido_mask} · ID {lookup.data.usuario_unico}</div>}
+                  {lookup.error && <div style={{ background: "var(--reb)", border: "1px solid var(--re)", borderRadius: 9, padding: "10px 12px", fontSize: 13, color: "var(--re)", fontWeight: 700 }}>{lookup.error}</div>}
+                </div>
+              )}
+            </div>
             <div style={{ display: "flex", gap: 9, marginTop: 16 }}>
               <button className="btn bo blg" onClick={() => setStep(1)}>← Atrás</button>
               <button className="btn bp blg" style={{ flex: 1 }} onClick={() => setStep(3)}>Revisar →</button>
@@ -933,7 +984,7 @@ function CrearTrato({ setPage, toast, user }) {
             <h2 style={{ fontSize: 21, marginBottom: 16 }}>Confirmar trato</h2>
             <div className="card" style={{ padding: "17px 19px", marginBottom: 12 }}>
               <div className="g2" style={{ gap: 12 }}>
-                {[["Tipo", tipos.find(([id]) => id === f.tipo)?.[2]],["Título", f.titulo],["Monto", fmt(monto)],["Días inspección", `${f.dias} días`],["Comisión la paga", f.quien]].map(([k, v]) => (
+                {[["Tipo", tipos.find(([id]) => id === f.tipo)?.[2]],["Título", f.titulo],["Monto", fmt(monto)],["Días inspección", `${f.dias} días`],["Comisión la paga", f.quien],["Contraparte", f.directo && lookup.data ? `${lookup.data.nombre_mask} ${lookup.data.apellido_mask}` : "Por link/QR"]].map(([k, v]) => (
                   <div key={k}><div style={{ fontSize: 10, fontWeight: 600, color: "var(--s400)", textTransform: "uppercase", letterSpacing: ".4px", marginBottom: 2 }}>{k}</div><div style={{ fontSize: 13.5, fontWeight: 600 }}>{v}</div></div>
                 ))}
               </div>
@@ -1367,24 +1418,44 @@ function Reputacion({ user, setUser, toast }) {
 
 // ─── Perfil ────────────────────────────────────────────
 function Perfil({ user, setUser, toast }) {
-  const [files, setFiles] = useState({});
-  const [cedula, setCedula] = useState("");
   const [loading, setLoading] = useState(false);
+  const [profile, setProfile] = useState({
+    nombre: user?.nombre || "",
+    apellido: user?.apellido || "",
+    telefono: user?.telefono || "",
+    ciudad: user?.ciudad || "",
+    usuario_unico: user?.usuario_unico || "",
+    tipo_identificacion: user?.tipo_identificacion || "CC",
+    cedula: user?.cedula || "",
+  });
+  const [bank, setBank] = useState({ banco: "", tipo: "ahorros", numero: "", titular: `${user?.nombre || ""} ${user?.apellido || ""}`.trim() });
+  const [accounts, setAccounts] = useState([]);
+  useEffect(() => { api.get("/users/bank-accounts").then(r => setAccounts(r.data || [])).catch(() => {}); }, []);
+  const sp = (k, v) => setProfile(p => ({ ...p, [k]: v }));
+  const sb = (k, v) => setBank(p => ({ ...p, [k]: v }));
 
-  const uploadKyc = async () => {
-    if (!cedula) { toast("Ingresa tu número de cédula", "error"); return; }
+  const saveProfile = async () => {
+    const handle = normalizeHandle(profile.usuario_unico);
+    if (!/^[a-z0-9]{5,24}$/.test(handle)) { toast("El ID único debe tener de 5 a 24 letras/números.", "error"); return; }
     setLoading(true);
     try {
-      const form = new FormData();
-      form.append("cedula", cedula);
-      if (files.cf) form.append("cedula_frente", files.cf);
-      if (files.cr) form.append("cedula_reverso", files.cr);
-      if (files.sl) form.append("selfie", files.sl);
-      await api.upload("/kyc/upload", form);
-      const me = await api.get("/auth/me");
-      setUser(me.data);
-      sessionStore().setItem("ty_user", JSON.stringify(me.data));
-      toast("¡Identidad verificada!", "success");
+      const r = await api.put("/users/profile", { ...profile, usuario_unico: handle });
+      const updated = r.data || { ...user, ...profile, usuario_unico: handle };
+      setUser(updated);
+      sessionStore().setItem("ty_user", JSON.stringify(updated));
+      setProfile(p => ({ ...p, usuario_unico: handle }));
+      toast("Perfil actualizado", "success");
+    } catch (e) { toast(e.message, "error"); }
+    setLoading(false);
+  };
+  const saveBank = async () => {
+    if (!bank.banco || !bank.numero) { toast("Selecciona entidad y escribe número de cuenta o teléfono.", "error"); return; }
+    setLoading(true);
+    try {
+      const r = await api.post("/users/bank-accounts", bank);
+      setAccounts(p => [r.data, ...p]);
+      setBank({ banco: "", tipo: "ahorros", numero: "", titular: `${user?.nombre || ""} ${user?.apellido || ""}`.trim() });
+      toast("Información bancaria registrada", "success");
     } catch (e) { toast(e.message, "error"); }
     setLoading(false);
   };
@@ -1406,38 +1477,41 @@ function Perfil({ user, setUser, toast }) {
               </div>
             </div>
             <div className="g2" style={{ gap: 10 }}>
-              {[["Email", user?.email],["Teléfono", user?.telefono||"—"],["Tratos", user?.total_tratos||0],["Reputación", `${parseFloat(user?.reputacion||0).toFixed(1)}★`]].map(([k, v]) => (
+              {[["Email", user?.email],["ID único", user?.usuario_unico || "—"],["Teléfono", user?.telefono||"—"],["Reputación", `${parseFloat(user?.reputacion||0).toFixed(1)}★`]].map(([k, v]) => (
                 <div key={k}><div style={{ fontSize: 10, color: "var(--s400)", fontWeight: 600, textTransform: "uppercase", letterSpacing: ".4px", marginBottom: 2 }}>{k}</div><div style={{ fontSize: 13, fontWeight: 600 }}>{v}</div></div>
               ))}
             </div>
           </div>
+          <div className="card" style={{ padding: "18px 20px" }}>
+            <h3 style={{ fontSize: 14, marginBottom: 12 }}>Datos de cuenta</h3>
+            <div className="g2" style={{ gap: 10 }}>
+              <div className="fg"><label className="fl">Nombre</label><input className="inp" value={profile.nombre} onChange={e => sp("nombre", e.target.value)} /></div>
+              <div className="fg"><label className="fl">Apellido</label><input className="inp" value={profile.apellido} onChange={e => sp("apellido", e.target.value)} /></div>
+            </div>
+            <div className="fg"><label className="fl">ID único</label><input className="inp" value={profile.usuario_unico} onChange={e => sp("usuario_unico", normalizeHandle(e.target.value))} placeholder="letrasynumeros" /><div className="fh">5 a 24 letras/números. Sirve para recibir tratos directos.</div></div>
+            <div className="g2" style={{ gap: 10 }}>
+              <div className="fg"><label className="fl">Tipo de identificación</label><select className="inp" value={profile.tipo_identificacion} onChange={e => sp("tipo_identificacion", e.target.value)}>{DOC_TYPES.map(([v,l]) => <option key={v} value={v}>{l}</option>)}</select></div>
+              <div className="fg"><label className="fl">Número</label><input className="inp" value={profile.cedula || ""} onChange={e => sp("cedula", e.target.value.replace(/[^\w.-]/g, ""))} /></div>
+            </div>
+            <div className="g2" style={{ gap: 10 }}>
+              <div className="fg"><label className="fl">WhatsApp</label><input className="inp" value={profile.telefono || ""} onChange={e => sp("telefono", e.target.value)} /></div>
+              <div className="fg"><label className="fl">Ciudad</label><input className="inp" value={profile.ciudad || ""} onChange={e => sp("ciudad", e.target.value)} /></div>
+            </div>
+            <button className="btn bp" style={{ width: "100%" }} onClick={saveProfile} disabled={loading}>{loading ? <><div className="spin" /> Guardando...</> : "Guardar perfil"}</button>
+          </div>
         </div>
 
         <div className="card" style={{ padding: "18px 20px" }}>
-          <h3 style={{ fontSize: 14, marginBottom: 5 }}>Verificación de identidad (KYC)</h3>
-          <p style={{ fontSize: 13, color: "var(--s600)", marginBottom: 14 }}>Requerido para crear tratos y aumentar límites de transacción.</p>
-          {user?.kyc_nivel !== "ninguno" ? (
-            <div style={{ background: "var(--cr)", borderRadius: 9, padding: "13px 15px" }}>
-              <div style={{ fontWeight: 700, fontSize: 13 }}>✅ Identidad verificada</div>
-              <div style={{ fontSize: 12, color: "var(--s600)", marginTop: 3 }}>Nivel: {user?.kyc_nivel} · Estado: {user?.kyc_estado}</div>
-            </div>
-          ) : (
-            <>
-              <div className="fg"><label className="fl">Número de cédula *</label><input className="inp" placeholder="1.234.567.890" value={cedula} onChange={e => setCedula(e.target.value)} /></div>
-              {[["cf","cedula_frente","📄 Cédula (frente)"],["cr","cedula_reverso","📄 Cédula (reverso)"],["sl","selfie","🤳 Selfie sosteniendo la cédula"]].map(([k, n, l]) => (
-                <div key={k} className="fg">
-                  <label className="fl">{l}</label>
-                  <label className="uz" style={{ display: "block" }}>
-                    <input type="file" accept="image/*" style={{ display: "none" }} onChange={e => setFiles(f => ({ ...f, [k]: e.target.files[0] }))} />
-                    {files[k] ? <div style={{ fontSize: 13, color: "var(--g2)", fontWeight: 600 }}>✅ {files[k].name}</div> : <div style={{ color: "var(--s400)", fontSize: 13 }}>⬆ Toca para subir imagen</div>}
-                  </label>
-                </div>
-              ))}
-              <button className="btn bp" style={{ width: "100%" }} onClick={uploadKyc} disabled={loading}>
-                {loading ? <><div className="spin" /> Verificando...</> : "🔒 Enviar para verificación"}
-              </button>
-            </>
-          )}
+          <h3 style={{ fontSize: 14, marginBottom: 5 }}>Información bancaria</h3>
+          <p style={{ fontSize: 13, color: "var(--s600)", marginBottom: 14 }}>Registra dónde quieres recibir liberaciones futuras. Para Nequi/Daviplata usa tu número celular.</p>
+          <div className="fg"><label className="fl">Entidad financiera</label><select className="inp" value={bank.banco} onChange={e => { sb("banco", e.target.value); if (e.target.value === "Nequi") sb("tipo", "nequi"); if (e.target.value === "Daviplata") sb("tipo", "daviplata"); }}><option value="">Seleccionar entidad</option>{FINANCIAL_ENTITIES.map(b => <option key={b} value={b}>{b}</option>)}</select></div>
+          <div className="g2" style={{ gap: 10 }}>
+            <div className="fg"><label className="fl">Tipo</label><select className="inp" value={bank.tipo} onChange={e => sb("tipo", e.target.value)}><option value="ahorros">Cuenta de ahorros</option><option value="corriente">Cuenta corriente</option><option value="nequi">Nequi</option><option value="daviplata">Daviplata</option></select></div>
+            <div className="fg"><label className="fl">Número cuenta/teléfono</label><input className="inp" value={bank.numero} onChange={e => sb("numero", e.target.value.replace(/[^\d]/g, ""))} placeholder="3001234567" /></div>
+          </div>
+          <div className="fg"><label className="fl">Titular</label><input className="inp" value={bank.titular} onChange={e => sb("titular", e.target.value)} /></div>
+          <button className="btn bp" style={{ width: "100%" }} onClick={saveBank} disabled={loading}>{loading ? <><div className="spin" /> Guardando...</> : "Guardar información bancaria"}</button>
+          {accounts.length > 0 && <div style={{ marginTop: 14 }}>{accounts.map(a => <div key={a.id} style={{ background: "var(--s50)", border: "1px solid var(--s100)", borderRadius: 9, padding: "10px 12px", marginTop: 8, fontSize: 13 }}><b>{a.banco}</b> · {a.tipo} · {String(a.numero || "").replace(/\d(?=\d{4})/g, "*")}</div>)}</div>}
         </div>
       </div>
     </div>
@@ -1580,11 +1654,9 @@ function Auth({ setSession, toast }) {
   const [mode, setMode] = useState("login");
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
-  const [f, setF_] = useState({ nombre:"", apellido:"", email:"", password:"", telefono:"" });
+  const [f, setF_] = useState({ nombre:"", apellido:"", email:"", password:"", confirm_password:"", telefono:"", tipo_identificacion:"CC", cedula:"", banco:"", tipo_cuenta:"ahorros", numero_cuenta:"" });
   const sf = (k, v) => setF_(p => ({ ...p, [k]: v }));
-  // KYC obligatorio al registro
-  const [kycFiles, setKycFiles] = useState({ cedula_frente: null, cedula_reverso: null, selfie: null });
-  const [cedula, setCedula] = useState("");
+  const checks = passwordChecks(f.password, f);
 
   const login = async (e) => {
     e?.preventDefault();
@@ -1600,28 +1672,19 @@ function Auth({ setSession, toast }) {
   };
 
   const register = async () => {
-    if (!f.nombre || !f.email || !f.password) { toast("Completa todos los campos", "error"); return; }
-    if (f.password.length < 8) { toast("Contraseña mínimo 8 caracteres", "error"); return; }
-    if (!cedula) { toast("El número de cédula es obligatorio", "error"); return; }
-    if (!kycFiles.cedula_frente) { toast("La foto de cédula es obligatoria", "error"); return; }
-    if (!kycFiles.selfie) { toast("La selfie es obligatoria", "error"); return; }
+    if (!f.nombre || !f.apellido || !f.email || !f.password || !f.cedula) { toast("Completa los campos obligatorios", "error"); return; }
+    if (!strongPasswordOk(f.password, f)) { toast("La contraseña todavía no cumple todos los criterios.", "error"); return; }
+    if (f.password !== f.confirm_password) { toast("Las contraseñas no coinciden", "error"); return; }
     setLoading(true);
     try {
-      // 1. Crear cuenta
-      await api.post("/auth/register", { nombre: f.nombre, apellido: f.apellido, email: f.email, password: f.password, telefono: f.telefono });
-      // 2. Login automático para obtener token
+      await api.post("/auth/register", { nombre: f.nombre, apellido: f.apellido, email: f.email, password: f.password, telefono: f.telefono, cedula: f.cedula, tipo_identificacion: f.tipo_identificacion });
       const r = await api.post("/auth/login", { email: f.email, password: f.password });
-      sessionStore().setItem("ty_token", r.token);
-      // 3. Subir KYC de inmediato
-      const form = new FormData();
-      form.append("cedula", cedula);
-      form.append("cedula_frente", kycFiles.cedula_frente);
-      if (kycFiles.cedula_reverso) form.append("cedula_reverso", kycFiles.cedula_reverso);
-      form.append("selfie", kycFiles.selfie);
-      await api.upload("/kyc/upload", form);
-      sessionStore().removeItem("ty_token");
-      toast("¡Cuenta creada! Los documentos están en revisión. Ya puedes iniciar sesión.", "success");
-      setMode("login"); setStep(1);
+      saveSession(r.token, r.refresh_token, r.user);
+      if (f.banco && f.numero_cuenta) {
+        await api.post("/users/bank-accounts", { banco: f.banco, tipo: f.tipo_cuenta, numero: f.numero_cuenta, titular: `${f.nombre} ${f.apellido}` });
+      }
+      setSession({ user: r.user, token: r.token });
+      toast("Registro confirmado. Tu cuenta quedó lista.", "success");
     } catch (e) { toast(e.message, "error"); }
     setLoading(false);
   };
@@ -1663,36 +1726,36 @@ function Auth({ setSession, toast }) {
                   <div className="g2"><div className="fg"><label className="fl">Nombre *</label><input className="inp" placeholder="Juan" value={f.nombre} onChange={e => sf("nombre", e.target.value)} /></div><div className="fg"><label className="fl">Apellido *</label><input className="inp" placeholder="Pérez" value={f.apellido} onChange={e => sf("apellido", e.target.value)} /></div></div>
                   <div className="fg"><label className="fl">Email *</label><input className="inp" type="email" autoComplete="email" placeholder="tu@correo.com" value={f.email} onChange={e => sf("email", e.target.value)} /></div>
                   <div className="fg"><label className="fl">WhatsApp</label><input className="inp" placeholder="+57 300 123 4567" value={f.telefono} onChange={e => sf("telefono", e.target.value)} /></div>
-                  <div className="fg"><label className="fl">Contraseña *</label><input className="inp" type="password" autoComplete="new-password" name="tratoya_new_password" placeholder="Mínimo 8 caracteres" value={f.password} onChange={e => sf("password", e.target.value)} /></div>
-                  <button className="btn bp blg" style={{ width: "100%" }} onClick={() => setStep(2)} disabled={!f.nombre || !f.apellido || !f.email || !f.password}>Continuar →</button>
+                  <div className="g2" style={{ gap: 10 }}>
+                    <div className="fg"><label className="fl">Tipo de identificación *</label><select className="inp" value={f.tipo_identificacion} onChange={e => sf("tipo_identificacion", e.target.value)}>{DOC_TYPES.map(([v,l]) => <option key={v} value={v}>{l}</option>)}</select></div>
+                    <div className="fg"><label className="fl">Número *</label><input className="inp" placeholder="104745625" value={f.cedula} onChange={e => sf("cedula", e.target.value.replace(/[^\w.-]/g, ""))} /></div>
+                  </div>
+                  <div className="fg"><label className="fl">Contraseña *</label><input className="inp" type="password" autoComplete="new-password" name="tratoya_new_password" placeholder="Mínimo 12 caracteres" value={f.password} onChange={e => sf("password", e.target.value)} /></div>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6, marginTop: -6, marginBottom: 10 }}>
+                    {checks.map(([id, label, ok]) => <div key={id} style={{ fontSize: 11.5, color: ok ? "var(--g2)" : "var(--s400)", fontWeight: ok ? 900 : 500 }}>{ok ? "✓ " : "○ "}{label}</div>)}
+                  </div>
+                  <div className="fg"><label className="fl">Confirmar contraseña *</label><input className="inp" type="password" autoComplete="new-password" placeholder="Repite tu contraseña" value={f.confirm_password} onChange={e => sf("confirm_password", e.target.value)} /></div>
+                  <button className="btn bp blg" style={{ width: "100%" }} onClick={() => setStep(2)} disabled={!f.nombre || !f.apellido || !f.email || !f.cedula || !strongPasswordOk(f.password, f) || f.password !== f.confirm_password}>Continuar →</button>
                 </div>
               )}
               {step === 2 && (
                 <div className="fi">
-                  <div style={{ background: "var(--reb)", border: "1.5px solid var(--re)", borderRadius: 10, padding: 13, marginBottom: 14, display: "flex", gap: 9 }}>
-                    <span style={{ fontSize: 20 }}>🆔</span>
-                    <div><div style={{ fontWeight: 700, fontSize: 13, marginBottom: 2, color: "var(--re)" }}>Verificación de identidad OBLIGATORIA</div><p style={{ fontSize: 12, color: "var(--s800)", lineHeight: 1.5 }}>Sin esto no puedes crear tu cuenta. Requerido por cumplimiento legal (SARLAFT/UIAF).</p></div>
+                  <div style={{ background: "var(--cr)", border: "1.5px solid var(--g)", borderRadius: 10, padding: 13, marginBottom: 14, display: "flex", gap: 9 }}>
+                    <span style={{ fontSize: 20 }}>✓</span>
+                    <div><div style={{ fontWeight: 800, fontSize: 13, marginBottom: 2, color: "var(--g2)" }}>Confirmación de registro</div><p style={{ fontSize: 12, color: "var(--s800)", lineHeight: 1.5 }}>No necesitas adjuntar documentos. Tu ID único inicial será tu correo normalizado y podrás cambiarlo desde Perfil.</p></div>
                   </div>
-                  <div className="fg">
-                    <label className="fl">Número de cédula *</label>
-                    <input className="inp" placeholder="1.234.567.890" value={cedula} onChange={e => setCedula(e.target.value)} />
+                  <h3 style={{ fontSize: 14, marginBottom: 8 }}>Información bancaria opcional</h3>
+                  <p style={{ fontSize: 12.5, color: "var(--s600)", marginBottom: 12 }}>Puedes dejarla lista ahora o agregarla después en Perfil. Para Nequi/Daviplata escribe tu celular.</p>
+                  <div className="fg"><label className="fl">Entidad financiera</label><select className="inp" value={f.banco} onChange={e => { sf("banco", e.target.value); if (e.target.value === "Nequi") sf("tipo_cuenta", "nequi"); if (e.target.value === "Daviplata") sf("tipo_cuenta", "daviplata"); }}><option value="">Registrar después</option>{FINANCIAL_ENTITIES.map(b => <option key={b} value={b}>{b}</option>)}</select></div>
+                  <div className="g2" style={{ gap: 10 }}>
+                    <div className="fg"><label className="fl">Tipo</label><select className="inp" value={f.tipo_cuenta} onChange={e => sf("tipo_cuenta", e.target.value)}><option value="ahorros">Cuenta de ahorros</option><option value="corriente">Cuenta corriente</option><option value="nequi">Nequi</option><option value="daviplata">Daviplata</option></select></div>
+                    <div className="fg"><label className="fl">Número cuenta/teléfono</label><input className="inp" placeholder="3001234567" value={f.numero_cuenta} onChange={e => sf("numero_cuenta", e.target.value.replace(/[^\d]/g, ""))} /></div>
                   </div>
-                  {[["cedula_frente","📄","Foto de cédula (frente) *"],["cedula_reverso","📄","Foto de cédula (reverso)"],["selfie","🤳","Selfie sosteniendo tu cédula *"]].map(([k, ico, label]) => (
-                    <div key={k} className="fg">
-                      <label className="fl">{ico} {label}</label>
-                      <label style={{ display: "block", border: `2px dashed ${kycFiles[k] ? "var(--g)" : "var(--re)"}`, background: kycFiles[k] ? "var(--cr)" : "var(--reb)", borderRadius: 10, padding: "14px 16px", textAlign: "center", cursor: "pointer", transition: "all .2s" }}>
-                        <input type="file" accept="image/*" style={{ display: "none" }} onChange={e => setKycFiles(p => ({ ...p, [k]: e.target.files[0] }))} />
-                        {kycFiles[k]
-                          ? <div style={{ fontSize: 13, color: "var(--g2)", fontWeight: 600 }}>✅ {kycFiles[k].name}</div>
-                          : <div style={{ color: "var(--re)", fontSize: 13 }}>⬆ Toca para subir imagen (obligatorio)</div>}
-                      </label>
-                    </div>
-                  ))}
                   <div style={{ display: "flex", gap: 9, marginTop: 8 }}>
                     <button className="btn bo blg" onClick={() => setStep(1)}>← Atrás</button>
                     <button className="btn bp blg" style={{ flex: 1 }} onClick={register}
-                      disabled={loading || !cedula || !kycFiles.cedula_frente || !kycFiles.selfie}>
-                      {loading ? <><div className="spin" /> Creando...</> : "🔒 Crear cuenta"}
+                      disabled={loading || (f.banco && !f.numero_cuenta)}>
+                      {loading ? <><div className="spin" /> Creando...</> : "Crear cuenta"}
                     </button>
                   </div>
                 </div>
