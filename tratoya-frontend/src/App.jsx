@@ -72,7 +72,7 @@ const calcularCostoEpaycoUI = (totalCobrado) => {
 const calcularComisionUI = (monto, quien = "comprador") => {
   let comisionTratoYa = 0;
   let label = "";
-  if (monto > 0 && monto <= 50000) { comisionTratoYa = 1500; label = "$1.500 fijo"; }
+  if (monto > 0 && monto <= 50000) { comisionTratoYa = 1500; label = "Incl. impuestos"; }
   else if (monto <= 500000) { comisionTratoYa = Math.round(monto * 0.055); label = "5.5%"; }
   else if (monto <= 2000000) { comisionTratoYa = Math.round(monto * 0.045); label = "4.5%"; }
   else if (monto <= 10000000) { comisionTratoYa = Math.round(monto * 0.035); label = "3.5%"; }
