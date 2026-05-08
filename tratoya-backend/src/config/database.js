@@ -10,8 +10,13 @@ const sequelize = new Sequelize(
     dialect: 'postgres',
     dialectModule: pg,
     logging: process.env.NODE_ENV === 'development' ? (msg) => logger.debug(msg) : false,
-    pool: { max: 10, min: 2, acquire: 30000, idle: 10000 },
-    dialectOptions: process.env.DB_SSL === 'true'
+    pool: {
+      max: process.env.VERCEL === '1' ? 2 : 10,
+      min: 0,
+      acquire: 10000,
+      idle: 10000,
+    },
+    dialectOptions: process.env.DB_SSL === 'true' || process.env.VERCEL === '1' || process.env.NODE_ENV === 'production'
       ? { ssl: { require: true, rejectUnauthorized: false } }
       : {},
   }
@@ -19,9 +24,12 @@ const sequelize = new Sequelize(
 
 async function connectDB() {
   await sequelize.authenticate();
-  const shouldSync = process.env.DB_SYNC === 'true' || process.env.NODE_ENV !== 'production';
-  if (shouldSync) {
-    await sequelize.sync({ alter: true }); // Crea/actualiza tablas automáticamente
+  const isProductionRuntime = process.env.NODE_ENV === 'production' || process.env.VERCEL === '1';
+  const shouldAlterSync = process.env.DB_SYNC === 'true' || !isProductionRuntime;
+  if (shouldAlterSync) {
+    await sequelize.sync({ alter: true });
+  } else if (process.env.DB_SYNC !== 'false') {
+    await sequelize.sync();
   }
 
   if (process.env.ADMIN_EMAIL && process.env.ADMIN_PASSWORD) {
