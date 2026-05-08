@@ -1053,7 +1053,7 @@ function PersonCard({ title, user }) {
   );
 }
 
-function AdminTratoDetailModal({ detail, loading, onClose, onRefresh, onLiberar, onCancelar, toast }) {
+function AdminTratoDetailModal({ detail, loading, onClose, onRefresh, onLiberar, onCancelar, toast, fullPage = false }) {
   const [destino, setDestino] = useState("ambos");
   const [mensaje, setMensaje] = useState("");
   const [sending, setSending] = useState(false);
@@ -1078,8 +1078,8 @@ function AdminTratoDetailModal({ detail, loading, onClose, onRefresh, onLiberar,
   };
 
   return (
-    <div className="modal">
-      <div className="modal-card" style={{ width: "min(1120px, 96vw)", maxHeight: "92vh" }}>
+    <div className={fullPage ? "page fi" : "modal"} style={fullPage ? { padding: 20 } : undefined}>
+      <div className={fullPage ? "" : "modal-card"} style={fullPage ? { width: "100%" } : { width: "min(1120px, 96vw)", maxHeight: "92vh" }}>
         <div className="modal-hd">
           <div>
             <h2 style={{ fontSize: 18 }}>{loading ? "Cargando trato…" : `${t.codigo || "Trato"} · ${t.titulo || ""}`}</h2>
@@ -1087,10 +1087,10 @@ function AdminTratoDetailModal({ detail, loading, onClose, onRefresh, onLiberar,
           </div>
           <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
             {!loading && <span className={`bdg ${TRATO_EST[t.estado] || "bg"}`}>{t.estado}</span>}
-            <button className="btn bg_ bsm" onClick={onClose}>×</button>
+            {fullPage ? <a className="btn bg_ bsm" href="/admin">Volver al admin</a> : <button className="btn bg_ bsm" onClick={onClose}>×</button>}
           </div>
         </div>
-        <div className="modal-bd" style={{ overflowY: "auto", maxHeight: "calc(92vh - 128px)" }}>
+        <div className={fullPage ? "" : "modal-bd"} style={fullPage ? { paddingTop: 14 } : { overflowY: "auto", maxHeight: "calc(92vh - 128px)" }}>
           {loading ? <div style={{ padding: 40, textAlign: "center", color: "var(--s400)" }}><div className="spin" style={{ margin: "0 auto" }} /></div> : (
             <>
               <div style={{ display: "grid", gridTemplateColumns: "1.1fr .9fr", gap: 12, marginBottom: 12 }}>
@@ -1289,7 +1289,7 @@ function TratosAdmin({ toast }) {
                   <td style={{ fontSize: 11, color: "var(--s400)" }}>{fmtDate(t.createdAt)}</td>
                   <td>
                     <div style={{ display: "flex", gap: 4 }}>
-                      <button className="btn bg_ bsm" onClick={() => openDetail(t.id)}>👁 Detalle</button>
+                      <a className="btn bg_ bsm" href={`/admin?trato=${encodeURIComponent(t.id)}`} target="_blank" rel="noreferrer">👁 Detalle</a>
                       {["pago_retenido","en_entrega","confirmado"].includes(t.estado) && <button className="btn bp bsm" onClick={() => forzarLiberar(t.id)}>💰 Liberar</button>}
                       {!["completado","cancelado","expirado"].includes(t.estado) && <button className="btn brd bsm" onClick={() => forzarCancelar(t.id)}>✕</button>}
                     </div>
@@ -1300,9 +1300,38 @@ function TratosAdmin({ toast }) {
           </tbody>
         </table>
       </div>
-      {detailId && <AdminTratoDetailModal detail={detail} loading={detailLoading} onClose={() => setDetailId(null)} onRefresh={refreshDetail} onLiberar={forzarLiberar} onCancelar={forzarCancelar} toast={toast} />}
     </div>
   );
+}
+
+function TratoAdminFullPage({ tratoId, toast }) {
+  const [detail, setDetail] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  const load = useCallback(() => {
+    if (!tratoId) return;
+    setLoading(true);
+    api.get(`/admin/tratos/${tratoId}/detalle`)
+      .then(r => setDetail(r.data))
+      .catch(e => toast(e.message, "error"))
+      .finally(() => setLoading(false));
+  }, [tratoId, toast]);
+
+  useEffect(load, [load]);
+
+  const forzarCancelar = async (id) => {
+    if (!confirm("¿Cancelar este trato? El dinero será devuelto al comprador.")) return;
+    try { await api.post(`/admin/tratos/${id}/cancelar`); toast("Trato cancelado", "warn"); load(); }
+    catch (e) { toast(e.message, "error"); }
+  };
+
+  const forzarLiberar = async (id) => {
+    if (!confirm("¿Liberar el pago al vendedor forzadamente?")) return;
+    try { await api.post(`/admin/tratos/${id}/liberar`); toast("Pago liberado", "success"); load(); }
+    catch (e) { toast(e.message, "error"); }
+  };
+
+  return <AdminTratoDetailModal detail={detail} loading={loading} onRefresh={load} onLiberar={forzarLiberar} onCancelar={forzarCancelar} toast={toast} fullPage />;
 }
 
 // ─── PAGOS ADMIN ──────────────────────────────────────
@@ -2157,6 +2186,7 @@ export default function TratoYaAdmin() {
   });
   const [page, setPage] = useState("dashboard");
   const [disputasPendientes, setDisputasPendientes] = useState(0);
+  const tratoDetailId = new URLSearchParams(window.location.search).get("trato");
 
   useEffect(() => {
     const onAuthExpired = (e) => {
@@ -2206,6 +2236,20 @@ export default function TratoYaAdmin() {
 
       {!admin ? (
         <AdminLogin onLogin={setAdmin} toast={toast} />
+      ) : tratoDetailId ? (
+        <div className="main" style={{ minHeight: "100vh" }}>
+          <div className="topbar">
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <a href="/admin" className="btn bg_ bsm" style={{ textDecoration: "none" }}>← Admin</a>
+              <span style={{ fontFamily: "Syne", fontWeight: 700, fontSize: 14 }}>Detalle completo del trato</span>
+            </div>
+            <div style={{ display: "flex", gap: 9, alignItems: "center" }}>
+              <a href="/" style={{ fontSize: 12.5, color: "var(--s600)", textDecoration: "none", display: "flex", alignItems: "center", gap: 5 }} target="_blank" rel="noreferrer">🌐 Ver plataforma</a>
+              <button className="btn bg_ bsm" onClick={logout}>🚪 Salir</button>
+            </div>
+          </div>
+          <TratoAdminFullPage tratoId={tratoDetailId} toast={toast} />
+        </div>
       ) : (
         <div className="adm">
           <Sidebar page={page} setPage={setPage} admin={admin} disputasPendientes={disputasPendientes} />
