@@ -118,11 +118,14 @@ function getEpaycoConfig() {
   const realEnabled = process.env.PAYMENTS_REAL_ENABLED === 'true';
   const maxTestAmountCop = Number(process.env.PAYMENTS_MAX_TEST_AMOUNT_COP || 50000);
 
-  if (!publicKey || !customerId || !pKey) {
-    const err = new Error('Faltan variables ePayco: EPAYCO_PUBLIC_KEY, EPAYCO_CUSTOMER_ID y EPAYCO_P_KEY');
+  if (!publicKey) {
+    const err = new Error('Falta variable ePayco: EPAYCO_PUBLIC_KEY');
     err.statusCode = 503;
     err.expose = true;
     throw err;
+  }
+  if (!customerId || !pKey) {
+    logger.warn('EPAYCO_SIGNATURE_KEYS_MISSING: el checkout puede abrir, pero el webhook no aprobará pagos sin EPAYCO_CUSTOMER_ID y EPAYCO_P_KEY');
   }
   return { env, publicKey, customerId, pKey, frontendUrl, backendUrl, realEnabled, maxTestAmountCop };
 }
