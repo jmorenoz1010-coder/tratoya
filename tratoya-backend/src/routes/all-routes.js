@@ -135,6 +135,18 @@ function canAccessDeal(trato, user) {
   return trato.comprador_id === user.id || trato.vendedor_id === user.id || user.is_admin || ['admin', 'superadmin', 'soporte'].includes(rol);
 }
 
+paymentsRouter.all('/epayco/response', (req, res) => {
+  const payload = readWebhookPayload(req);
+  const reference = req.query.reference || payload.x_id_invoice || payload.x_extra3 || payload.invoice || payload.reference || '';
+  const params = new URLSearchParams();
+  if (reference) params.set('reference', reference);
+  for (const key of ['ref_payco', 'x_ref_payco', 'x_transaction_id', 'x_response', 'x_cod_transaction_state']) {
+    if (payload[key]) params.set(key, payload[key]);
+  }
+  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+  return res.redirect(303, `${frontendUrl}/pago/resultado?${params.toString()}`);
+});
+
 paymentsRouter.use(auth);
 
 paymentsRouter.post('/wompi/create', async (req, res, next) => {
@@ -179,7 +191,7 @@ paymentsRouter.post('/epayco/create', async (req, res, next) => {
     const amountInCents = amountCop * 100;
     const random = require('crypto').randomBytes(3).toString('hex').toUpperCase();
     const reference = `TY-${String(trato.codigo || trato.id).replace(/[^a-zA-Z0-9-]/g, '').slice(0, 18)}-${Date.now()}-${random}`;
-    const responseUrl = `${config.frontendUrl}/pago/resultado?reference=${encodeURIComponent(reference)}`;
+    const responseUrl = `${config.backendUrl}/api/payments/epayco/response?reference=${encodeURIComponent(reference)}`;
     const confirmationUrl = `${config.backendUrl}/api/webhooks/epayco`;
     const checkoutData = {
       name: `TratoYA ${trato.codigo || ''}`.trim(),
