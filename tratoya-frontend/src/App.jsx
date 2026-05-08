@@ -121,6 +121,28 @@ const EpaycoMark = ({ compact = false }) => (
     <span style={{ color: "#111", fontStyle: "italic" }}>e</span><span style={{ color: "#f15a24", fontStyle: "italic" }}>Payco</span>
   </span>
 );
+const COMMISSION_PAYER_LABEL = {
+  comprador: "La paga el comprador",
+  vendedor: "La asume el vendedor",
+  compartida: "50% comprador / 50% vendedor",
+};
+const CommissionBreakdown = ({ monto, quien = "comprador", showMinimum = false, note = "" }) => {
+  if (!monto) return null;
+  const calc = calcularComisionUI(monto, quien);
+  return (
+    <div className="commbox">
+      {showMinimum && <div className="cr"><span>Monto mínimo permitido</span><span>{fmt(MONTO_MINIMO_TRATO)}</span></div>}
+      <div className="cr"><span>Monto del trato</span><span>{fmt(monto)}</span></div>
+      <div className="cr"><span>Comisión TratoYa ({calc.label})</span><span>{fmt(calc.comision)}</span></div>
+      <div className="cr"><span>Quién paga la comisión</span><span>{COMMISSION_PAYER_LABEL[quien] || quien}</span></div>
+      <div className="cr"><span>Comisión pagada por comprador</span><span>{fmt(calc.compradorComision)}</span></div>
+      <div className="cr"><span>Comisión descontada al vendedor</span><span>{fmt(calc.vendedorComision)}</span></div>
+      <div className="cr tot"><span>Total que paga comprador</span><span>{fmt(calc.totalPagar)}</span></div>
+      <div className="cr tot"><span>Vendedor recibe</span><span>{fmt(calc.vendedorRecibe)}</span></div>
+      {note && <div style={{ marginTop: 8, fontSize: 11.5, color: "var(--s600)", lineHeight: 1.45 }}>{note}</div>}
+    </div>
+  );
+};
 
 const ESTADO = {
   borrador:               { l: "Borrador",          c: "bg" },
@@ -671,9 +693,6 @@ function CrearTrato({ setPage, toast, user }) {
   const [f, setF_] = useState({ tipo: "producto", titulo: "", descripcion: "", monto: "", dias: "7", quien: "comprador", notas: "" });
   const sf = (k, v) => setF_(p => ({ ...p, [k]: v }));
   const monto = parseInt((f.monto || "").replace(/\D/g, "")) || 0;
-  const calc = calcularComisionUI(monto, f.quien);
-  const com = calc.comision;
-  const neto = calc.vendedorRecibe;
 
   const create = async () => {
     setLoading(true);
@@ -763,13 +782,12 @@ function CrearTrato({ setPage, toast, user }) {
               </div>
             </div>
             {monto > 0 && (
-              <div className="commbox fi">
-                <div className="cr"><span>Monto mínimo permitido</span><span>{fmt(MONTO_MINIMO_TRATO)}</span></div>
-                <div className="cr"><span>Monto del trato</span><span>{fmt(monto)}</span></div>
-                <div className="cr"><span>Comisión TratoYa ({calc.label})</span><span>{fmt(com)}</span></div>
-                <div className="cr"><span>Total que paga comprador</span><span>{fmt(calc.totalPagar)}</span></div>
-                <div className="cr tot"><span>Vendedor recibe</span><span>{fmt(neto)}</span></div>
-              </div>
+              <CommissionBreakdown
+                monto={monto}
+                quien={f.quien}
+                showMinimum
+                note="Este resumen cambia en el siguiente paso según quién asuma la comisión."
+              />
             )}
             <button className="btn bp blg" style={{ width: "100%", marginTop: 16 }} onClick={() => setStep(2)} disabled={!f.titulo || monto < MONTO_MINIMO_TRATO || monto > 50000000}>Continuar →</button>
             {monto > 0 && monto < MONTO_MINIMO_TRATO && <div className="fh" style={{ color: "var(--re)", marginTop: 8 }}>El monto mínimo del trato es {fmt(MONTO_MINIMO_TRATO)}.</div>}
@@ -795,6 +813,11 @@ function CrearTrato({ setPage, toast, user }) {
                 ))}
               </div>
             </div>
+            <CommissionBreakdown
+              monto={monto}
+              quien={f.quien}
+              note="El valor que verá ePayco es el total que paga el comprador. La comisión de TratoYa queda incluida en este cálculo."
+            />
             <div className="fg"><label className="fl">Notas adicionales</label><textarea className="inp" rows="2" placeholder="Condiciones especiales, punto de entrega, etc." value={f.notas} onChange={e => sf("notas", e.target.value)} /></div>
             <div style={{ display: "flex", gap: 9, marginTop: 16 }}>
               <button className="btn bo blg" onClick={() => setStep(1)}>← Atrás</button>
@@ -813,11 +836,8 @@ function CrearTrato({ setPage, toast, user }) {
                 ))}
               </div>
             </div>
-            <div className="commbox" style={{ marginBottom: 14 }}>
-              <div className="cr"><span>Monto</span><span>{fmt(monto)}</span></div>
-              <div className="cr"><span>Comisión TratoYa ({calc.label})</span><span>{fmt(com)}</span></div>
-              <div className="cr"><span>Total que paga comprador</span><span>{fmt(calc.totalPagar)}</span></div>
-              <div className="cr tot"><span>Vendedor recibe</span><span>{fmt(neto)}</span></div>
+            <div style={{ marginBottom: 14 }}>
+              <CommissionBreakdown monto={monto} quien={f.quien} />
             </div>
             <div style={{ background: "var(--cr)", borderRadius: 9, padding: "10px 13px", display: "flex", gap: 8, marginBottom: 16, fontSize: 13, color: "var(--s600)", lineHeight: 1.5 }}>
               ℹ️ Al crear este trato aceptas los <span style={{ color: "var(--g2)", fontWeight: 600, margin: "0 3px" }}>Términos y Condiciones</span>. El dinero solo se moverá cuando ambas partes confirmen.
@@ -873,7 +893,8 @@ function TratoDetalle({ tratoId, setPage, setDisputeTratoId, user, toast }) {
   };
 
   const pagarEpayco = async () => {
-    if (!window.confirm(`Vas a pagar ${fmt(trato?.monto)} COP por este acuerdo en TratoYa. Este pago se procesará por ePayco.`)) return;
+    const pago = calcularComisionUI(parseFloat(trato?.monto || 0), trato?.quien_paga_comision || "comprador");
+    if (!window.confirm(`Vas a pagar ${fmt(pago.totalPagar)} COP por este acuerdo en TratoYa. Este pago se procesará por ePayco.`)) return;
     setBusy(true);
     try {
       const r = await api.post(`/payments/epayco/create`, { dealId: tratoId });
@@ -907,15 +928,17 @@ function TratoDetalle({ tratoId, setPage, setDisputeTratoId, user, toast }) {
   const esV = trato.vendedor?.id === user?.id;
   const esC = trato.comprador?.id === user?.id;
   const cp = esV ? trato.comprador : trato.vendedor;
-  const com = parseFloat(trato.comision_monto || 0);
-  const neto = parseFloat(trato.monto_neto || trato.monto - com);
+  const montoTrato = parseFloat(trato.monto || 0);
+  const quienComision = trato.quien_paga_comision || "comprador";
+  const commissionCalc = calcularComisionUI(montoTrato, quienComision);
+  const neto = commissionCalc.vendedorRecibe;
   const entrega = trato.metadata?.datos_entrega || {};
   const medioEnvio = entrega.medio_envio || trato.metadata?.medio_envio;
   const telefonoDomiciliario = entrega.numero_contacto || trato.metadata?.numero_contacto_domiciliario || trato.metadata?.telefono_domiciliario;
   const puntoEncuentro = entrega.punto_encuentro || trato.metadata?.punto_encuentro;
   const steps = [
     { l: "Trato creado", s: "Condiciones aceptadas", done: true },
-    { l: "Pago en custodia de TratoYA", s: `${fmt(trato.monto)} protegido`, done: ["pago_retenido","en_entrega","confirmado","completado"].includes(trato.estado), active: trato.estado === "pago_retenido" },
+    { l: "Pago en custodia de TratoYA", s: `${fmt(montoTrato)} protegido`, done: ["pago_retenido","en_entrega","confirmado","completado"].includes(trato.estado), active: trato.estado === "pago_retenido" },
     { l: "Entregado", s: trato.guia_envio ? (medioEnvio === "en_persona" || trato.transportadora === "En persona" ? `📍 ${puntoEncuentro || "En persona"}` : medioEnvio === "domiciliario" || trato.transportadora === "Domiciliario" ? `🛵 Domiciliario · ${telefonoDomiciliario || "contacto pendiente"}` : `Guía ${trato.guia_envio} · ${trato.transportadora}`) : "Pendiente de registrar envío", done: ["en_entrega","confirmado","completado"].includes(trato.estado), active: trato.estado === "en_entrega" },
     { l: "Confirmación", s: "Comprador verifica", done: ["confirmado","completado"].includes(trato.estado), active: trato.estado === "confirmado" },
     { l: "Pago liberado", s: `${fmt(neto)} al vendedor`, done: trato.estado === "completado" },
@@ -943,16 +966,16 @@ function TratoDetalle({ tratoId, setPage, setDisputeTratoId, user, toast }) {
                 </div>
               </div>
               <div style={{ textAlign: "right" }}>
-                <div style={{ fontFamily: "Manrope", fontSize: 22, fontWeight: 800 }}>{fmt(trato.monto)}</div>
+                <div style={{ fontFamily: "Manrope", fontSize: 22, fontWeight: 800 }}>{fmt(montoTrato)}</div>
                 <div style={{ fontSize: 11.5, color: "var(--s400)" }}>{fmtDate(trato.createdAt)}</div>
               </div>
             </div>
             {trato.descripcion && <p style={{ fontSize: 13, color: "var(--s600)", lineHeight: 1.55, marginBottom: 13 }}>{trato.descripcion}</p>}
-            <div className="commbox">
-              <div className="cr"><span>Monto</span><span>{fmt(trato.monto)}</span></div>
-              <div className="cr"><span>Comisión TratoYa</span><span>−{fmt(com)}</span></div>
-              <div className="cr tot"><span>Vendedor recibe</span><span>{fmt(neto)}</span></div>
-            </div>
+            <CommissionBreakdown
+              monto={montoTrato}
+              quien={quienComision}
+              note="El checkout de ePayco cobra exactamente el total indicado para el comprador."
+            />
           </div>
 
           {/* Timeline + acciones */}
@@ -1611,7 +1634,8 @@ function PublicTratoPage({ link, session, goAuth, toast }) {
     setBusy(false);
   };
   const pagar = async () => {
-    if (!window.confirm(`Vas a pagar ${fmt(trato?.monto)} COP por este acuerdo en TratoYa. Este pago se procesará por ePayco.`)) return;
+    const pago = calcularComisionUI(parseFloat(trato?.monto || 0), trato?.quien_paga_comision || "comprador");
+    if (!window.confirm(`Vas a pagar ${fmt(pago.totalPagar)} COP por este acuerdo en TratoYa. Este pago se procesará por ePayco.`)) return;
     setBusy(true);
     try {
       const r = await api.post(`/payments/epayco/create`, { dealId: trato.id });
@@ -1640,6 +1664,8 @@ function PublicTratoPage({ link, session, goAuth, toast }) {
   const canAccept = session && trato.estado === "borrador" && !isSeller;
   const canPay = session && isBuyer && ["activo","pago_pendiente"].includes(trato.estado);
   const ec = ESTADO[trato.estado] || ESTADO.borrador;
+  const montoTrato = parseFloat(trato.monto || 0);
+  const quienComision = trato.quien_paga_comision || "comprador";
 
   return (
     <div className="land" style={{ minHeight: "100vh", background: "var(--s50)" }}>
@@ -1662,10 +1688,12 @@ function PublicTratoPage({ link, session, goAuth, toast }) {
             <span className={`bdg ${ec.c}`}>{ec.l}</span>
           </div>
           {trato.descripcion && <p style={{ color: "var(--s600)", fontSize: 14, lineHeight: 1.6, marginBottom: 18 }}>{trato.descripcion}</p>}
-          <div className="commbox" style={{ marginBottom: 18 }}>
-            <div className="cr"><span>Monto del trato</span><span>{fmt(trato.monto)}</span></div>
-            <div className="cr"><span>Comisión TratoYa</span><span>{fmt(trato.comision_monto)}</span></div>
-            <div className="cr tot"><span>Vendedor recibe</span><span>{fmt(trato.monto_neto)}</span></div>
+          <div style={{ marginBottom: 18 }}>
+            <CommissionBreakdown
+              monto={montoTrato}
+              quien={quienComision}
+              note="Este es el valor real que se usará para el checkout de ePayco."
+            />
           </div>
           {!session ? (
             <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>

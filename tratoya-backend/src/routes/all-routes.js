@@ -1259,11 +1259,29 @@ webhooksRouter.all('/epayco', async (req, res) => {
     });
 
     if (!duplicateBefore && !alreadyPaid && internalStatus === 'PAID') {
+      let commission = null;
+      if (trato) {
+        try {
+          const { calcularComision } = require('../services/comisionService');
+          commission = calcularComision(Number(trato.monto || 0), trato.quien_paga_comision || 'comprador');
+        } catch (commissionErr) {
+          logger.warn(`EPAYCO_COMMISSION_RECALC_FAILED ${reference}: ${commissionErr.message}`);
+        }
+      }
       if (trato) {
         await trato.update({
           estado: 'pago_retenido',
           fecha_pago: new Date(),
-          metadata: { ...(trato.metadata || {}), payment_status: 'FONDOS_RECIBIDOS', epayco_reference: reference, epayco_ref_payco: refPayco },
+          metadata: {
+            ...(trato.metadata || {}),
+            payment_status: 'FONDOS_RECIBIDOS',
+            epayco_reference: reference,
+            epayco_ref_payco: refPayco,
+            total_pagado_comprador: Number(amount),
+            comision_visible: commission?.monto_comision,
+            comision_tratoya_neta: commission?.comision_tratoya,
+            costo_epayco_estimado: commission?.costo_epayco,
+          },
         });
       }
       await LedgerEntry.create({
@@ -1287,6 +1305,48 @@ webhooksRouter.all('/epayco', async (req, res) => {
         webhook_payload: payload,
         metadata: { reference, ref_payco: refPayco, payment_intent_id: intent.id, real: true },
       });
+      if (commission) {
+        await LedgerEntry.create({
+          deal_id: intent.deal_id,
+          payment_intent_id: intent.id,
+          type: 'PLATFORM_FEE',
+          amount_cents: Math.round(Number(commission.comision_tratoya || 0) * 100),
+          description: 'Comisión neta TratoYA',
+        });
+        await LedgerEntry.create({
+          deal_id: intent.deal_id,
+          payment_intent_id: intent.id,
+          type: 'GATEWAY_FEE_ESTIMATED',
+          amount_cents: Math.round(Number(commission.costo_epayco || 0) * 100),
+          description: 'Costo estimado ePayco incluido en la comisión',
+        });
+        await Pago.create({
+          trato_id: intent.deal_id,
+          usuario_id: null,
+          tipo: 'comision',
+          monto: Number(commission.comision_tratoya || 0),
+          moneda: 'COP',
+          pasarela: 'epayco',
+          pasarela_ref: txId || reference,
+          pasarela_estado: response || stateCode,
+          estado: 'aprobado',
+          fecha_aprobacion: new Date(),
+          comision_pasarela: Number(commission.costo_epayco || 0),
+          neto_desembolso: Number(commission.comision_tratoya || 0),
+          webhook_payload: payload,
+          metadata: {
+            reference,
+            ref_payco: refPayco,
+            payment_intent_id: intent.id,
+            comision_visible: commission.monto_comision,
+            costo_epayco_estimado: commission.costo_epayco,
+            quien_paga_comision: trato?.quien_paga_comision || 'comprador',
+            total_pagado_comprador: commission.total_a_pagar,
+            vendedor_recibe: commission.monto_neto,
+            real: true,
+          },
+        });
+      }
       await AuditLog.create({
         user_id: intent.created_by_user_id,
         action: 'EPAYCO_PAYMENT_APPROVED',
