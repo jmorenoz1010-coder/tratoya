@@ -1026,10 +1026,198 @@ function KYCVerificaciones({ toast }) {
 }
 
 // ─── TRATOS ADMIN ─────────────────────────────────────
+function MiniField({ label, value, mono = false }) {
+  return (
+    <div style={{ background: "var(--s50)", border: "1px solid var(--s100)", borderRadius: 8, padding: "9px 10px", minWidth: 0 }}>
+      <div style={{ fontSize: 9.5, color: "var(--s400)", fontWeight: 800, textTransform: "uppercase", marginBottom: 3 }}>{label}</div>
+      <div className={mono ? "mono" : ""} style={{ fontSize: 12.5, fontWeight: 700, color: "var(--n)", overflowWrap: "anywhere" }}>{value ?? "—"}</div>
+    </div>
+  );
+}
+
+function PersonCard({ title, user }) {
+  return (
+    <div className="card" style={{ padding: 14 }}>
+      <h3 style={{ fontSize: 14, marginBottom: 10 }}>{title}</h3>
+      {user ? (
+        <div className="g2" style={{ gap: 8 }}>
+          <MiniField label="Nombre" value={`${user.nombre || ""} ${user.apellido || ""}`.trim() || "—"} />
+          <MiniField label="Email" value={user.email} mono />
+          <MiniField label="Teléfono" value={user.telefono || "—"} />
+          <MiniField label="Cédula" value={user.cedula || "—"} mono />
+          <MiniField label="KYC" value={`${user.kyc_nivel || "—"} / ${user.kyc_estado || "—"}`} />
+          <MiniField label="Reputación" value={`${Number(user.reputacion || 0).toFixed(1)}★ · ${user.total_resenas || 0} reseñas`} />
+        </div>
+      ) : <p style={{ fontSize: 12.5, color: "var(--s400)" }}>Aún no asignado.</p>}
+    </div>
+  );
+}
+
+function AdminTratoDetailModal({ detail, loading, onClose, onRefresh, onLiberar, onCancelar, toast }) {
+  const [destino, setDestino] = useState("ambos");
+  const [mensaje, setMensaje] = useState("");
+  const [sending, setSending] = useState(false);
+  const data = detail || {};
+  const t = data.trato || {};
+  const publicUrl = t.link_compartir ? `${window.location.origin}/t/${t.link_compartir}` : null;
+
+  const sendMessage = async () => {
+    if (!mensaje.trim()) return toast("Escribe un mensaje", "warn");
+    setSending(true);
+    try {
+      await api.post(`/admin/tratos/${t.id}/contactar`, {
+        destino,
+        titulo: 'Mensaje de "Soporte - TratoYA"',
+        cuerpo: mensaje.trim(),
+      });
+      toast("Mensaje enviado", "success");
+      setMensaje("");
+      onRefresh?.();
+    } catch (e) { toast(e.message, "error"); }
+    finally { setSending(false); }
+  };
+
+  return (
+    <div className="modal">
+      <div className="modal-card" style={{ width: "min(1120px, 96vw)", maxHeight: "92vh" }}>
+        <div className="modal-hd">
+          <div>
+            <h2 style={{ fontSize: 18 }}>{loading ? "Cargando trato…" : `${t.codigo || "Trato"} · ${t.titulo || ""}`}</h2>
+            {!loading && <p style={{ fontSize: 12, color: "var(--s400)", marginTop: 3 }}>{t.id}</p>}
+          </div>
+          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+            {!loading && <span className={`bdg ${TRATO_EST[t.estado] || "bg"}`}>{t.estado}</span>}
+            <button className="btn bg_ bsm" onClick={onClose}>×</button>
+          </div>
+        </div>
+        <div className="modal-bd" style={{ overflowY: "auto", maxHeight: "calc(92vh - 128px)" }}>
+          {loading ? <div style={{ padding: 40, textAlign: "center", color: "var(--s400)" }}><div className="spin" style={{ margin: "0 auto" }} /></div> : (
+            <>
+              <div style={{ display: "grid", gridTemplateColumns: "1.1fr .9fr", gap: 12, marginBottom: 12 }}>
+                <div className="card" style={{ padding: 14 }}>
+                  <h3 style={{ fontSize: 14, marginBottom: 10 }}>Resumen operativo</h3>
+                  <div className="g2" style={{ gap: 8 }}>
+                    <MiniField label="Monto del trato" value={fmt(t.monto)} />
+                    <MiniField label="Comisión TratoYA" value={fmt(t.comision_monto)} />
+                    <MiniField label="Vendedor recibe" value={fmt(t.monto_neto || t.monto)} />
+                    <MiniField label="Quién paga comisión" value={t.quien_paga_comision || "—"} />
+                    <MiniField label="Tipo" value={t.tipo || "—"} />
+                    <MiniField label="Días inspección" value={t.dias_inspeccion ?? "—"} />
+                    <MiniField label="Creado" value={fmtTime(t.createdAt)} />
+                    <MiniField label="Expira" value={fmtTime(t.fecha_expiracion)} />
+                  </div>
+                  <div style={{ marginTop: 10 }}>
+                    <div style={{ fontSize: 10, color: "var(--s400)", fontWeight: 800, textTransform: "uppercase" }}>Descripción</div>
+                    <p style={{ fontSize: 12.5, color: "var(--s800)", marginTop: 4, whiteSpace: "pre-wrap" }}>{t.descripcion || "Sin descripción"}</p>
+                  </div>
+                </div>
+                <div className="card" style={{ padding: 14 }}>
+                  <h3 style={{ fontSize: 14, marginBottom: 10 }}>Control admin</h3>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 12 }}>
+                    {publicUrl && <a className="btn bg_ bsm" href={publicUrl} target="_blank" rel="noreferrer">Abrir link público</a>}
+                    {["pago_retenido","en_entrega","confirmado","pendiente_confirmacion"].includes(t.estado) && <button className="btn bp bsm" onClick={() => onLiberar(t.id)}>Liberar pago</button>}
+                    {!["completado","cancelado","expirado"].includes(t.estado) && <button className="btn brd bsm" onClick={() => onCancelar(t.id)}>Cancelar trato</button>}
+                    <button className="btn bg_ bsm" onClick={onRefresh}>Actualizar</button>
+                  </div>
+                  <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
+                    {["comprador","vendedor","ambos"].map(x => <button key={x} className={`btn bsm ${destino === x ? "bp" : "bg_"}`} onClick={() => setDestino(x)}>{x}</button>)}
+                  </div>
+                  <textarea value={mensaje} onChange={e => setMensaje(e.target.value)} placeholder="Mensaje de soporte para este trato…" style={{ width: "100%", minHeight: 82, border: "1px solid var(--s200)", borderRadius: 8, padding: 10, fontFamily: "inherit", resize: "vertical" }} />
+                  <button className="btn bp" style={{ width: "100%", marginTop: 8 }} onClick={sendMessage} disabled={sending}>{sending ? "Enviando…" : "Enviar desde Soporte TratoYA"}</button>
+                </div>
+              </div>
+
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>
+                <PersonCard title="Vendedor" user={t.vendedor} />
+                <PersonCard title="Comprador" user={t.comprador} />
+              </div>
+
+              <div className="card" style={{ padding: 14, marginBottom: 12 }}>
+                <h3 style={{ fontSize: 14, marginBottom: 10 }}>Fechas y entrega</h3>
+                <div className="g2" style={{ gap: 8 }}>
+                  <MiniField label="Activado" value={fmtTime(t.fecha_activado)} />
+                  <MiniField label="Pago" value={fmtTime(t.fecha_pago)} />
+                  <MiniField label="Enviado" value={fmtTime(t.fecha_entrega)} />
+                  <MiniField label="Confirmación" value={fmtTime(t.fecha_confirmacion)} />
+                  <MiniField label="Liberación" value={fmtTime(t.fecha_liberacion)} />
+                  <MiniField label="Transportadora" value={t.transportadora || "—"} />
+                  <MiniField label="Guía" value={t.guia_envio || "—"} mono />
+                  <MiniField label="Tracking" value={t.tracking_url || "—"} mono />
+                </div>
+              </div>
+
+              {[
+                ["Pagos registrados", data.pagos, p => [p.tipo, fmt(p.monto), p.pasarela, p.estado, p.referencia_externa || "—", fmtTime(p.createdAt)]],
+                ["Intenciones de pago", data.payment_intents, p => [p.provider, p.reference, fmt(p.amount_cop), p.status, p.epayco_transaction_id || p.wompi_transaction_id || "—", fmtTime(p.updated_at || p.created_at)]],
+                ["Eventos pasarela", data.payment_events, e => [e.provider, e.event_type, e.reference, e.status, e.is_valid_signature ? "Firma OK" : "Sin firma/pendiente", fmtTime(e.received_at)]],
+                ["Ledger", data.ledger, l => [l.type, fmt((l.amount_cents || 0) / 100), l.description || "—", fmtTime(l.created_at)]],
+              ].map(([title, rows = [], map]) => (
+                <div key={title} className="card" style={{ padding: 14, marginBottom: 12 }}>
+                  <h3 style={{ fontSize: 14, marginBottom: 10 }}>{title}</h3>
+                  <div className="tw" style={{ boxShadow: "none" }}>
+                    <table><tbody>{rows.length ? rows.map((row, i) => <tr key={row.id || i}>{map(row).map((v, j) => <td key={j} style={{ fontSize: 11.5, overflowWrap: "anywhere" }}>{v}</td>)}</tr>) : <tr><td style={{ textAlign: "center", color: "var(--s400)", padding: 18 }}>Sin registros</td></tr>}</tbody></table>
+                  </div>
+                </div>
+              ))}
+
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>
+                <div className="card" style={{ padding: 14 }}>
+                  <h3 style={{ fontSize: 14, marginBottom: 10 }}>Chat y mensajes</h3>
+                  <div style={{ maxHeight: 260, overflowY: "auto" }}>
+                    {(data.mensajes || []).length ? data.mensajes.map(m => (
+                      <div key={m.id} style={{ borderBottom: "1px solid var(--s100)", padding: "8px 0" }}>
+                        <div style={{ fontSize: 11, color: "var(--s400)" }}>{fmtTime(m.createdAt)} · {m.remitente ? `${m.remitente.nombre || ""} ${m.remitente.apellido || ""}`.trim() : "Sistema"} · {m.tipo}</div>
+                        <div style={{ fontSize: 12.5, whiteSpace: "pre-wrap" }}>{m.contenido}</div>
+                      </div>
+                    )) : <p style={{ fontSize: 12.5, color: "var(--s400)" }}>Sin mensajes.</p>}
+                  </div>
+                </div>
+                <div className="card" style={{ padding: 14 }}>
+                  <h3 style={{ fontSize: 14, marginBottom: 10 }}>Disputa y reseñas</h3>
+                  {data.disputa ? (
+                    <div style={{ marginBottom: 12 }}>
+                      <span className={`bdg ${DISP_EST[data.disputa.estado] || "bg"}`}>{data.disputa.estado}</span>
+                      <p style={{ fontSize: 12.5, marginTop: 7, fontWeight: 700 }}>{data.disputa.motivo}</p>
+                      <p style={{ fontSize: 12, color: "var(--s600)", whiteSpace: "pre-wrap" }}>{data.disputa.descripcion}</p>
+                    </div>
+                  ) : <p style={{ fontSize: 12.5, color: "var(--s400)", marginBottom: 12 }}>Sin disputa abierta.</p>}
+                  {(data.resenas || []).length ? data.resenas.map(r => (
+                    <div key={r.id} style={{ borderTop: "1px solid var(--s100)", padding: "8px 0" }}>
+                      <div style={{ fontSize: 12.5, fontWeight: 800 }}>{"★".repeat(r.calificacion)}{"☆".repeat(5 - r.calificacion)}</div>
+                      <div style={{ fontSize: 11, color: "var(--s400)" }}>{r.autor?.email} → {r.destinatario?.email}</div>
+                      <p style={{ fontSize: 12.5 }}>{r.comentario || "Sin comentario"}</p>
+                    </div>
+                  )) : <p style={{ fontSize: 12.5, color: "var(--s400)" }}>Sin reseñas.</p>}
+                </div>
+              </div>
+
+              <div className="card" style={{ padding: 14 }}>
+                <h3 style={{ fontSize: 14, marginBottom: 10 }}>Notas internas y auditoría</h3>
+                <p style={{ fontSize: 12.5, whiteSpace: "pre-wrap", marginBottom: 10 }}>{t.notas_internas || "Sin notas internas."}</p>
+                <div style={{ maxHeight: 210, overflowY: "auto" }}>
+                  {(data.audit_logs || []).length ? data.audit_logs.map(l => (
+                    <div key={l.id} style={{ display: "grid", gridTemplateColumns: "150px 1fr", gap: 10, borderTop: "1px solid var(--s100)", padding: "7px 0", fontSize: 11.5 }}>
+                      <span style={{ color: "var(--s400)" }}>{fmtTime(l.created_at)}</span>
+                      <span><b>{l.action}</b> · {JSON.stringify(l.metadata || {})}</span>
+                    </div>
+                  )) : <p style={{ fontSize: 12.5, color: "var(--s400)" }}>Sin auditoría asociada.</p>}
+                </div>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function TratosAdmin({ toast }) {
   const [tratos, setTratos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [q, setQ] = useState("");
+  const [detail, setDetail] = useState(null);
+  const [detailLoading, setDetailLoading] = useState(false);
+  const [detailId, setDetailId] = useState(null);
 
   const load = () => {
     setLoading(true);
@@ -1040,15 +1228,38 @@ function TratosAdmin({ toast }) {
   };
   useEffect(load, []);
 
+  const openDetail = async (id) => {
+    setDetailId(id);
+    setDetail(null);
+    setDetailLoading(true);
+    try {
+      const r = await api.get(`/admin/tratos/${id}/detalle`);
+      setDetail(r.data);
+    } catch (e) {
+      toast(e.message, "error");
+      setDetailId(null);
+    } finally {
+      setDetailLoading(false);
+    }
+  };
+
+  const refreshDetail = async () => {
+    if (!detailId) return;
+    try {
+      const r = await api.get(`/admin/tratos/${detailId}/detalle`);
+      setDetail(r.data);
+    } catch (e) { toast(e.message, "error"); }
+  };
+
   const forzarCancelar = async (id) => {
     if (!confirm("¿Cancelar este trato? El dinero será devuelto al comprador.")) return;
-    try { await api.post(`/admin/tratos/${id}/cancelar`); toast("Trato cancelado", "warn"); load(); }
+    try { await api.post(`/admin/tratos/${id}/cancelar`); toast("Trato cancelado", "warn"); load(); refreshDetail(); }
     catch (e) { toast(e.message, "error"); }
   };
 
   const forzarLiberar = async (id) => {
     if (!confirm("¿Liberar el pago al vendedor forzadamente?")) return;
-    try { await api.post(`/admin/tratos/${id}/liberar`); toast("Pago liberado", "success"); load(); }
+    try { await api.post(`/admin/tratos/${id}/liberar`); toast("Pago liberado", "success"); load(); refreshDetail(); }
     catch (e) { toast(e.message, "error"); }
   };
 
@@ -1078,6 +1289,7 @@ function TratosAdmin({ toast }) {
                   <td style={{ fontSize: 11, color: "var(--s400)" }}>{fmtDate(t.createdAt)}</td>
                   <td>
                     <div style={{ display: "flex", gap: 4 }}>
+                      <button className="btn bg_ bsm" onClick={() => openDetail(t.id)}>👁 Detalle</button>
                       {["pago_retenido","en_entrega","confirmado"].includes(t.estado) && <button className="btn bp bsm" onClick={() => forzarLiberar(t.id)}>💰 Liberar</button>}
                       {!["completado","cancelado","expirado"].includes(t.estado) && <button className="btn brd bsm" onClick={() => forzarCancelar(t.id)}>✕</button>}
                     </div>
@@ -1088,6 +1300,7 @@ function TratosAdmin({ toast }) {
           </tbody>
         </table>
       </div>
+      {detailId && <AdminTratoDetailModal detail={detail} loading={detailLoading} onClose={() => setDetailId(null)} onRefresh={refreshDetail} onLiberar={forzarLiberar} onCancelar={forzarCancelar} toast={toast} />}
     </div>
   );
 }

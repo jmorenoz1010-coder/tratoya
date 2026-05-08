@@ -820,6 +820,92 @@ adminRouter.get('/tratos', async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
+adminRouter.get('/tratos/:id/detalle', async (req, res, next) => {
+  try {
+    const {
+      Trato, User, Pago, PaymentIntent, PaymentEvent, LedgerEntry,
+      AuditLog, Disputa, Mensaje, Resena
+    } = require('../config/database');
+    const userAttrs = [
+      'id', 'nombre', 'apellido', 'email', 'telefono', 'cedula',
+      'rol', 'estado', 'kyc_nivel', 'kyc_estado', 'reputacion',
+      'total_resenas', 'total_tratos', 'tratos_exitosos', 'createdAt'
+    ];
+    const trato = await Trato.findByPk(req.params.id, {
+      include: [
+        { model: User, as: 'vendedor', attributes: userAttrs },
+        { model: User, as: 'comprador', attributes: userAttrs },
+      ],
+    });
+    if (!trato) return res.status(404).json({ success: false, message: 'Trato no encontrado' });
+
+    const [pagos, intents, ledger, disputa, mensajes, resenas, auditLogs] = await Promise.all([
+      Pago.findAll({
+        where: { trato_id: trato.id },
+        include: [{ model: User, attributes: ['id', 'nombre', 'apellido', 'email'] }],
+        order: [['createdAt', 'DESC']],
+        limit: 100,
+      }).catch(() => []),
+      PaymentIntent.findAll({
+        where: { deal_id: trato.id },
+        include: [{ model: User, as: 'creator', attributes: ['id', 'nombre', 'apellido', 'email'] }],
+        order: [['created_at', 'DESC']],
+        limit: 50,
+      }).catch(() => []),
+      LedgerEntry.findAll({
+        where: { deal_id: trato.id },
+        order: [['created_at', 'DESC']],
+        limit: 100,
+      }).catch(() => []),
+      Disputa.findOne({
+        where: { trato_id: trato.id },
+        include: [{ model: User, as: 'aperturista', attributes: ['id', 'nombre', 'apellido', 'email'] }],
+        order: [['createdAt', 'DESC']],
+      }).catch(() => null),
+      Mensaje.findAll({
+        where: { trato_id: trato.id },
+        include: [{ model: User, as: 'remitente', attributes: ['id', 'nombre', 'apellido', 'email', 'rol'] }],
+        order: [['createdAt', 'ASC']],
+        limit: 250,
+      }).catch(() => []),
+      Resena.findAll({
+        where: { trato_id: trato.id },
+        include: [
+          { model: User, as: 'autor', attributes: ['id', 'nombre', 'apellido', 'email'] },
+          { model: User, as: 'destinatario', attributes: ['id', 'nombre', 'apellido', 'email'] },
+        ],
+        order: [['createdAt', 'DESC']],
+        limit: 50,
+      }).catch(() => []),
+      AuditLog.findAll({
+        where: { entity_type: { [Op.in]: ['deal', 'trato', 'payment_intent'] }, entity_id: trato.id },
+        order: [['created_at', 'DESC']],
+        limit: 100,
+      }).catch(() => []),
+    ]);
+
+    const refs = intents.map(i => i.reference).filter(Boolean);
+    const txIds = intents.map(i => i.wompi_transaction_id).filter(Boolean);
+    const paymentEvents = (refs.length || txIds.length)
+      ? await PaymentEvent.findAll({
+        where: {
+          [Op.or]: [
+            ...(refs.length ? [{ reference: { [Op.in]: refs } }] : []),
+            ...(txIds.length ? [{ wompi_transaction_id: { [Op.in]: txIds } }] : []),
+          ],
+        },
+        order: [['received_at', 'DESC']],
+        limit: 100,
+      }).catch(() => [])
+      : [];
+
+    res.json({
+      success: true,
+      data: { trato, pagos, payment_intents: intents, payment_events: paymentEvents, ledger, disputa, mensajes, resenas, audit_logs: auditLogs },
+    });
+  } catch (err) { next(err); }
+});
+
 adminRouter.post('/tratos/:id/cancelar', async (req, res, next) => {
   try {
     const { Trato, Pago } = require('../config/database');
