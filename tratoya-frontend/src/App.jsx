@@ -169,6 +169,7 @@ h1,h2,h3,h4{font-family:'Manrope',sans-serif;line-height:1.15;color:var(--n)}
 @keyframes fi{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
 @keyframes sp{to{transform:rotate(360deg)}}
 @keyframes pi{from{transform:scale(.85);opacity:0}to{transform:scale(1);opacity:1}}
+@keyframes celebrateIn{0%{opacity:0;transform:scale(.55)}18%{opacity:1;transform:scale(1.12)}34%{transform:scale(1)}72%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(1.18)}}
 .fi{animation:fi .35s ease both}.fi2{animation:fi .35s .08s ease both}.fi3{animation:fi .35s .16s ease both}.popi{animation:pi .3s cubic-bezier(.34,1.56,.64,1) both}
 .spin{width:20px;height:20px;border:2.5px solid currentColor;border-top-color:transparent;border-radius:50%;animation:sp .7s linear infinite;display:inline-block;flex-shrink:0}
 
@@ -258,6 +259,10 @@ tbody tr:last-child td{border-bottom:none}tbody tr:hover td{background:var(--s50
 .float-note-ico{width:42px;height:42px;border-radius:50%;background:var(--cr);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
 .float-note-title{font-family:'Manrope';font-weight:800;font-size:13.5px;color:var(--n);margin-bottom:2px}
 .float-note-body{font-size:12.5px;color:var(--s600);line-height:1.35}
+.celebrate-overlay{position:fixed;inset:0;z-index:10000;display:grid;place-items:center;pointer-events:none;background:rgba(7,25,47,.08);backdrop-filter:blur(2px)}
+.celebrate-card{font-family:'Manrope';font-size:clamp(36px,8vw,82px);font-weight:900;letter-spacing:0;text-align:center;color:var(--n);text-transform:uppercase;animation:celebrateIn 2.5s cubic-bezier(.22,1,.36,1) both;text-shadow:0 14px 34px rgba(7,25,47,.22)}
+.celebrate-card span{color:var(--g2)}
+.celebrate-sub{font-family:'Inter';font-size:clamp(13px,2.2vw,18px);font-weight:800;color:var(--g2);margin-top:10px;text-transform:none}
 
 .uz{border:2px dashed var(--s200);border-radius:11px;padding:22px;text-align:center;cursor:pointer;transition:border-color .2s,background .2s}
 .uz:hover{border-color:var(--g);background:var(--cr2)}
@@ -394,26 +399,59 @@ function useToast() {
   return { toasts, show, remove };
 }
 
+let notificationAudioCtx = null;
+const getNotificationAudioContext = () => {
+  const Ctx = window.AudioContext || window.webkitAudioContext;
+  if (!Ctx) return null;
+  if (!notificationAudioCtx || notificationAudioCtx.state === "closed") notificationAudioCtx = new Ctx();
+  return notificationAudioCtx;
+};
+function unlockNotificationSound() {
+  try {
+    const ctx = getNotificationAudioContext();
+    if (ctx?.state === "suspended") ctx.resume();
+  } catch { /* sound is optional */ }
+}
 function playBubbleSound() {
   try {
-    const Ctx = window.AudioContext || window.webkitAudioContext;
-    if (!Ctx) return;
-    const ctx = new Ctx();
+    const ctx = getNotificationAudioContext();
+    if (!ctx) return;
+    if (ctx.state === "suspended") ctx.resume();
     const now = ctx.currentTime;
     const gain = ctx.createGain();
     gain.gain.setValueAtTime(0.0001, now);
-    gain.gain.exponentialRampToValueAtTime(0.055, now + 0.015);
-    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.42);
+    gain.gain.exponentialRampToValueAtTime(0.09, now + 0.012);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.5);
     gain.connect(ctx.destination);
-    [520, 780, 1040].forEach((freq, i) => {
+    [660, 880, 1180].forEach((freq, i) => {
       const osc = ctx.createOscillator();
-      osc.type = "sine";
+      osc.type = "triangle";
       osc.frequency.setValueAtTime(freq, now + i * 0.075);
       osc.connect(gain);
       osc.start(now + i * 0.075);
-      osc.stop(now + i * 0.075 + 0.18);
+      osc.stop(now + i * 0.075 + 0.16);
     });
-    setTimeout(() => ctx.close?.(), 700);
+  } catch { /* sound is optional */ }
+}
+function playCelebrationSound() {
+  try {
+    const ctx = getNotificationAudioContext();
+    if (!ctx) return;
+    if (ctx.state === "suspended") ctx.resume();
+    const now = ctx.currentTime;
+    const master = ctx.createGain();
+    master.gain.setValueAtTime(0.0001, now);
+    master.gain.exponentialRampToValueAtTime(0.12, now + 0.018);
+    master.gain.exponentialRampToValueAtTime(0.0001, now + 0.72);
+    master.connect(ctx.destination);
+    [523.25, 659.25, 783.99, 1046.5].forEach((freq, i) => {
+      const osc = ctx.createOscillator();
+      osc.type = i === 3 ? "sine" : "triangle";
+      osc.frequency.setValueAtTime(freq, now + i * 0.095);
+      osc.connect(master);
+      osc.start(now + i * 0.095);
+      osc.stop(now + i * 0.095 + 0.22);
+    });
   } catch { /* sound is optional */ }
 }
 
@@ -421,12 +459,20 @@ function FloatingNotification({ note, onOpen, onClose }) {
   if (!note) return null;
   return (
     <div className="float-note" onClick={onOpen}>
-      <div className="float-note-ico">💬</div>
+      <div className="float-note-ico">{note.icon || "💬"}</div>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div className="float-note-title">{note.titulo || "Nueva actividad"}</div>
         <div className="float-note-body">{note.cuerpo || "Toca para abrir el trato relacionado."}</div>
       </div>
       <button className="btn bg_ bsm" onClick={(e) => { e.stopPropagation(); onClose?.(); }}>×</button>
+    </div>
+  );
+}
+function CelebrationOverlay({ show }) {
+  if (!show) return null;
+  return (
+    <div className="celebrate-overlay">
+      <div className="celebrate-card">Trato <span>completado</span><div className="celebrate-sub">Pago liberado con éxito</div></div>
     </div>
   );
 }
@@ -1781,20 +1827,30 @@ function AppShell({ session, setSession, toast }) {
   const [tratoId, setTratoId] = useState(null);
   const [disputeTratoId, setDisputeTratoId] = useState(null);
   const [floatingNote, setFloatingNote] = useState(null);
+  const [celebration, setCelebration] = useState(false);
   const showFloatingNote = useCallback((note) => {
     setFloatingNote(note);
     playBubbleSound();
     setTimeout(() => setFloatingNote(n => n === note ? null : n), 9000);
   }, []);
   const estadoLabel = useCallback((estado) => (ESTADO[estado]?.l || estado || "Actualizado").replace(/[^\p{L}\p{N}\s]/gu, "").trim(), []);
+  const showCompletionCelebration = useCallback(() => {
+    setCelebration(true);
+    playCelebrationSound();
+    setTimeout(() => setCelebration(false), 2600);
+  }, []);
   const notifyStatusUpdate = useCallback((trato, _prevEstado, nextEstado) => {
+    if (nextEstado === "completado") {
+      showCompletionCelebration();
+    }
     showFloatingNote({
       tipo: "estado_trato",
-      titulo: "Estado del trato actualizado",
+      icon: nextEstado === "completado" ? "🔔" : "💬",
+      titulo: nextEstado === "completado" ? "Trato completado" : "Estado del trato actualizado",
       cuerpo: `${trato.codigo || "Tu trato"} ahora está en ${estadoLabel(nextEstado)}.`,
       trato_id: trato.id,
     });
-  }, [showFloatingNote, estadoLabel]);
+  }, [showFloatingNote, estadoLabel, showCompletionCelebration]);
 
   const logout = useCallback((message = "Sesión cerrada") => {
     const logoutMessage = typeof message === "string" ? message : "Sesión cerrada";
@@ -1804,6 +1860,13 @@ function AppShell({ session, setSession, toast }) {
     toast(logoutMessage, "info");
   }, [setSession, toast]);
   const updateUser = (u) => setSession(s => ({ ...s, user: u }));
+
+  useEffect(() => {
+    const unlock = () => unlockNotificationSound();
+    const events = ["pointerdown", "keydown", "touchstart", "click"];
+    events.forEach(evt => window.addEventListener(evt, unlock, { passive: true }));
+    return () => events.forEach(evt => window.removeEventListener(evt, unlock));
+  }, []);
 
   useEffect(() => {
     const INACTIVITY_MS = 7 * 60 * 1000;
@@ -1849,10 +1912,12 @@ function AppShell({ session, setSession, toast }) {
               if (evt.tipo !== "conectado") {
                 const note = {
                   tipo: evt.tipo,
+                  icon: ["pago_liberado", "trato_completado"].includes(evt.tipo) ? "🔔" : "💬",
                   titulo: evt.datos?.titulo || evt.tipo,
                   cuerpo: evt.datos?.cuerpo || evt.datos?.mensaje || "Nueva actividad en tu cuenta",
                   trato_id: evt.datos?.metadata?.trato_id || evt.datos?.trato_id,
                 };
+                if (["pago_liberado", "trato_completado"].includes(evt.tipo)) showCompletionCelebration();
                 showFloatingNote(note);
               }
             } catch { /* ignore */ }
@@ -1864,7 +1929,7 @@ function AppShell({ session, setSession, toast }) {
     };
     conectarSSE();
     return () => ctrl.abort();
-  }, [session?.token, showFloatingNote]);
+  }, [session?.token, showFloatingNote, showCompletionCelebration]);
 
   const openFloatingNote = () => {
     if (floatingNote?.trato_id) {
@@ -1896,6 +1961,7 @@ function AppShell({ session, setSession, toast }) {
         <div key={page}>{cur.c}</div>
       </div>
       <FloatingNotification note={floatingNote} onOpen={openFloatingNote} onClose={() => setFloatingNote(null)} />
+      <CelebrationOverlay show={celebration} />
     </div>
   );
 }
