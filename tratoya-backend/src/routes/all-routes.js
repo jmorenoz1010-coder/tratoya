@@ -116,7 +116,7 @@ function getEpaycoConfig() {
   const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
   const backendUrl = process.env.BACKEND_URL || 'http://localhost:4000';
   const realEnabled = process.env.PAYMENTS_REAL_ENABLED === 'true';
-  const maxTestAmountCop = Number(process.env.PAYMENTS_MAX_TEST_AMOUNT_COP || 50000);
+  const maxTestAmountCop = Number(process.env.PAYMENTS_MAX_TEST_AMOUNT_COP || 100000);
 
   if (!publicKey) {
     const err = new Error('Falta variable ePayco: EPAYCO_PUBLIC_KEY');
@@ -176,7 +176,10 @@ paymentsRouter.post('/epayco/create', async (req, res, next) => {
       return res.status(400).json({ success: false, message: `No se puede pagar un trato en estado ${trato.estado}` });
     }
 
-    const amountCop = Math.round(Number(trato.monto || 0));
+    const { calcularComision } = require('../services/comisionService');
+    const montoBase = Math.round(Number(trato.monto || 0));
+    const commission = calcularComision(montoBase, trato.quien_paga_comision || 'comprador');
+    const amountCop = commission.total_a_pagar;
     if (!Number.isFinite(amountCop) || amountCop <= 0) {
       return res.status(400).json({ success: false, message: 'El monto del trato no es válido' });
     }

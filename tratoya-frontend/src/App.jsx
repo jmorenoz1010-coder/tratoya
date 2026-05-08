@@ -63,6 +63,20 @@ const getSavedUser = () => { try { return JSON.parse(sessionStore().getItem("ty_
 const fmt = (n) => new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", minimumFractionDigits: 0 }).format(n || 0);
 const fmtDate = (d) => d ? new Date(d).toLocaleDateString("es-CO", { day: "2-digit", month: "short", year: "numeric" }) : "—";
 const timeAgo = (d) => { if (!d) return ""; const diff = Date.now() - new Date(d); const m = Math.floor(diff/60000); if (m < 1) return "ahora"; if (m < 60) return `hace ${m}m`; const h = Math.floor(m/60); if (h < 24) return `hace ${h}h`; return `hace ${Math.floor(h/24)}d`; };
+const MONTO_MINIMO_TRATO = 50000;
+const calcularComisionUI = (monto, quien = "comprador") => {
+  let comision = 0;
+  let label = "";
+  if (monto > 0 && monto <= 50000) { comision = 1500; label = "$1.500 fijo"; }
+  else if (monto <= 500000) { comision = Math.round(monto * 0.055); label = "5.5%"; }
+  else if (monto <= 2000000) { comision = Math.round(monto * 0.045); label = "4.5%"; }
+  else if (monto <= 10000000) { comision = Math.round(monto * 0.035); label = "3.5%"; }
+  else if (monto <= 50000000) { comision = Math.round(monto * 0.029); label = "2.9%"; }
+  else { comision = 0; label = "Negociable"; }
+  const comprador = quien === "comprador" ? comision : quien === "compartida" ? Math.ceil(comision / 2) : 0;
+  const vendedor = quien === "vendedor" ? comision : quien === "compartida" ? Math.floor(comision / 2) : 0;
+  return { comision, label, totalPagar: monto + comprador, vendedorRecibe: monto - vendedor, compradorComision: comprador, vendedorComision: vendedor };
+};
 const loadEpaycoCheckout = () => new Promise((resolve, reject) => {
   if (window.ePayco?.checkout) return resolve(window.ePayco);
   const existing = document.querySelector('script[data-epayco-checkout="true"]');
@@ -637,8 +651,9 @@ function CrearTrato({ setPage, toast, user }) {
   const [f, setF_] = useState({ tipo: "producto", titulo: "", descripcion: "", monto: "", dias: "7", quien: "comprador", notas: "" });
   const sf = (k, v) => setF_(p => ({ ...p, [k]: v }));
   const monto = parseInt((f.monto || "").replace(/\D/g, "")) || 0;
-  const com = monto <= 50000 ? 1500 : Math.round(monto * (monto <= 500000 ? 0.055 : monto <= 2000000 ? 0.045 : 0.035));
-  const neto = monto - com;
+  const calc = calcularComisionUI(monto, f.quien);
+  const com = calc.comision;
+  const neto = calc.vendedorRecibe;
 
   const create = async () => {
     setLoading(true);
@@ -729,12 +744,16 @@ function CrearTrato({ setPage, toast, user }) {
             </div>
             {monto > 0 && (
               <div className="commbox fi">
-                <div className="cr"><span>Monto</span><span>{fmt(monto)}</span></div>
-                <div className="cr"><span>Comisión TratoYa</span><span>−{fmt(com)}</span></div>
+                <div className="cr"><span>Monto mínimo permitido</span><span>{fmt(MONTO_MINIMO_TRATO)}</span></div>
+                <div className="cr"><span>Monto del trato</span><span>{fmt(monto)}</span></div>
+                <div className="cr"><span>Comisión TratoYa ({calc.label})</span><span>{fmt(com)}</span></div>
+                <div className="cr"><span>Total que paga comprador</span><span>{fmt(calc.totalPagar)}</span></div>
                 <div className="cr tot"><span>Vendedor recibe</span><span>{fmt(neto)}</span></div>
               </div>
             )}
-            <button className="btn bp blg" style={{ width: "100%", marginTop: 16 }} onClick={() => setStep(2)} disabled={!f.titulo || monto < 1000}>Continuar →</button>
+            <button className="btn bp blg" style={{ width: "100%", marginTop: 16 }} onClick={() => setStep(2)} disabled={!f.titulo || monto < MONTO_MINIMO_TRATO || monto > 50000000}>Continuar →</button>
+            {monto > 0 && monto < MONTO_MINIMO_TRATO && <div className="fh" style={{ color: "var(--re)", marginTop: 8 }}>El monto mínimo del trato es {fmt(MONTO_MINIMO_TRATO)}.</div>}
+            {monto > 50000000 && <div className="fh" style={{ color: "var(--re)", marginTop: 8 }}>Para tratos superiores a $50.000.000 la comisión es negociable. Contacta soporte.</div>}
           </div>
         )}
 
@@ -776,7 +795,8 @@ function CrearTrato({ setPage, toast, user }) {
             </div>
             <div className="commbox" style={{ marginBottom: 14 }}>
               <div className="cr"><span>Monto</span><span>{fmt(monto)}</span></div>
-              <div className="cr"><span>Comisión</span><span>−{fmt(com)}</span></div>
+              <div className="cr"><span>Comisión TratoYa ({calc.label})</span><span>{fmt(com)}</span></div>
+              <div className="cr"><span>Total que paga comprador</span><span>{fmt(calc.totalPagar)}</span></div>
               <div className="cr tot"><span>Vendedor recibe</span><span>{fmt(neto)}</span></div>
             </div>
             <div style={{ background: "var(--cr)", borderRadius: 9, padding: "10px 13px", display: "flex", gap: 8, marginBottom: 16, fontSize: 13, color: "var(--s600)", lineHeight: 1.5 }}>

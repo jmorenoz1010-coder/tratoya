@@ -8,7 +8,7 @@ const dayjs = require('dayjs');
 const auth = require('../middleware/auth');
 const kycRequired = require('../middleware/kycRequired');
 const { Trato, User, Pago } = require('../config/database');
-const { calcularComision } = require('../services/comisionService');
+const { calcularComision, MONTO_MINIMO_TRATO } = require('../services/comisionService');
 const { notificar } = require('../services/notificacionService');
 const { generarCodigo } = require('../utils/helpers');
 const logger = require('../utils/logger');
@@ -94,13 +94,14 @@ router.get('/', async (req, res, next) => {
 router.post('/', kycRequired, [
   body('titulo').notEmpty().trim().isLength({ min: 5 }).withMessage('Título mínimo 5 caracteres'),
   body('tipo').isIn(['producto','servicio','reserva','vehiculo','inmueble','otro']),
-  body('monto').isFloat({ min: 1000 }).withMessage('Monto mínimo $1.000 COP'),
+  body('monto').isFloat({ min: MONTO_MINIMO_TRATO }).withMessage(`Monto mínimo $${MONTO_MINIMO_TRATO.toLocaleString('es-CO')} COP`),
 ], async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) return res.status(400).json({ success: false, errors: errors.array() });
   try {
     const { titulo, descripcion, tipo, monto, dias_inspeccion = 7, quien_paga_comision = 'comprador', notas } = req.body;
-    const { porcentaje, monto_comision, monto_neto } = calcularComision(parseFloat(monto));
+    const montoNumero = parseFloat(monto);
+    const { porcentaje, monto_comision, monto_neto } = calcularComision(montoNumero, quien_paga_comision);
     const codigo = await generarCodigo();
 
     const trato = await Trato.create({
