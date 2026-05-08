@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import TratoYaAdmin from "./Admin";
 
 /* ════════════════════════════════════════════════════
@@ -856,7 +856,7 @@ function CrearTrato({ setPage, toast, user }) {
 }
 
 // ─── Detalle del trato ────────────────────────────────
-function TratoDetalle({ tratoId, setPage, setDisputeTratoId, user, toast }) {
+function TratoDetalle({ tratoId, setPage, setDisputeTratoId, user, toast, onStatusUpdate }) {
   const [trato, setTrato] = useState(null);
   const [msgs, setMsgs] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -865,15 +865,22 @@ function TratoDetalle({ tratoId, setPage, setDisputeTratoId, user, toast }) {
   const [pruebaFotos, setPruebaFotos] = useState([]);
   const [busy, setBusy] = useState(false);
   const [paymentOrder, setPaymentOrder] = useState(null);
+  const previousEstadoRef = useRef(null);
 
   const load = async (silent = false) => {
     try {
       const [t, m] = await Promise.all([api.get(`/tratos/${tratoId}`), api.get(`/messages/${tratoId}`).catch(() => ({ data: [] }))]);
-      setTrato(t.data); setMsgs(m.data || []);
+      const nextTrato = t.data;
+      if (silent && previousEstadoRef.current && previousEstadoRef.current !== nextTrato.estado) {
+        onStatusUpdate?.(nextTrato, previousEstadoRef.current, nextTrato.estado);
+      }
+      previousEstadoRef.current = nextTrato.estado;
+      setTrato(nextTrato); setMsgs(m.data || []);
     } catch (e) { if (!silent) toast(e.message, "error"); }
     if (!silent) setLoading(false);
   };
   useEffect(() => {
+    previousEstadoRef.current = null;
     load();
     const t = setInterval(() => load(true), 5000);
     return () => clearInterval(t);
@@ -939,7 +946,7 @@ function TratoDetalle({ tratoId, setPage, setDisputeTratoId, user, toast }) {
   const steps = [
     { l: "Trato creado", s: "Condiciones aceptadas", done: true },
     { l: "Pago en custodia de TratoYA", s: `${fmt(montoTrato)} protegido`, done: ["pago_retenido","en_entrega","confirmado","completado"].includes(trato.estado), active: trato.estado === "pago_retenido" },
-    { l: "Entregado", s: trato.guia_envio ? (medioEnvio === "en_persona" || trato.transportadora === "En persona" ? `📍 ${puntoEncuentro || "En persona"}` : medioEnvio === "domiciliario" || trato.transportadora === "Domiciliario" ? `🛵 Domiciliario · ${telefonoDomiciliario || "contacto pendiente"}` : `Guía ${trato.guia_envio} · ${trato.transportadora}`) : "Pendiente de registrar envío", done: ["en_entrega","confirmado","completado"].includes(trato.estado), active: trato.estado === "en_entrega" },
+    { l: "Enviado", s: trato.guia_envio ? (medioEnvio === "en_persona" || trato.transportadora === "En persona" ? `📍 ${puntoEncuentro || "En persona"}` : medioEnvio === "domiciliario" || trato.transportadora === "Domiciliario" ? `🛵 Domiciliario · ${telefonoDomiciliario || "contacto pendiente"}` : `Guía ${trato.guia_envio} · ${trato.transportadora}`) : "Pendiente de registrar envío", done: ["en_entrega","confirmado","completado"].includes(trato.estado), active: trato.estado === "en_entrega" },
     { l: "Confirmación", s: "Comprador verifica", done: ["confirmado","completado"].includes(trato.estado), active: trato.estado === "confirmado" },
     { l: "Pago liberado", s: `${fmt(neto)} al vendedor`, done: trato.estado === "completado" },
   ];
@@ -1774,6 +1781,20 @@ function AppShell({ session, setSession, toast }) {
   const [tratoId, setTratoId] = useState(null);
   const [disputeTratoId, setDisputeTratoId] = useState(null);
   const [floatingNote, setFloatingNote] = useState(null);
+  const showFloatingNote = useCallback((note) => {
+    setFloatingNote(note);
+    playBubbleSound();
+    setTimeout(() => setFloatingNote(n => n === note ? null : n), 9000);
+  }, []);
+  const estadoLabel = useCallback((estado) => (ESTADO[estado]?.l || estado || "Actualizado").replace(/[^\p{L}\p{N}\s]/gu, "").trim(), []);
+  const notifyStatusUpdate = useCallback((trato, _prevEstado, nextEstado) => {
+    showFloatingNote({
+      tipo: "estado_trato",
+      titulo: "Estado del trato actualizado",
+      cuerpo: `${trato.codigo || "Tu trato"} ahora está en ${estadoLabel(nextEstado)}.`,
+      trato_id: trato.id,
+    });
+  }, [showFloatingNote, estadoLabel]);
 
   const logout = useCallback((message = "Sesión cerrada") => {
     const logoutMessage = typeof message === "string" ? message : "Sesión cerrada";
@@ -1832,9 +1853,7 @@ function AppShell({ session, setSession, toast }) {
                   cuerpo: evt.datos?.cuerpo || evt.datos?.mensaje || "Nueva actividad en tu cuenta",
                   trato_id: evt.datos?.metadata?.trato_id || evt.datos?.trato_id,
                 };
-                setFloatingNote(note);
-                playBubbleSound();
-                setTimeout(() => setFloatingNote(n => n === note ? null : n), 9000);
+                showFloatingNote(note);
               }
             } catch { /* ignore */ }
           }
@@ -1845,7 +1864,7 @@ function AppShell({ session, setSession, toast }) {
     };
     conectarSSE();
     return () => ctrl.abort();
-  }, [session?.token]);
+  }, [session?.token, showFloatingNote]);
 
   const openFloatingNote = () => {
     if (floatingNote?.trato_id) {
@@ -1861,7 +1880,7 @@ function AppShell({ session, setSession, toast }) {
     dashboard: { title: "Dashboard",    c: <Dashboard setPage={setPage} setTratoId={setTratoId} user={session.user} toast={toast} setUser={updateUser} /> },
     tratos:    { title: "Mis Tratos",   c: <MisTratos setPage={setPage} setTratoId={setTratoId} user={session.user} toast={toast} /> },
     crear:     { title: "Crear trato",  c: <CrearTrato setPage={setPage} toast={toast} user={session.user} /> },
-    detalle:   { title: "Detalle",      c: <TratoDetalle tratoId={tratoId} setPage={setPage} setDisputeTratoId={setDisputeTratoId} user={session.user} toast={toast} /> },
+    detalle:   { title: "Detalle",      c: <TratoDetalle tratoId={tratoId} setPage={setPage} setDisputeTratoId={setDisputeTratoId} user={session.user} toast={toast} onStatusUpdate={notifyStatusUpdate} /> },
     pagos:     { title: "Pagos",        c: <Pagos toast={toast} /> },
     disputas:  { title: "Disputas",     c: <Disputas toast={toast} initialTratoId={disputeTratoId} clearInitialTratoId={() => setDisputeTratoId(null)} setPage={setPage} setTratoId={setTratoId} /> },
     reputacion:{ title: "Reputación",   c: <Reputacion user={session.user} setUser={updateUser} toast={toast} /> },
