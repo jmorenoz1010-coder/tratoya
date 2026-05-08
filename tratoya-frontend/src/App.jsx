@@ -63,6 +63,30 @@ const getSavedUser = () => { try { return JSON.parse(sessionStore().getItem("ty_
 const fmt = (n) => new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", minimumFractionDigits: 0 }).format(n || 0);
 const fmtDate = (d) => d ? new Date(d).toLocaleDateString("es-CO", { day: "2-digit", month: "short", year: "numeric" }) : "—";
 const timeAgo = (d) => { if (!d) return ""; const diff = Date.now() - new Date(d); const m = Math.floor(diff/60000); if (m < 1) return "ahora"; if (m < 60) return `hace ${m}m`; const h = Math.floor(m/60); if (h < 24) return `hace ${h}h`; return `hace ${Math.floor(h/24)}d`; };
+const loadEpaycoCheckout = () => new Promise((resolve, reject) => {
+  if (window.ePayco?.checkout) return resolve(window.ePayco);
+  const existing = document.querySelector('script[data-epayco-checkout="true"]');
+  if (existing) {
+    existing.addEventListener("load", () => resolve(window.ePayco), { once: true });
+    existing.addEventListener("error", () => reject(new Error("No se pudo cargar el checkout de ePayco")), { once: true });
+    return;
+  }
+  const script = document.createElement("script");
+  script.src = "https://checkout.epayco.co/checkout.js";
+  script.async = true;
+  script.dataset.epaycoCheckout = "true";
+  script.onload = () => window.ePayco?.checkout ? resolve(window.ePayco) : reject(new Error("Checkout de ePayco no disponible"));
+  script.onerror = () => reject(new Error("No se pudo cargar el checkout de ePayco"));
+  document.body.appendChild(script);
+});
+const openEpaycoCheckout = async (order) => {
+  const ePayco = await loadEpaycoCheckout();
+  const handler = ePayco.checkout.configure({
+    key: order.publicKey,
+    test: order.checkoutData?.test === true || order.checkoutData?.test === "true",
+  });
+  handler.open(order.checkoutData);
+};
 
 const ESTADO = {
   borrador:               { l: "Borrador",          c: "bg" },
@@ -808,14 +832,15 @@ function TratoDetalle({ tratoId, setPage, setDisputeTratoId, user, toast }) {
     setBusy(false);
   };
 
-  const pagarWompi = async () => {
-    if (!window.confirm(`Vas a pagar ${fmt(trato?.monto)} COP por este acuerdo en TratoYa. Este pago se procesará por Wompi.`)) return;
+  const pagarEpayco = async () => {
+    if (!window.confirm(`Vas a pagar ${fmt(trato?.monto)} COP por este acuerdo en TratoYa. Este pago se procesará por ePayco.`)) return;
     setBusy(true);
     try {
-      const r = await api.post(`/payments/wompi/create`, { dealId: tratoId });
-      if (!r.data?.checkoutUrl) throw new Error("No se pudo generar el checkout de Wompi");
-      setPaymentOrder(r.data);
-      window.location.href = r.data.checkoutUrl;
+      const r = await api.post(`/payments/epayco/create`, { dealId: tratoId });
+      const order = r.data || r;
+      if (!order?.publicKey || !order?.checkoutData) throw new Error("No se pudo generar el checkout de ePayco");
+      setPaymentOrder(order);
+      await openEpaycoCheckout(order);
     } catch (e) { toast(e.message, "error"); }
     setBusy(false);
   };
@@ -923,10 +948,10 @@ function TratoDetalle({ tratoId, setPage, setDisputeTratoId, user, toast }) {
 
             {["activo","pago_pendiente"].includes(trato.estado) && esC && (
               <div style={{ marginTop: 13, padding: "12px 13px", background: "var(--cr)", borderRadius: 9 }}>
-                <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 4 }}>Pago seguro con Wompi</div>
-                <p style={{ fontSize: 12.5, color: "var(--s600)", marginBottom: 10 }}>Tu pago se procesa en Wompi y solo el webhook confirmado marca los fondos como recibidos en TratoYA.</p>
-                <button className="btn bp" style={{ width: "100%" }} onClick={pagarWompi} disabled={busy}>
-                  {busy ? <div className="spin" /> : "💳 Pagar con Wompi"}
+                <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 4 }}>Pago seguro con ePayco</div>
+                <p style={{ fontSize: 12.5, color: "var(--s600)", marginBottom: 10 }}>Tu pago se procesa en ePayco y solo la confirmación oficial marca los fondos como recibidos en TratoYA.</p>
+                <button className="btn bp" style={{ width: "100%" }} onClick={pagarEpayco} disabled={busy}>
+                  {busy ? <div className="spin" /> : "💳 Pagar con ePayco"}
                 </button>
                 {paymentOrder?.reference && <div style={{ marginTop: 8, fontSize: 11, color: "var(--s600)", wordBreak: "break-all" }}>Referencia: {paymentOrder.reference}</div>}
               </div>
@@ -1546,12 +1571,13 @@ function PublicTratoPage({ link, session, goAuth, toast }) {
     setBusy(false);
   };
   const pagar = async () => {
-    if (!window.confirm(`Vas a pagar ${fmt(trato?.monto)} COP por este acuerdo en TratoYa. Este pago se procesará por Wompi.`)) return;
+    if (!window.confirm(`Vas a pagar ${fmt(trato?.monto)} COP por este acuerdo en TratoYa. Este pago se procesará por ePayco.`)) return;
     setBusy(true);
     try {
-      const r = await api.post(`/payments/wompi/create`, { dealId: trato.id });
-      setOrder(r.data);
-      window.location.href = r.data.checkoutUrl;
+      const r = await api.post(`/payments/epayco/create`, { dealId: trato.id });
+      const paymentOrder = r.data || r;
+      setOrder(paymentOrder);
+      await openEpaycoCheckout(paymentOrder);
     } catch (e) { toast(e.message, "error"); }
     setBusy(false);
   };
@@ -1619,7 +1645,7 @@ function PublicTratoPage({ link, session, goAuth, toast }) {
             <button className="btn bp blg" onClick={aceptar} disabled={busy}>{busy ? <div className="spin" /> : "Aceptar trato y continuar al pago"}</button>
           ) : canPay ? (
             <div>
-              <button className="btn bp blg" style={{ width: "100%" }} onClick={pagar} disabled={busy}>{busy ? <div className="spin" /> : "Pagar con Wompi"}</button>
+              <button className="btn bp blg" style={{ width: "100%" }} onClick={pagar} disabled={busy}>{busy ? <div className="spin" /> : "Pagar con ePayco"}</button>
               {order?.reference && <div style={{ fontSize: 11, color: "var(--s600)", marginTop: 8 }}>Referencia: {order.reference}</div>}
             </div>
           ) : (
@@ -1634,7 +1660,8 @@ function PublicTratoPage({ link, session, goAuth, toast }) {
 function PaymentResultPage({ session, goAuth, toast }) {
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(true);
-  const reference = new URLSearchParams(window.location.search).get("reference");
+  const params = new URLSearchParams(window.location.search);
+  const reference = params.get("reference") || params.get("x_id_invoice") || params.get("x_extra3") || params.get("invoice");
   useEffect(() => {
     if (!session || !reference) { setLoading(false); return; }
     const check = () => api.get(`/payments/status?reference=${encodeURIComponent(reference)}`)
@@ -1650,11 +1677,11 @@ function PaymentResultPage({ session, goAuth, toast }) {
   const statusCopy = {
     PAID: ["✅", "Pago recibido", "Tus fondos quedaron registrados en TratoYA."],
     PAYMENT_PENDING: ["⏳", "Pago pendiente", "Tu pago está pendiente de confirmación."],
-    CREATED: ["⏳", "Verificando pago", "Estamos verificando tu pago con Wompi..."],
+    CREATED: ["⏳", "Verificando pago", "Estamos verificando tu pago con ePayco..."],
     PAYMENT_DECLINED: ["❌", "Pago rechazado", "El pago fue rechazado. Puedes intentar nuevamente."],
     PAYMENT_ERROR: ["⚠️", "Error en el pago", "Hubo un error procesando el pago."],
-    PAYMENT_VOIDED: ["↩️", "Pago anulado", "El pago fue anulado por Wompi."],
-  }[status] || ["💳", "Resultado del pago", "Estamos verificando tu pago con Wompi..."];
+    PAYMENT_VOIDED: ["↩️", "Pago anulado", "El pago fue anulado por ePayco."],
+  }[status] || ["💳", "Resultado del pago", "Estamos verificando tu pago con ePayco..."];
 
   return (
     <div className="land" style={{ minHeight: "100vh", display: "grid", placeItems: "center", background: "var(--s50)", padding: 20 }}>
@@ -1663,7 +1690,7 @@ function PaymentResultPage({ session, goAuth, toast }) {
         <h1 style={{ fontSize: 24, marginBottom: 8 }}>{statusCopy[1]}</h1>
         {!session ? <p style={{ color: "var(--s600)", marginBottom: 16 }}>Inicia sesión para verificar el estado de la transacción.</p>
           : loading ? <div className="spin" style={{ margin: "18px auto" }} />
-          : !reference ? <p style={{ color: "var(--s600)" }}>Wompi no envió una referencia de pago.</p>
+          : !reference ? <p style={{ color: "var(--s600)" }}>ePayco no envió una referencia de pago.</p>
           : <p style={{ color: "var(--s600)" }}>{statusCopy[2]}</p>}
         {reference && <div style={{ fontSize: 11, color: "var(--s400)", wordBreak: "break-all", marginTop: 10 }}>Referencia: {reference}</div>}
         {!session && <button className="btn bp" onClick={() => goAuth("login")}>Iniciar sesión</button>}

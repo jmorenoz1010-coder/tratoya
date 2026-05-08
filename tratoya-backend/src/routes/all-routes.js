@@ -96,51 +96,35 @@ const {
   Pago, Trato, PaymentIntent, PaymentEvent, LedgerEntry, AuditLog
 } = require('../config/database');
 
-const normalizeWompiStatus = (status) => ({
-  APPROVED: 'PAID',
-  DECLINED: 'PAYMENT_DECLINED',
-  ERROR: 'PAYMENT_ERROR',
-  VOIDED: 'PAYMENT_VOIDED',
-  PENDING: 'PAYMENT_PENDING',
-}[String(status || '').toUpperCase()] || 'PAYMENT_PENDING');
+const normalizeEpaycoStatus = (response, stateCode) => {
+  const normalized = String(response || '').toLowerCase();
+  const code = String(stateCode || '');
+  if (normalized.includes('aceptada') || code === '1') return 'PAID';
+  if (normalized.includes('rechazada') || code === '2') return 'PAYMENT_DECLINED';
+  if (normalized.includes('pendiente') || code === '3') return 'PAYMENT_PENDING';
+  if (normalized.includes('fallida') || code === '4') return 'PAYMENT_ERROR';
+  return 'PAYMENT_PENDING';
+};
 
 const paymentFailedStatuses = ['PAYMENT_DECLINED', 'PAYMENT_ERROR', 'PAYMENT_VOIDED'];
 
-function getWompiConfig() {
-  const env = process.env.WOMPI_ENV || (process.env.NODE_ENV === 'production' ? 'production' : 'sandbox');
-  const publicKey = process.env.WOMPI_PUBLIC_KEY || '';
-  const integritySecret = process.env.WOMPI_INTEGRITY_SECRET || process.env.WOMPI_INTEGRITY_KEY || '';
-  const eventsSecret = process.env.WOMPI_EVENTS_SECRET || '';
+function getEpaycoConfig() {
+  const env = process.env.EPAYCO_ENV || (process.env.NODE_ENV === 'production' ? 'production' : 'test');
+  const publicKey = process.env.EPAYCO_PUBLIC_KEY || process.env.EPAYCO_P_PUBLIC_KEY || '';
+  const customerId = process.env.EPAYCO_CUSTOMER_ID || process.env.EPAYCO_P_CUST_ID_CLIENTE || '';
+  const pKey = process.env.EPAYCO_P_KEY || '';
   const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+  const backendUrl = process.env.BACKEND_URL || 'http://localhost:4000';
   const realEnabled = process.env.PAYMENTS_REAL_ENABLED === 'true';
   const maxTestAmountCop = Number(process.env.PAYMENTS_MAX_TEST_AMOUNT_COP || 50000);
 
-  if (!publicKey || !integritySecret) {
-    const err = new Error('Faltan variables Wompi: WOMPI_PUBLIC_KEY y WOMPI_INTEGRITY_SECRET');
+  if (!publicKey || !customerId || !pKey) {
+    const err = new Error('Faltan variables ePayco: EPAYCO_PUBLIC_KEY, EPAYCO_CUSTOMER_ID y EPAYCO_P_KEY');
     err.statusCode = 503;
     err.expose = true;
     throw err;
   }
-  if (env === 'production' && !publicKey.startsWith('pub_prod_')) {
-    const err = new Error('WOMPI_ENV=production requiere WOMPI_PUBLIC_KEY con prefijo pub_prod_');
-    err.statusCode = 503;
-    err.expose = true;
-    throw err;
-  }
-  if (env === 'sandbox' && !publicKey.startsWith('pub_test_')) {
-    const err = new Error('WOMPI_ENV=sandbox requiere WOMPI_PUBLIC_KEY con prefijo pub_test_');
-    err.statusCode = 503;
-    err.expose = true;
-    throw err;
-  }
-  return { env, publicKey, integritySecret, eventsSecret, frontendUrl, realEnabled, maxTestAmountCop };
-}
-
-function createWompiSignature(reference, amountInCents, currency, integritySecret) {
-  return require('crypto')
-    .createHash('sha256')
-    .update(`${reference}${amountInCents}${currency}${integritySecret}`)
-    .digest('hex');
+  return { env, publicKey, customerId, pKey, frontendUrl, backendUrl, realEnabled, maxTestAmountCop };
 }
 
 function canAccessDeal(trato, user) {
@@ -151,12 +135,16 @@ function canAccessDeal(trato, user) {
 paymentsRouter.use(auth);
 
 paymentsRouter.post('/wompi/create', async (req, res, next) => {
+  return res.status(410).json({ success: false, message: 'Wompi fue desactivado. TratoYA ahora procesa pagos con ePayco.' });
+});
+
+paymentsRouter.post('/epayco/create', async (req, res, next) => {
   try {
-    logger.info('WOMPI_CREATE_PAYMENT_START');
+    logger.info('EPAYCO_CREATE_PAYMENT_START');
     const { dealId } = req.body || {};
     if (!dealId) return res.status(400).json({ success: false, message: 'dealId requerido' });
 
-    const config = getWompiConfig();
+    const config = getEpaycoConfig();
     if (config.env === 'production' && !config.realEnabled) {
       return res.status(403).json({ success: false, message: 'Pagos reales deshabilitados por configuración' });
     }
@@ -187,21 +175,31 @@ paymentsRouter.post('/wompi/create', async (req, res, next) => {
     const currency = 'COP';
     const amountInCents = amountCop * 100;
     const random = require('crypto').randomBytes(3).toString('hex').toUpperCase();
-    const reference = `TRATOYA-${String(trato.id).slice(0, 8)}-${Date.now()}-${random}`;
-    const signature = createWompiSignature(reference, amountInCents, currency, config.integritySecret);
-    const redirectUrl = `${config.frontendUrl}/pago/resultado?reference=${encodeURIComponent(reference)}`;
-    const checkoutParams = new URLSearchParams({
-      'public-key': config.publicKey,
+    const reference = `TY-${String(trato.codigo || trato.id).replace(/[^a-zA-Z0-9-]/g, '').slice(0, 18)}-${Date.now()}-${random}`;
+    const responseUrl = `${config.frontendUrl}/pago/resultado?reference=${encodeURIComponent(reference)}`;
+    const confirmationUrl = `${config.backendUrl}/api/webhooks/epayco`;
+    const checkoutData = {
+      name: `TratoYA ${trato.codigo || ''}`.trim(),
+      description: trato.titulo,
+      invoice: reference,
       currency,
-      'amount-in-cents': String(amountInCents),
-      reference,
-      'signature:integrity': signature,
-      'redirect-url': redirectUrl,
-    });
-    const checkoutUrl = `https://checkout.wompi.co/p/?${checkoutParams.toString()}`;
+      amount: String(amountCop),
+      tax_base: '0',
+      tax: '0',
+      country: 'CO',
+      lang: 'es',
+      external: 'true',
+      response: responseUrl,
+      confirmation: confirmationUrl,
+      method_confirmation: 'POST',
+      test: config.env !== 'production',
+      extra1: trato.id,
+      extra2: req.user.id,
+      extra3: reference,
+    };
 
     const intent = await PaymentIntent.create({
-      provider: 'wompi',
+      provider: 'epayco',
       reference,
       amount_cents: amountInCents,
       amount_cop: amountCop,
@@ -209,29 +207,30 @@ paymentsRouter.post('/wompi/create', async (req, res, next) => {
       status: 'CREATED',
       deal_id: trato.id,
       created_by_user_id: req.user.id,
-      checkout_url: checkoutUrl,
-      raw_response: { redirectUrl, env: config.env },
+      checkout_url: responseUrl,
+      raw_response: { responseUrl, confirmationUrl, checkoutData, env: config.env },
     });
     await trato.update({ estado: 'pago_pendiente' });
     await AuditLog.create({
       user_id: req.user.id,
-      action: 'WOMPI_PAYMENT_CREATED',
+      action: 'EPAYCO_PAYMENT_CREATED',
       entity_type: 'payment_intent',
       entity_id: intent.id,
       metadata: { reference, deal_id: trato.id, amount_cents: amountInCents },
     });
 
-    logger.info(`WOMPI_CREATE_PAYMENT_SUCCESS ${reference}`);
+    logger.info(`EPAYCO_CREATE_PAYMENT_SUCCESS ${reference}`);
     res.json({
       success: true,
       ok: true,
-      data: { checkoutUrl, reference, amountInCents, amountCop, currency, provider: 'wompi' },
-      checkoutUrl,
+      data: { reference, amountInCents, amountCop, currency, provider: 'epayco', publicKey: config.publicKey, checkoutData },
       reference,
       amountInCents,
       amountCop,
       currency,
-      provider: 'wompi',
+      provider: 'epayco',
+      publicKey: config.publicKey,
+      checkoutData,
     });
   } catch (err) { next(err); }
 });
@@ -250,30 +249,34 @@ paymentsRouter.get('/status', async (req, res, next) => {
       success: true,
       ok: true,
       data: {
-        provider: 'wompi',
+        provider: intent.provider,
         reference: intent.reference,
         status: intent.status,
         amountCop: Number(intent.amount_cop),
         amountInCents: intent.amount_cents,
         currency: intent.currency,
         dealId: intent.deal_id,
-        wompiTransactionId: intent.wompi_transaction_id,
+        transactionId: intent.wompi_transaction_id,
         updatedAt: intent.updated_at || intent.updatedAt,
       },
-      provider: 'wompi',
+      provider: intent.provider,
       reference: intent.reference,
       status: intent.status,
       amountCop: Number(intent.amount_cop),
       amountInCents: intent.amount_cents,
       currency: intent.currency,
       dealId: intent.deal_id,
-      wompiTransactionId: intent.wompi_transaction_id,
+      transactionId: intent.wompi_transaction_id,
       updatedAt: intent.updated_at || intent.updatedAt,
     });
   } catch (err) { next(err); }
 });
 
 paymentsRouter.post('/create-order/:trato_id', async (req, res, next) => {
+  return res.status(410).json({ success: false, message: 'Este endpoint Wompi fue desactivado. Usa /api/payments/epayco/create.' });
+});
+
+paymentsRouter.post('/create-order-disabled/:trato_id', async (req, res, next) => {
   try {
     const trato = await Trato.findByPk(req.params.trato_id);
     if (!trato) return res.status(404).json({ success: false, message: 'Trato no encontrado' });
@@ -316,6 +319,10 @@ paymentsRouter.post('/create-order/:trato_id', async (req, res, next) => {
 });
 
 paymentsRouter.get('/status/:transaction_id', async (req, res, next) => {
+  return res.status(410).json({ success: false, message: 'La verificación Wompi fue desactivada. Usa /api/payments/status?reference=...' });
+});
+
+paymentsRouter.get('/status-disabled/:transaction_id', async (req, res, next) => {
   try {
     const { verificarTransaccionWompi, registrarPagoAprobado } = require('../services/pagoService');
     const trx = await verificarTransaccionWompi(req.params.transaction_id);
@@ -1149,7 +1156,167 @@ const webhooksRouter = express.Router();
 const crypto = require('crypto');
 const logger = require('../utils/logger');
 
+function readWebhookPayload(req) {
+  if (Buffer.isBuffer(req.body)) {
+    const raw = req.body.toString('utf8');
+    try { return JSON.parse(raw || '{}'); } catch { return Object.fromEntries(new URLSearchParams(raw)); }
+  }
+  return { ...(req.query || {}), ...(req.body || {}) };
+}
+
+webhooksRouter.all('/epayco', async (req, res) => {
+  let savedEvent = null;
+  try {
+    logger.info('EPAYCO_WEBHOOK_RECEIVED');
+    const payload = readWebhookPayload(req);
+    const reference = payload.x_id_invoice || payload.x_extra3 || payload.invoice || payload.reference || null;
+    const refPayco = payload.x_ref_payco || payload.ref_payco || null;
+    const txId = payload.x_transaction_id || refPayco || null;
+    const response = payload.x_response || payload.x_respuesta || null;
+    const stateCode = payload.x_cod_transaction_state || payload.x_transaction_state || payload.x_cod_response || null;
+    const amount = payload.x_amount || payload.x_amount_ok || null;
+    const currency = payload.x_currency_code || 'COP';
+    const checksum = payload.x_signature || null;
+    const customerId = process.env.EPAYCO_CUSTOMER_ID || process.env.EPAYCO_P_CUST_ID_CLIENTE || '';
+    const pKey = process.env.EPAYCO_P_KEY || '';
+    const expectedChecksum = customerId && pKey && refPayco && txId && amount && currency
+      ? crypto.createHash('sha256').update(`${customerId}^${pKey}^${refPayco}^${txId}^${amount}^${currency}`).digest('hex')
+      : null;
+    const isValidSignature = Boolean(expectedChecksum && checksum && expectedChecksum === checksum);
+    const internalStatus = normalizeEpaycoStatus(response, stateCode);
+
+    const duplicateBefore = checksum && txId && internalStatus
+      ? await PaymentEvent.findOne({
+        where: {
+          provider: 'epayco',
+          wompi_transaction_id: txId,
+          status: internalStatus,
+          event_checksum: checksum,
+          is_valid_signature: true,
+        },
+      })
+      : null;
+
+    savedEvent = await PaymentEvent.create({
+      provider: 'epayco',
+      event_type: 'transaction.updated',
+      event_checksum: checksum,
+      wompi_transaction_id: txId,
+      reference,
+      status: internalStatus,
+      raw_payload: payload,
+      received_at: new Date(),
+      is_valid_signature: isValidSignature,
+    });
+
+    if (!isValidSignature) {
+      logger.warn(`EPAYCO_WEBHOOK_SIGNATURE_INVALID ${reference || 'sin-reference'}`);
+      await savedEvent.update({ processing_error: 'Firma ePayco inválida' });
+      return res.status(400).json({ received: false });
+    }
+    logger.info(`EPAYCO_WEBHOOK_SIGNATURE_VALID ${reference || 'sin-reference'}`);
+
+    const intent = await PaymentIntent.findOne({ where: { reference, provider: 'epayco' } });
+    if (!intent) {
+      await savedEvent.update({ processed_at: new Date(), processing_error: 'payment_intent no encontrado' });
+      return res.json({ received: true });
+    }
+
+    const amountCents = Math.round(Number(amount || 0) * 100);
+    if (amountCents !== Number(intent.amount_cents)) {
+      await savedEvent.update({ processed_at: new Date(), processing_error: 'Monto no coincide' });
+      return res.status(400).json({ received: false });
+    }
+    if (currency !== intent.currency || currency !== 'COP') {
+      await savedEvent.update({ processed_at: new Date(), processing_error: 'Moneda no válida' });
+      return res.status(400).json({ received: false });
+    }
+
+    const trato = await Trato.findByPk(intent.deal_id);
+    const alreadyPaid = intent.status === 'PAID' && internalStatus === 'PAID';
+    await intent.update({
+      status: internalStatus,
+      wompi_transaction_id: txId,
+      raw_response: payload,
+    });
+
+    if (!duplicateBefore && !alreadyPaid && internalStatus === 'PAID') {
+      if (trato) {
+        await trato.update({
+          estado: 'pago_retenido',
+          fecha_pago: new Date(),
+          metadata: { ...(trato.metadata || {}), payment_status: 'FONDOS_RECIBIDOS', epayco_reference: reference, epayco_ref_payco: refPayco },
+        });
+      }
+      await LedgerEntry.create({
+        deal_id: intent.deal_id,
+        payment_intent_id: intent.id,
+        type: 'PAYMENT_RECEIVED',
+        amount_cents: amountCents,
+        description: 'Pago recibido por ePayco',
+      });
+      await Pago.create({
+        trato_id: intent.deal_id,
+        usuario_id: intent.created_by_user_id,
+        tipo: 'retencion',
+        monto: Number(amount),
+        moneda: 'COP',
+        pasarela: 'epayco',
+        pasarela_ref: txId || reference,
+        pasarela_estado: response || stateCode,
+        estado: 'aprobado',
+        fecha_aprobacion: new Date(),
+        webhook_payload: payload,
+        metadata: { reference, ref_payco: refPayco, payment_intent_id: intent.id, real: true },
+      });
+      await AuditLog.create({
+        user_id: intent.created_by_user_id,
+        action: 'EPAYCO_PAYMENT_APPROVED',
+        entity_type: 'payment_intent',
+        entity_id: intent.id,
+        metadata: { reference, deal_id: intent.deal_id, epayco_transaction_id: txId, ref_payco: refPayco },
+      });
+      if (trato) {
+        const { notificarAmbos } = require('../services/notificacionService');
+        await notificarAmbos(trato.comprador_id, trato.vendedor_id, 'pago_retenido', {
+          titulo: 'Pago en custodia de TratoYA',
+          cuerpo: `Tu pago de $${Number(amount).toLocaleString('es-CO')} COP fue recibido por ePayco.`,
+          metadata: { trato_id: trato.id, reference },
+        }, {
+          titulo: 'Pago en custodia de TratoYA',
+          cuerpo: `El pago del trato ${trato.codigo} fue recibido. Puedes proceder con la entrega.`,
+          metadata: { trato_id: trato.id, reference },
+        });
+      }
+      logger.info(`EPAYCO_PAYMENT_APPROVED ${reference}`);
+    } else if (paymentFailedStatuses.includes(internalStatus)) {
+      if (trato) await trato.update({ estado: 'activo' });
+      await AuditLog.create({
+        user_id: intent.created_by_user_id,
+        action: 'EPAYCO_PAYMENT_FAILED',
+        entity_type: 'payment_intent',
+        entity_id: intent.id,
+        metadata: { reference, deal_id: intent.deal_id, epayco_transaction_id: txId, response, stateCode },
+      });
+      logger.info(`EPAYCO_PAYMENT_FAILED ${reference}`);
+    }
+
+    await savedEvent.update({ processed_at: new Date() });
+    return res.json({ received: true });
+  } catch (err) {
+    logger.error('[EPAYCO_WEBHOOK] Error: ' + err.message);
+    if (savedEvent) {
+      try { await savedEvent.update({ processed_at: new Date(), processing_error: err.message }); } catch {}
+    }
+    return res.status(500).json({ received: false });
+  }
+});
+
 webhooksRouter.post('/wompi', async (req, res) => {
+  return res.status(410).json({ received: false, message: 'Wompi desactivado. Usa /api/webhooks/epayco.' });
+});
+
+webhooksRouter.post('/wompi-disabled', async (req, res) => {
   let savedEvent = null;
   try {
     logger.info('WOMPI_WEBHOOK_RECEIVED');
