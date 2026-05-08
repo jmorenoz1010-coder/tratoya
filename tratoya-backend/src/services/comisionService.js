@@ -13,6 +13,32 @@ const TRAMOS = [
 
 const MONTO_MINIMO_TRATO = 50000;
 const MONTO_MAXIMO_AUTOMATICO = 50000000;
+const IVA_COLOMBIA = 0.19;
+const EPAYCO_DAVIVIENDA_PCT = 0.0264;
+const EPAYCO_DAVIVIENDA_FIJO = 690;
+const EPAYCO_PSE_FIJO_HASTA = 60000;
+const EPAYCO_PSE_FIJO = 2200;
+
+function calcularComisionTratoYa(monto) {
+  const tramo = TRAMOS.find(t => monto <= t.max) || TRAMOS[TRAMOS.length - 1];
+  const monto_comision = tramo.fijo !== null
+    ? tramo.fijo
+    : Math.round(monto * tramo.pct);
+  return { tramo, monto_comision };
+}
+
+function calcularCostoEpayco(totalCobrado) {
+  if (totalCobrado <= EPAYCO_PSE_FIJO_HASTA) {
+    return Math.ceil(EPAYCO_PSE_FIJO * (1 + IVA_COLOMBIA));
+  }
+  return Math.ceil((totalCobrado * EPAYCO_DAVIVIENDA_PCT + EPAYCO_DAVIVIENDA_FIJO) * (1 + IVA_COLOMBIA));
+}
+
+function calcularBuyerShare(monto, totalComision, quienPaga) {
+  if (quienPaga === 'comprador') return totalComision;
+  if (quienPaga === 'compartida') return Math.ceil(totalComision / 2);
+  return 0;
+}
 
 function calcularComision(monto, quienPaga = 'comprador') {
   if (!Number.isFinite(monto) || monto < MONTO_MINIMO_TRATO) {
@@ -27,26 +53,39 @@ function calcularComision(monto, quienPaga = 'comprador') {
     err.expose = true;
     throw err;
   }
-  const tramo = TRAMOS.find(t => monto <= t.max) || TRAMOS[TRAMOS.length - 1];
-  const monto_comision = tramo.fijo !== null
-    ? tramo.fijo
-    : Math.round(monto * tramo.pct);
+  const { tramo, monto_comision: comision_tratoya } = calcularComisionTratoYa(monto);
+  let total_comision = comision_tratoya;
+  let costo_epayco = 0;
+  for (let i = 0; i < 8; i += 1) {
+    const compradorShare = calcularBuyerShare(monto, total_comision, quienPaga);
+    const totalCobrado = monto + compradorShare;
+    const nextCostoEpayco = calcularCostoEpayco(totalCobrado);
+    const nextTotalComision = comision_tratoya + nextCostoEpayco;
+    if (nextTotalComision === total_comision) {
+      costo_epayco = nextCostoEpayco;
+      break;
+    }
+    total_comision = nextTotalComision;
+    costo_epayco = nextCostoEpayco;
+  }
   const comprador_paga_comision = quienPaga === 'comprador'
-    ? monto_comision
+    ? total_comision
     : quienPaga === 'compartida'
-      ? Math.ceil(monto_comision / 2)
+      ? Math.ceil(total_comision / 2)
       : 0;
   const vendedor_paga_comision = quienPaga === 'vendedor'
-    ? monto_comision
+    ? total_comision
     : quienPaga === 'compartida'
-      ? Math.floor(monto_comision / 2)
+      ? Math.floor(total_comision / 2)
       : 0;
   const total_a_pagar = monto + comprador_paga_comision;
   const monto_neto = monto - vendedor_paga_comision;
 
   return {
     porcentaje: tramo.pct,
-    monto_comision,
+    monto_comision: total_comision,
+    comision_tratoya,
+    costo_epayco,
     monto_neto,
     total_a_pagar,
     comprador_paga_comision,
@@ -57,4 +96,10 @@ function calcularComision(monto, quienPaga = 'comprador') {
   };
 }
 
-module.exports = { calcularComision, MONTO_MINIMO_TRATO, MONTO_MAXIMO_AUTOMATICO, TRAMOS };
+module.exports = {
+  calcularComision,
+  calcularCostoEpayco,
+  MONTO_MINIMO_TRATO,
+  MONTO_MAXIMO_AUTOMATICO,
+  TRAMOS,
+};

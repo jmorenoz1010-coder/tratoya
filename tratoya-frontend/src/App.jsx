@@ -64,18 +64,33 @@ const fmt = (n) => new Intl.NumberFormat("es-CO", { style: "currency", currency:
 const fmtDate = (d) => d ? new Date(d).toLocaleDateString("es-CO", { day: "2-digit", month: "short", year: "numeric" }) : "—";
 const timeAgo = (d) => { if (!d) return ""; const diff = Date.now() - new Date(d); const m = Math.floor(diff/60000); if (m < 1) return "ahora"; if (m < 60) return `hace ${m}m`; const h = Math.floor(m/60); if (h < 24) return `hace ${h}h`; return `hace ${Math.floor(h/24)}d`; };
 const MONTO_MINIMO_TRATO = 50000;
+const calcularCostoEpaycoUI = (totalCobrado) => {
+  const iva = 1.19;
+  if (totalCobrado <= 60000) return Math.ceil(2200 * iva);
+  return Math.ceil((totalCobrado * 0.0264 + 690) * iva);
+};
 const calcularComisionUI = (monto, quien = "comprador") => {
-  let comision = 0;
+  let comisionTratoYa = 0;
   let label = "";
-  if (monto > 0 && monto <= 50000) { comision = 1500; label = "$1.500 fijo"; }
-  else if (monto <= 500000) { comision = Math.round(monto * 0.055); label = "5.5%"; }
-  else if (monto <= 2000000) { comision = Math.round(monto * 0.045); label = "4.5%"; }
-  else if (monto <= 10000000) { comision = Math.round(monto * 0.035); label = "3.5%"; }
-  else if (monto <= 50000000) { comision = Math.round(monto * 0.029); label = "2.9%"; }
-  else { comision = 0; label = "Negociable"; }
+  if (monto > 0 && monto <= 50000) { comisionTratoYa = 1500; label = "$1.500 fijo"; }
+  else if (monto <= 500000) { comisionTratoYa = Math.round(monto * 0.055); label = "5.5%"; }
+  else if (monto <= 2000000) { comisionTratoYa = Math.round(monto * 0.045); label = "4.5%"; }
+  else if (monto <= 10000000) { comisionTratoYa = Math.round(monto * 0.035); label = "3.5%"; }
+  else if (monto <= 50000000) { comisionTratoYa = Math.round(monto * 0.029); label = "2.9%"; }
+  else { comisionTratoYa = 0; label = "Negociable"; }
+  let comision = comisionTratoYa;
+  let costoEpayco = 0;
+  for (let i = 0; i < 8; i += 1) {
+    const buyerPart = quien === "comprador" ? comision : quien === "compartida" ? Math.ceil(comision / 2) : 0;
+    const nextCostoEpayco = calcularCostoEpaycoUI(monto + buyerPart);
+    const nextComision = comisionTratoYa + nextCostoEpayco;
+    if (nextComision === comision) { costoEpayco = nextCostoEpayco; break; }
+    comision = nextComision;
+    costoEpayco = nextCostoEpayco;
+  }
   const comprador = quien === "comprador" ? comision : quien === "compartida" ? Math.ceil(comision / 2) : 0;
   const vendedor = quien === "vendedor" ? comision : quien === "compartida" ? Math.floor(comision / 2) : 0;
-  return { comision, label, totalPagar: monto + comprador, vendedorRecibe: monto - vendedor, compradorComision: comprador, vendedorComision: vendedor };
+  return { comision, comisionTratoYa, costoEpayco, label, totalPagar: monto + comprador, vendedorRecibe: monto - vendedor, compradorComision: comprador, vendedorComision: vendedor };
 };
 const loadEpaycoCheckout = () => new Promise((resolve, reject) => {
   if (window.ePayco?.checkout) return resolve(window.ePayco);
