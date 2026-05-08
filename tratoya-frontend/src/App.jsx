@@ -28,7 +28,7 @@ const api = {
         body: body ? (isForm ? body : JSON.stringify(body)) : null,
       });
     } catch {
-      throw new Error("No se pudo conectar con TratoYA. Verifica que el PC y el celular estén en la misma red Wi-Fi.");
+      throw new Error("No se pudo conectar con el servidor de TratoYA. Intenta de nuevo en unos segundos.");
     }
     const d = await r.json().catch(() => ({ success: false, message: "Error de conexión" }));
     if (!r.ok) {
@@ -303,7 +303,13 @@ function Toast({ message, type, onClose }) {
 }
 function useToast() {
   const [toasts, setToasts] = useState([]);
-  const show = useCallback((message, type = "info") => { const id = Date.now(); setToasts(t => [...t, { id, message, type }]); }, []);
+  const show = useCallback((message, type = "info") => {
+    const id = Date.now();
+    setToasts(t => {
+      const clean = t.filter(x => x.message !== message || x.type !== type);
+      return [...clean.slice(-2), { id, message, type }];
+    });
+  }, []);
   const remove = useCallback((id) => setToasts(t => t.filter(x => x.id !== id)), []);
   return { toasts, show, remove };
 }
