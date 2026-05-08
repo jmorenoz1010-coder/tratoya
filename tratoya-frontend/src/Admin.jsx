@@ -441,26 +441,26 @@ function Usuarios({ toast }) {
     setBusy(false);
   };
 
-  const filtered = users.filter(u => !q || `${u.nombre} ${u.apellido} ${u.email}`.toLowerCase().includes(q.toLowerCase()));
+  const filtered = users.filter(u => !q || `${u.nombre} ${u.apellido} ${u.email} ${u.usuario_unico || ""} ${u.cedula || ""}`.toLowerCase().includes(q.toLowerCase()));
 
   return (
     <div className="page fi">
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
         <h1 style={{ fontSize: 20 }}>Usuarios</h1>
         <div style={{ display: "flex", gap: 8 }}>
-          <div className="search" style={{ width: 220 }}>🔍 <input placeholder="Buscar nombre o email…" value={q} onChange={e => setQ(e.target.value)} onKeyDown={e => e.key === "Enter" && load()} /></div>
+          <div className="search" style={{ width: 260 }}>🔍 <input placeholder="Buscar nombre, email, ID o documento…" value={q} onChange={e => setQ(e.target.value)} onKeyDown={e => e.key === "Enter" && load()} /></div>
           <button className="btn bg_" onClick={load}>↻</button>
         </div>
       </div>
 
       <div className="tw">
         <table>
-          <thead><tr><th>#</th><th>Usuario</th><th>Email</th><th>Rol</th><th>KYC</th><th>Estado</th><th>Tratos</th><th>Registro</th><th>Acciones</th></tr></thead>
+          <thead><tr><th>#</th><th>Usuario</th><th>Email</th><th>ID único</th><th>Identificación</th><th>Banco</th><th>Rol</th><th>Estado</th><th>Tratos</th><th>Registro</th><th>Acciones</th></tr></thead>
           <tbody>
             {loading
-              ? <tr><td colSpan={9} style={{ textAlign: "center", padding: 32, color: "var(--s400)" }}><div className="spin" style={{ margin: "0 auto" }} /></td></tr>
+              ? <tr><td colSpan={11} style={{ textAlign: "center", padding: 32, color: "var(--s400)" }}><div className="spin" style={{ margin: "0 auto" }} /></td></tr>
               : filtered.length === 0
-                ? <tr><td colSpan={9} style={{ textAlign: "center", padding: 28, color: "var(--s400)", fontSize: 13 }}>Sin usuarios</td></tr>
+                ? <tr><td colSpan={11} style={{ textAlign: "center", padding: 28, color: "var(--s400)", fontSize: 13 }}>Sin usuarios</td></tr>
                 : filtered.map((u, i) => (
                   <tr key={u.id}>
                     <td style={{ color: "var(--s400)", fontSize: 11 }}>{i + 1}</td>
@@ -469,13 +469,15 @@ function Usuarios({ toast }) {
                         <div style={{ width: 28, height: 28, borderRadius: "50%", background: "var(--n)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "Syne", fontWeight: 800, fontSize: 11, color: "var(--g)", flexShrink: 0 }}>{(u.nombre || "?")[0]}</div>
                         <div>
                           <div style={{ fontWeight: 600, fontSize: 12.5 }}>{u.nombre} {u.apellido}</div>
-                          <div style={{ fontSize: 10.5, color: "var(--s400)" }}>ID: {u.id?.slice?.(0,8) || u.id}</div>
+                          <div style={{ fontSize: 10.5, color: "var(--s400)" }}>UUID: {u.id?.slice?.(0,8) || u.id}</div>
                         </div>
                       </div>
                     </td>
                     <td style={{ fontSize: 12 }}>{u.email}</td>
+                    <td className="mono" style={{ fontSize: 11.5 }}>{u.usuario_unico || "—"}</td>
+                    <td className="mono" style={{ fontSize: 11.5 }}>{[u.tipo_identificacion, u.cedula].filter(Boolean).join(" ") || "—"}</td>
+                    <td style={{ fontSize: 11.5 }}>{(u.CuentaBancaria || u.CuentaBancariae || u.CuentaBancarias || [])[0]?.banco || "—"}</td>
                     <td><span className={`bdg ${ROLE_BADGE[u.rol] || "bg"}`}>{rolLabel(u.rol)}</span></td>
-                    <td><span className={`bdg ${KYC_ESTADOS[u.kyc_nivel] || "bg"}`}>{u.kyc_nivel}</span></td>
                     <td><span className={`bdg ${u.estado === "activo" ? "gn" : u.estado === "suspendido" ? "rd" : "bg"}`}>{u.estado}</span></td>
                     <td style={{ fontFamily: "Syne", fontWeight: 700, fontSize: 12.5 }}>{u.total_tratos || 0}</td>
                     <td style={{ fontSize: 11, color: "var(--s400)" }}>{fmtDate(u.createdAt)}</td>
@@ -506,7 +508,7 @@ function Usuarios({ toast }) {
             </div>
             <div className="modal-bd">
               <div className="g2" style={{ gap: 10, marginBottom: 14 }}>
-                {[["Email", selected.email],["Teléfono", selected.telefono||"—"],["Rol", rolLabel(selected.rol)],["KYC", selected.kyc_nivel],["Estado", selected.estado],["Plan", selected.plan||"gratuito"],["Tratos", selected.total_tratos||0],["Exitosos", selected.tratos_exitosos||0],["Reputación", `${parseFloat(selected.reputacion||0).toFixed(1)}★`]].map(([k,v]) => (
+                {[["Email", selected.email],["ID único", selected.usuario_unico || "—"],["Teléfono", selected.telefono||"—"],["Identificación", [selected.tipo_identificacion, selected.cedula].filter(Boolean).join(" ") || "—"],["Rol", rolLabel(selected.rol)],["Estado", selected.estado],["Plan", selected.plan||"gratuito"],["Tratos", selected.total_tratos||0],["Exitosos", selected.tratos_exitosos||0],["Reputación", `${parseFloat(selected.reputacion||0).toFixed(1)}★`]].map(([k,v]) => (
                   <div key={k} style={{ background: "var(--s50)", borderRadius: 8, padding: "9px 11px" }}>
                     <div style={{ fontSize: 9.5, color: "var(--s400)", fontWeight: 600, textTransform: "uppercase", letterSpacing: ".4px", marginBottom: 2 }}>{k}</div>
                     <div style={{ fontSize: 13, fontWeight: 600 }}>{v}</div>
@@ -516,6 +518,12 @@ function Usuarios({ toast }) {
               <div style={{ background: "var(--s50)", borderRadius: 8, padding: "9px 11px" }}>
                 <div style={{ fontSize: 9.5, color: "var(--s400)", fontWeight: 600, textTransform: "uppercase", letterSpacing: ".4px", marginBottom: 2 }}>Fecha de registro</div>
                 <div style={{ fontSize: 13, fontWeight: 600 }}>{fmtDate(selected.createdAt)}</div>
+              </div>
+              <div style={{ marginTop: 12 }}>
+                <h4 style={{ fontSize: 13, marginBottom: 8 }}>Información bancaria</h4>
+                {((selected.CuentaBancaria || selected.CuentaBancariae || selected.CuentaBancarias || []).length)
+                  ? (selected.CuentaBancaria || selected.CuentaBancariae || selected.CuentaBancarias).map(a => <div key={a.id} style={{ background: "var(--s50)", borderRadius: 8, padding: "9px 11px", marginBottom: 7, fontSize: 12.5 }}><b>{a.banco}</b> · {a.tipo} · <span className="mono">{String(a.numero || "").replace(/\d(?=\d{4})/g, "*")}</span> · {a.titular || "Sin titular"}</div>)
+                  : <div style={{ color: "var(--s400)", fontSize: 12.5 }}>Sin cuenta bancaria registrada.</div>}
               </div>
             </div>
             <div className="modal-ft">
@@ -1036,15 +1044,17 @@ function MiniField({ label, value, mono = false }) {
 }
 
 function PersonCard({ title, user }) {
+  const doc = [user?.tipo_identificacion, user?.cedula].filter(Boolean).join(" ");
   return (
     <div className="card" style={{ padding: 14 }}>
       <h3 style={{ fontSize: 14, marginBottom: 10 }}>{title}</h3>
       {user ? (
         <div className="g2" style={{ gap: 8 }}>
           <MiniField label="Nombre" value={`${user.nombre || ""} ${user.apellido || ""}`.trim() || "—"} />
+          <MiniField label="ID único" value={user.usuario_unico || "—"} mono />
           <MiniField label="Email" value={user.email} mono />
           <MiniField label="Teléfono" value={user.telefono || "—"} />
-          <MiniField label="Cédula" value={user.cedula || "—"} mono />
+          <MiniField label="Identificación" value={doc || "—"} mono />
           <MiniField label="KYC" value={`${user.kyc_nivel || "—"} / ${user.kyc_estado || "—"}`} />
           <MiniField label="Reputación" value={`${Number(user.reputacion || 0).toFixed(1)}★ · ${user.total_resenas || 0} reseñas`} />
         </div>
@@ -1060,6 +1070,7 @@ function AdminTratoDetailModal({ detail, loading, onClose, onRefresh, onLiberar,
   const data = detail || {};
   const t = data.trato || {};
   const publicUrl = t.link_compartir ? `${window.location.origin}/t/${t.link_compartir}` : null;
+  const bankAccounts = data.cuentas_bancarias || [];
 
   const sendMessage = async () => {
     if (!mensaje.trim()) return toast("Escribe un mensaje", "warn");
@@ -1103,6 +1114,7 @@ function AdminTratoDetailModal({ detail, loading, onClose, onRefresh, onLiberar,
                     <MiniField label="Quién paga comisión" value={t.quien_paga_comision || "—"} />
                     <MiniField label="Tipo" value={t.tipo || "—"} />
                     <MiniField label="Días inspección" value={t.dias_inspeccion ?? "—"} />
+                    <MiniField label="Invitación directa" value={t.metadata?.invitacion_directa ? `Sí · ${t.metadata?.contraparte_usuario_unico || "—"}` : "No"} />
                     <MiniField label="Creado" value={fmtTime(t.createdAt)} />
                     <MiniField label="Expira" value={fmtTime(t.fecha_expiracion)} />
                   </div>
@@ -1130,6 +1142,28 @@ function AdminTratoDetailModal({ detail, loading, onClose, onRefresh, onLiberar,
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>
                 <PersonCard title="Vendedor" user={t.vendedor} />
                 <PersonCard title="Comprador" user={t.comprador} />
+              </div>
+
+              <div className="card" style={{ padding: 14, marginBottom: 12 }}>
+                <h3 style={{ fontSize: 14, marginBottom: 10 }}>Información bancaria registrada</h3>
+                <div className="tw" style={{ boxShadow: "none" }}>
+                  <table>
+                    <thead><tr><th>Usuario</th><th>Entidad</th><th>Tipo</th><th>Número</th><th>Titular</th><th>Estado</th></tr></thead>
+                    <tbody>
+                      {bankAccounts.length ? bankAccounts.map(a => {
+                        const owner = a.usuario_id === t.vendedor_id ? "Vendedor" : a.usuario_id === t.comprador_id ? "Comprador" : "Usuario";
+                        return <tr key={a.id}>
+                          <td>{owner}</td>
+                          <td>{a.banco}</td>
+                          <td>{a.tipo}</td>
+                          <td className="mono">{String(a.numero || "").replace(/\d(?=\d{4})/g, "*")}</td>
+                          <td>{a.titular || "—"}</td>
+                          <td><span className={`bdg ${a.verificada ? "gn" : "bg"}`}>{a.verificada ? "verificada" : "sin verificar"}</span></td>
+                        </tr>;
+                      }) : <tr><td colSpan={6} style={{ textAlign: "center", color: "var(--s400)", padding: 18 }}>Sin información bancaria registrada</td></tr>}
+                    </tbody>
+                  </table>
+                </div>
               </div>
 
               <div className="card" style={{ padding: 14, marginBottom: 12 }}>
@@ -1274,17 +1308,18 @@ function TratosAdmin({ toast }) {
       </div>
       <div className="tw">
         <table>
-          <thead><tr><th>Código</th><th>Título</th><th>Vendedor</th><th>Comprador</th><th>Monto</th><th>Estado</th><th>Fecha</th><th>Acciones</th></tr></thead>
+          <thead><tr><th>Código</th><th>Título</th><th>Vendedor</th><th>Comprador</th><th>Monto</th><th>Tipo envío</th><th>Estado</th><th>Fecha</th><th>Acciones</th></tr></thead>
           <tbody>
             {loading
-              ? <tr><td colSpan={8} style={{ textAlign: "center", padding: 32 }}><div className="spin" style={{ margin: "0 auto", color: "var(--s400)" }} /></td></tr>
+              ? <tr><td colSpan={9} style={{ textAlign: "center", padding: 32 }}><div className="spin" style={{ margin: "0 auto", color: "var(--s400)" }} /></td></tr>
               : tratos.map(t => (
                 <tr key={t.id}>
                   <td style={{ fontFamily: "Syne", fontWeight: 700, fontSize: 11, color: "var(--g2)" }}>{t.codigo}</td>
                   <td style={{ fontWeight: 600, fontSize: 12.5, maxWidth: 180 }}>{t.titulo}</td>
-                  <td style={{ fontSize: 12 }}>{t.vendedor?.nombre} {t.vendedor?.apellido}</td>
-                  <td style={{ fontSize: 12 }}>{t.comprador?.nombre} {t.comprador?.apellido || <span style={{ color: "var(--s400)", fontStyle: "italic" }}>—</span>}</td>
+                  <td style={{ fontSize: 12 }}>{t.vendedor?.nombre} {t.vendedor?.apellido}<div className="mono" style={{ fontSize: 10, color: "var(--s400)" }}>{t.vendedor?.usuario_unico || "—"}</div></td>
+                  <td style={{ fontSize: 12 }}>{t.comprador?.nombre} {t.comprador?.apellido || <span style={{ color: "var(--s400)", fontStyle: "italic" }}>—</span>}<div className="mono" style={{ fontSize: 10, color: "var(--s400)" }}>{t.comprador?.usuario_unico || "—"}</div></td>
                   <td style={{ fontFamily: "Syne", fontWeight: 700, fontSize: 12.5 }}>{fmt(t.monto)}</td>
+                  <td><span className={`bdg ${t.metadata?.invitacion_directa ? "gn" : "bg"}`}>{t.metadata?.invitacion_directa ? "Directo por ID" : "Link / QR"}</span></td>
                   <td><span className={`bdg ${TRATO_EST[t.estado] || "bg"}`}>{t.estado}</span></td>
                   <td style={{ fontSize: 11, color: "var(--s400)" }}>{fmtDate(t.createdAt)}</td>
                   <td>

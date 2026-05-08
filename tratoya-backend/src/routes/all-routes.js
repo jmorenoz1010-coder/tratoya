@@ -874,11 +874,12 @@ adminRouter.get('/tratos', async (req, res, next) => {
         { titulo: { [Op.iLike]: `%${q}%` } },
       ];
     }
+    const partyAttrs = ['id', 'nombre', 'apellido', 'email', 'telefono', 'usuario_unico', 'tipo_identificacion', 'cedula'];
     const tratos = await Trato.findAll({
       where,
       include: [
-        { model: User, as: 'vendedor', attributes: ['id', 'nombre', 'apellido', 'email'] },
-        { model: User, as: 'comprador', attributes: ['id', 'nombre', 'apellido', 'email'] },
+        { model: User, as: 'vendedor', attributes: partyAttrs },
+        { model: User, as: 'comprador', attributes: partyAttrs },
       ],
       order: [['createdAt', 'DESC']],
       limit: 250,
@@ -890,11 +891,11 @@ adminRouter.get('/tratos', async (req, res, next) => {
 adminRouter.get('/tratos/:id/detalle', async (req, res, next) => {
   try {
     const {
-      Trato, User, Pago, PaymentIntent, PaymentEvent, LedgerEntry,
+      Trato, User, Pago, PaymentIntent, PaymentEvent, LedgerEntry, CuentaBancaria,
       AuditLog, Disputa, Mensaje, Resena
     } = require('../config/database');
     const userAttrs = [
-      'id', 'nombre', 'apellido', 'email', 'telefono', 'cedula',
+      'id', 'nombre', 'apellido', 'email', 'telefono', 'usuario_unico', 'tipo_identificacion', 'cedula',
       'rol', 'estado', 'kyc_nivel', 'kyc_estado', 'reputacion',
       'total_resenas', 'total_tratos', 'tratos_exitosos', 'createdAt'
     ];
@@ -976,10 +977,16 @@ adminRouter.get('/tratos/:id/detalle', async (req, res, next) => {
         limit: 100,
       }), [])
       : [];
+    const userIds = [trato.vendedor_id, trato.comprador_id].filter(Boolean);
+    const cuentasBancarias = userIds.length ? await safe('cuentas_bancarias', () => CuentaBancaria.findAll({
+      where: { usuario_id: { [Op.in]: userIds } },
+      order: [['createdAt', 'DESC']],
+      limit: 20,
+    }), []) : [];
 
     res.json({
       success: true,
-      data: { trato, pagos, payment_intents: intents, payment_events: paymentEvents, ledger, disputa, mensajes, resenas, audit_logs: auditLogs },
+      data: { trato, pagos, payment_intents: intents, payment_events: paymentEvents, ledger, disputa, mensajes, resenas, audit_logs: auditLogs, cuentas_bancarias: cuentasBancarias },
     });
   } catch (err) { next(err); }
 });
@@ -1174,6 +1181,8 @@ adminRouter.get('/users', async (req, res, next) => {
         { nombre: { [Op.iLike]: `%${q}%` } },
         { apellido: { [Op.iLike]: `%${q}%` } },
         { email: { [Op.iLike]: `%${q}%` } },
+        { usuario_unico: { [Op.iLike]: `%${q}%` } },
+        { cedula: { [Op.iLike]: `%${q}%` } },
       ];
     }
     if (estado === 'suspendido') where.is_blocked = true;
@@ -1181,6 +1190,7 @@ adminRouter.get('/users', async (req, res, next) => {
 
     const users = await User.findAll({
       where,
+      include: [{ model: CuentaBancaria, limit: 5, separate: true, order: [['createdAt', 'DESC']] }],
       attributes: { exclude: ['password_hash', 'refresh_token'] },
       order: [['createdAt', 'DESC']],
       limit: 200,
