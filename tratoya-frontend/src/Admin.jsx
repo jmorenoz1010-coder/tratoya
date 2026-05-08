@@ -244,6 +244,7 @@ const NAV = [
   { id: "tratos",       ico: "🤝", l: "Todos los tratos" },
   { id: "pagos",        ico: "💳", l: "Pagos y retiros" },
   { id: "comisiones",   ico: "💰", l: "Comisiones TratoYa" },
+  { id: "resenas",      ico: "⭐", l: "Reseñas y reputación" },
   { id: "disputas",     ico: "⚖️", l: "Disputas", badge: true },
   { sec: "Soporte" },
   { id: "tickets",      ico: "🎫", l: "Tickets de soporte" },
@@ -1201,6 +1202,62 @@ function Configuracion({ toast }) {
 }
 
 // ─── Actividad en vivo ────────────────────────────────
+function ResenasAdmin({ toast }) {
+  const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const load = useCallback(() => {
+    setLoading(true);
+    api.get("/admin/reviews")
+      .then(r => setItems(r.data || []))
+      .catch(() => toast("Error cargando reseñas", "error"))
+      .finally(() => setLoading(false));
+  }, [toast]);
+  useEffect(load, [load]);
+  const avg = items.length ? items.reduce((s, r) => s + Number(r.calificacion || 0), 0) / items.length : 0;
+  const five = items.filter(r => Number(r.calificacion) === 5).length;
+  return (
+    <div className="page fi">
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+        <div>
+          <h1 style={{ fontSize: 20 }}>⭐ Reseñas y reputación</h1>
+          <p style={{ fontSize: 12.5, color: "var(--s600)", marginTop: 2 }}>Valoraciones escritas al completar transacciones.</p>
+        </div>
+        <button className="btn bg_" onClick={load}>↻ Actualizar</button>
+      </div>
+      <div className="g3" style={{ marginBottom: 14 }}>
+        {[
+          ["Promedio", `${avg.toFixed(1)}★`, "Últimas 100 reseñas"],
+          ["Reseñas", items.length, "publicadas"],
+          ["5 estrellas", five, "experiencias excelentes"],
+        ].map(([l, v, s]) => (
+          <div key={l} className="card" style={{ padding: "16px 18px" }}>
+            <div style={{ fontSize: 11, color: "var(--s400)", fontWeight: 700, textTransform: "uppercase", marginBottom: 6 }}>{l}</div>
+            <div style={{ fontFamily: "Syne", fontSize: 28, fontWeight: 800, color: "var(--g2)" }}>{v}</div>
+            <div style={{ fontSize: 12, color: "var(--s600)", marginTop: 4 }}>{s}</div>
+          </div>
+        ))}
+      </div>
+      <div className="card" style={{ padding: 0, overflow: "hidden" }}>
+        {loading ? <div style={{ padding: 40, textAlign: "center" }}><div className="spin" style={{ margin: "0 auto" }} /></div>
+          : items.length === 0 ? <div style={{ padding: 42, textAlign: "center", color: "var(--s400)" }}>Sin reseñas todavía</div>
+          : <div className="tw"><table>
+            <thead><tr><th>Trato</th><th>Autor</th><th>Destinatario</th><th>Estrellas</th><th>Comentario</th><th>Fecha</th></tr></thead>
+            <tbody>{items.map(r => (
+              <tr key={r.id}>
+                <td><strong>{r.Trato?.codigo || "—"}</strong><div style={{ fontSize: 11, color: "var(--s500)" }}>{r.Trato?.titulo || ""}</div></td>
+                <td>{r.autor ? `${r.autor.nombre} ${r.autor.apellido}` : r.autor_id}</td>
+                <td>{r.destinatario ? `${r.destinatario.nombre} ${r.destinatario.apellido}` : r.destinatario_id}</td>
+                <td><span style={{ color: "var(--g2)", fontWeight: 800 }}>{r.calificacion}★</span></td>
+                <td style={{ maxWidth: 360, whiteSpace: "normal", lineHeight: 1.4 }}>{r.comentario || "—"}</td>
+                <td style={{ fontSize: 11.5, color: "var(--s400)" }}>{fmtDate(r.createdAt)}</td>
+              </tr>
+            ))}</tbody>
+          </table></div>}
+      </div>
+    </div>
+  );
+}
+
 // ─── PANEL DE COMISIONES ─────────────────────────────
 function ComisionesPanel({ toast }) {
   const [pagos, setPagos] = useState([]);
@@ -1224,7 +1281,7 @@ function ComisionesPanel({ toast }) {
     daviplata:        { label: "Daviplata",  pct: 0.020, fijo: 0   },
     tarjeta_credito:  { label: "T. Crédito", pct: 0.030, fijo: 0   },
     tarjeta_debito:   { label: "T. Débito",  pct: 0.020, fijo: 0   },
-    epayco:           { label: "ePayco",     pct: 0.0299, fijo: 900 },
+    epayco:           { label: "ePayco Davivienda", pct: 0.0264, fijo: 690 },
     transferencia:    { label: "Transferencia", pct: 0, fijo: 0 },
     efectivo:         { label: "Efectivo",   pct: 0, fijo: 0 },
   };
@@ -1921,6 +1978,7 @@ export default function TratoYaAdmin() {
     tratos:         <TratosAdmin toast={toast} />,
     pagos:          <PagosAdmin toast={toast} />,
     comisiones:     <ComisionesPanel toast={toast} />,
+    resenas:        <ResenasAdmin toast={toast} />,
     disputas:       <Disputas toast={toast} />,
     tickets:        <Tickets toast={toast} />,
     notificaciones: <Notificaciones toast={toast} />,

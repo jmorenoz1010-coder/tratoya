@@ -75,6 +75,7 @@ app.use('/api/tratos',   tratoRoutes);
 app.use('/api/users',    allRoutes.users);
 app.use('/api/payments', allRoutes.payments);
 app.use('/api/messages', allRoutes.messages);
+app.use('/api/reviews',  allRoutes.reviews);
 app.use('/api/disputes', allRoutes.disputes);
 app.use('/api/kyc',      allRoutes.kyc);
 app.use('/api/admin',    allRoutes.admin);

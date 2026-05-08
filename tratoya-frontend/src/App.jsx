@@ -143,6 +143,26 @@ const CommissionBreakdown = ({ monto, quien = "comprador", showMinimum = false, 
     </div>
   );
 };
+function StarRating({ value, onChange, disabled = false }) {
+  const [hover, setHover] = useState(0);
+  const active = hover || value;
+  return (
+    <div className="stars" onMouseLeave={() => setHover(0)}>
+      {[1,2,3,4,5].map(n => (
+        <button
+          key={n}
+          type="button"
+          className={`star-btn ${active >= n ? "on" : ""}`}
+          onMouseEnter={() => !disabled && setHover(n)}
+          onFocus={() => !disabled && setHover(n)}
+          onClick={() => !disabled && onChange?.(n)}
+          disabled={disabled}
+          aria-label={`${n} estrellas`}
+        >★</button>
+      ))}
+    </div>
+  );
+}
 
 const ESTADO = {
   borrador:               { l: "Borrador",          c: "bg" },
@@ -263,6 +283,11 @@ tbody tr:last-child td{border-bottom:none}tbody tr:hover td{background:var(--s50
 .celebrate-card{font-family:'Manrope';font-size:clamp(36px,8vw,82px);font-weight:900;letter-spacing:0;text-align:center;color:var(--n);text-transform:uppercase;animation:celebrateIn 2.5s cubic-bezier(.22,1,.36,1) both;text-shadow:0 14px 34px rgba(7,25,47,.22)}
 .celebrate-card span{color:var(--g2)}
 .celebrate-sub{font-family:'Inter';font-size:clamp(13px,2.2vw,18px);font-weight:800;color:var(--g2);margin-top:10px;text-transform:none}
+.stars{display:flex;gap:5px;align-items:center}
+.star-btn{border:0;background:transparent;padding:0;font-size:30px;line-height:1;cursor:pointer;color:#CBD5E1;transform:scale(1);transition:transform .14s ease,color .14s ease,text-shadow .14s ease}
+.star-btn.on{color:var(--g);text-shadow:0 8px 18px rgba(168,196,0,.28)}
+.star-btn:hover{transform:scale(1.18) rotate(-3deg)}
+.review-card{background:#fff;border:1px solid var(--s100);border-radius:13px;padding:15px;box-shadow:var(--sh)}
 
 .uz{border:2px dashed var(--s200);border-radius:11px;padding:22px;text-align:center;cursor:pointer;transition:border-color .2s,background .2s}
 .uz:hover{border-color:var(--g);background:var(--cr2)}
@@ -489,7 +514,7 @@ function Sidebar({ page, setPage, user, onLogout }) {
     ["dashboard","🏠","Dashboard"],["tratos","📋","Mis Tratos"],["crear","➕","Crear trato"],
     ["pagos","💳","Pagos"],["disputas","⚖️","Disputas"],["reputacion","⭐","Reputación"],
   ];
-  const bot = [["perfil","👤","Perfil y KYC"]];
+  const bot = [["perfil","👤","Perfil"]];
   const nom = user ? `${user.nombre} ${user.apellido}` : "";
   return (
     <aside className="sb">
@@ -501,7 +526,7 @@ function Sidebar({ page, setPage, user, onLogout }) {
       <nav className="sb-nav">
         <div className="nav-lbl">Principal</div>
         {nav.map(([id, ic, l]) => <div key={id} className={`ni ${page === id ? "act" : ""}`} onClick={() => setPage(id)}><span style={{ fontSize: 15 }}>{ic}</span> {l}</div>)}
-        <div className="nav-lbl" style={{ marginTop: 8 }}>Cuenta</div>
+        <div className="nav-lbl" style={{ marginTop: 8 }}>Perfil</div>
         {bot.map(([id, ic, l]) => <div key={id} className={`ni ${page === id ? "act" : ""}`} onClick={() => setPage(id)}><span style={{ fontSize: 15 }}>{ic}</span> {l}</div>)}
         <div className="ni" onClick={onLogout} style={{ marginTop: 6 }}><span style={{ fontSize: 15 }}>🚪</span> Cerrar sesión</div>
       </nav>
@@ -902,9 +927,53 @@ function CrearTrato({ setPage, toast, user }) {
 }
 
 // ─── Detalle del trato ────────────────────────────────
+function ReviewBox({ tratoId, reviews, user, toast, onSaved }) {
+  const mine = reviews.find(r => r.autor_id === user?.id);
+  const [rating, setRating] = useState(mine?.calificacion || 0);
+  const [comment, setComment] = useState(mine?.comentario || "");
+  const [busy, setBusy] = useState(false);
+  useEffect(() => {
+    setRating(mine?.calificacion || 0);
+    setComment(mine?.comentario || "");
+  }, [mine?.id]);
+  const submit = async () => {
+    if (!rating) return toast("Selecciona una valoración de 1 a 5 estrellas", "error");
+    setBusy(true);
+    try {
+      await api.post(`/reviews/deal/${tratoId}`, { calificacion: rating, comentario: comment });
+      toast(mine ? "Reseña actualizada" : "Reseña publicada", "success");
+      onSaved?.();
+    } catch (e) { toast(e.message, "error"); }
+    setBusy(false);
+  };
+  return (
+    <div className="review-card fi">
+      <h3 style={{ fontSize: 15, marginBottom: 6 }}>Deja tu reseña</h3>
+      <p style={{ fontSize: 12.5, color: "var(--s600)", marginBottom: 10 }}>Valora a tu contraparte y cuéntanos cómo fue el trato.</p>
+      <StarRating value={rating} onChange={setRating} disabled={busy} />
+      <textarea className="inp" rows="3" style={{ marginTop: 10 }} placeholder="Escribe un comentario corto sobre tu experiencia..." value={comment} onChange={e => setComment(e.target.value)} maxLength={1000} />
+      <button className="btn bp" style={{ width: "100%", marginTop: 10 }} onClick={submit} disabled={busy || !rating}>{busy ? <div className="spin" /> : mine ? "Actualizar reseña" : "Publicar reseña"}</button>
+      {reviews.length > 0 && (
+        <div style={{ marginTop: 12, display: "grid", gap: 8 }}>
+          {reviews.map(r => (
+            <div key={r.id} style={{ background: "var(--s50)", borderRadius: 9, padding: "9px 10px" }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
+                <strong style={{ fontSize: 12.5 }}>{r.autor?.nombre || (r.autor_id === user?.id ? "Tu reseña" : "Usuario")}</strong>
+                <span style={{ color: "var(--g2)", fontWeight: 800, fontSize: 12 }}>{r.calificacion}★</span>
+              </div>
+              {r.comentario && <div style={{ fontSize: 12, color: "var(--s600)", marginTop: 4, lineHeight: 1.45 }}>{r.comentario}</div>}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function TratoDetalle({ tratoId, setPage, setDisputeTratoId, user, toast, onStatusUpdate }) {
   const [trato, setTrato] = useState(null);
   const [msgs, setMsgs] = useState([]);
+  const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
   const [msg, setMsg] = useState("");
   const [guia, setGuia] = useState({ guia: "", transportadora: "", medio_envio: "servientrega", numero_contacto: "", punto_encuentro: "" });
@@ -915,13 +984,17 @@ function TratoDetalle({ tratoId, setPage, setDisputeTratoId, user, toast, onStat
 
   const load = async (silent = false) => {
     try {
-      const [t, m] = await Promise.all([api.get(`/tratos/${tratoId}`), api.get(`/messages/${tratoId}`).catch(() => ({ data: [] }))]);
+      const [t, m, rv] = await Promise.all([
+        api.get(`/tratos/${tratoId}`),
+        api.get(`/messages/${tratoId}`).catch(() => ({ data: [] })),
+        api.get(`/reviews/deal/${tratoId}`).catch(() => ({ data: [] })),
+      ]);
       const nextTrato = t.data;
       if (silent && previousEstadoRef.current && previousEstadoRef.current !== nextTrato.estado) {
         onStatusUpdate?.(nextTrato, previousEstadoRef.current, nextTrato.estado);
       }
       previousEstadoRef.current = nextTrato.estado;
-      setTrato(nextTrato); setMsgs(m.data || []);
+      setTrato(nextTrato); setMsgs(m.data || []); setReviews(rv.data || []);
     } catch (e) { if (!silent) toast(e.message, "error"); }
     if (!silent) setLoading(false);
   };
@@ -1045,6 +1118,12 @@ function TratoDetalle({ tratoId, setPage, setDisputeTratoId, user, toast, onStat
                 </div>
               ))}
             </div>
+
+            {trato.estado === "completado" && (
+              <div style={{ marginTop: 14 }}>
+                <ReviewBox tratoId={tratoId} reviews={reviews} user={user} toast={toast} onSaved={() => load(true)} />
+              </div>
+            )}
 
             {esC && medioEnvio === "domiciliario" && telefonoDomiciliario && (
               <div className="courier-box">
@@ -1255,7 +1334,7 @@ function Reputacion({ user, setUser, toast }) {
   );
 }
 
-// ─── Perfil y KYC ─────────────────────────────────────
+// ─── Perfil ────────────────────────────────────────────
 function Perfil({ user, setUser, toast }) {
   const [files, setFiles] = useState({});
   const [cedula, setCedula] = useState("");
@@ -1281,7 +1360,7 @@ function Perfil({ user, setUser, toast }) {
 
   return (
     <div className="page fi">
-      <h1 className="page-hd" style={{ fontSize: 21, marginBottom: 18 }}>Perfil y KYC</h1>
+      <h1 className="page-hd" style={{ fontSize: 21, marginBottom: 18 }}>Perfil</h1>
       <div className="g2" style={{ gap: 14 }}>
         <div>
           <div className="card" style={{ padding: "18px 20px", marginBottom: 12 }}>
@@ -1869,11 +1948,11 @@ function AppShell({ session, setSession, toast }) {
   }, []);
 
   useEffect(() => {
-    const INACTIVITY_MS = 7 * 60 * 1000;
+    const INACTIVITY_MS = 30 * 60 * 1000;
     let timerId;
     const resetTimer = () => {
       clearTimeout(timerId);
-      timerId = setTimeout(() => logout("Sesión cerrada por 7 minutos de inactividad"), INACTIVITY_MS);
+      timerId = setTimeout(() => logout("Sesión cerrada por 30 minutos de inactividad"), INACTIVITY_MS);
     };
     const events = ["mousemove", "mousedown", "keydown", "touchstart", "scroll", "click"];
     events.forEach(evt => window.addEventListener(evt, resetTimer, { passive: true }));
@@ -1949,7 +2028,7 @@ function AppShell({ session, setSession, toast }) {
     pagos:     { title: "Pagos",        c: <Pagos toast={toast} /> },
     disputas:  { title: "Disputas",     c: <Disputas toast={toast} initialTratoId={disputeTratoId} clearInitialTratoId={() => setDisputeTratoId(null)} setPage={setPage} setTratoId={setTratoId} /> },
     reputacion:{ title: "Reputación",   c: <Reputacion user={session.user} setUser={updateUser} toast={toast} /> },
-    perfil:    { title: "Perfil y KYC", c: <Perfil user={session.user} setUser={updateUser} toast={toast} /> },
+    perfil:    { title: "Perfil", c: <Perfil user={session.user} setUser={updateUser} toast={toast} /> },
   };
   const cur = pages[page] || pages.dashboard;
 

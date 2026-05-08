@@ -513,6 +513,83 @@ module.exports.messages = messagesRouter;
 
 
 // =============================================
+// REVIEWS ROUTE — src/routes/reviews.js
+// =============================================
+const reviewsRouter = express.Router();
+reviewsRouter.use(auth);
+
+async function recalcularReputacionPorResenas(userId) {
+  const { User, Resena } = require('../config/database');
+  const resenas = await Resena.findAll({ where: { destinatario_id: userId } });
+  const user = await User.findByPk(userId);
+  if (!user) return;
+  if (!resenas.length) return user.update({ total_resenas: 0 });
+  const promedio = resenas.reduce((s, r) => s + Number(r.calificacion || 0), 0) / resenas.length;
+  const exitosos = Number(user.tratos_exitosos || 0);
+  const bonusExperiencia = Math.min(0.25, exitosos * 0.01);
+  const reputacion = Math.min(5, Math.max(1, promedio + bonusExperiencia));
+  await user.update({ reputacion: reputacion.toFixed(2), total_resenas: resenas.length });
+}
+
+reviewsRouter.get('/deal/:trato_id', async (req, res, next) => {
+  try {
+    const { Trato, Resena, User } = require('../config/database');
+    const trato = await Trato.findByPk(req.params.trato_id);
+    if (!trato || ![trato.comprador_id, trato.vendedor_id].includes(req.user.id)) {
+      return res.status(404).json({ success: false, message: 'Trato no encontrado' });
+    }
+    const resenas = await Resena.findAll({
+      where: { trato_id: trato.id },
+      include: [
+        { model: User, as: 'autor', attributes: ['id', 'nombre', 'apellido'] },
+        { model: User, as: 'destinatario', attributes: ['id', 'nombre', 'apellido'] },
+      ],
+      order: [['createdAt', 'DESC']],
+    }).catch(async () => Resena.findAll({ where: { trato_id: trato.id }, order: [['createdAt', 'DESC']] }));
+    res.json({ success: true, data: resenas });
+  } catch (err) { next(err); }
+});
+
+reviewsRouter.post('/deal/:trato_id', async (req, res, next) => {
+  try {
+    const { Trato, Resena } = require('../config/database');
+    const { calificacion, comentario = '' } = req.body;
+    const rating = Number(calificacion);
+    if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
+      return res.status(400).json({ success: false, message: 'La valoración debe estar entre 1 y 5 estrellas' });
+    }
+    const trato = await Trato.findByPk(req.params.trato_id);
+    if (!trato || ![trato.comprador_id, trato.vendedor_id].includes(req.user.id)) {
+      return res.status(404).json({ success: false, message: 'Trato no encontrado' });
+    }
+    if (trato.estado !== 'completado') {
+      return res.status(400).json({ success: false, message: 'Solo puedes reseñar tratos completados' });
+    }
+    const destinatarioId = req.user.id === trato.comprador_id ? trato.vendedor_id : trato.comprador_id;
+    if (!destinatarioId) return res.status(400).json({ success: false, message: 'El trato no tiene contraparte para reseñar' });
+
+    const [resena, created] = await Resena.findOrCreate({
+      where: { trato_id: trato.id, autor_id: req.user.id },
+      defaults: {
+        trato_id: trato.id,
+        autor_id: req.user.id,
+        destinatario_id: destinatarioId,
+        calificacion: rating,
+        comentario: comentario.trim().slice(0, 1000),
+      },
+    });
+    if (!created) {
+      await resena.update({ calificacion: rating, comentario: comentario.trim().slice(0, 1000), destinatario_id: destinatarioId });
+    }
+    await recalcularReputacionPorResenas(destinatarioId);
+    res.status(created ? 201 : 200).json({ success: true, data: resena, message: created ? 'Reseña publicada' : 'Reseña actualizada' });
+  } catch (err) { next(err); }
+});
+
+module.exports.reviews = reviewsRouter;
+
+
+// =============================================
 // DISPUTES ROUTE — src/routes/disputes.js
 // =============================================
 const disputesRouter = express.Router();
@@ -700,6 +777,22 @@ adminRouter.get('/stats', async (req, res, next) => {
         comisiones_mes: Number(comisionesMes || 0),
       }
     });
+  } catch (err) { next(err); }
+});
+
+adminRouter.get('/reviews', async (req, res, next) => {
+  try {
+    const { Resena, Trato, User } = require('../config/database');
+    const resenas = await Resena.findAll({
+      include: [
+        { model: Trato, attributes: ['id', 'codigo', 'titulo', 'estado'] },
+        { model: User, as: 'autor', attributes: ['id', 'nombre', 'apellido', 'email'] },
+        { model: User, as: 'destinatario', attributes: ['id', 'nombre', 'apellido', 'email'] },
+      ],
+      order: [['createdAt', 'DESC']],
+      limit: 100,
+    }).catch(async () => Resena.findAll({ order: [['createdAt', 'DESC']], limit: 100 }));
+    res.json({ success: true, data: resenas });
   } catch (err) { next(err); }
 });
 

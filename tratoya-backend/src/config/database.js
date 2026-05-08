@@ -356,6 +356,8 @@ Trato.hasOne(Disputa,  { foreignKey: 'trato_id' });
 Disputa.belongsTo(Trato, { foreignKey: 'trato_id' });
 Disputa.belongsTo(User, { as: 'aperturista', foreignKey: 'abierta_por' });
 Trato.hasMany(Resena,  { foreignKey: 'trato_id' });
+Resena.belongsTo(User, { as: 'autor', foreignKey: 'autor_id' });
+Resena.belongsTo(User, { as: 'destinatario', foreignKey: 'destinatario_id' });
 User.hasMany(CuentaBancaria, { foreignKey: 'usuario_id' });
 User.hasMany(Notificacion,   { foreignKey: 'usuario_id' });
 TicketSoporte.belongsTo(User, { as: 'usuario', foreignKey: 'usuario_id' });
