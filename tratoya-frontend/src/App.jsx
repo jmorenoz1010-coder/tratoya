@@ -434,49 +434,72 @@ const getNotificationAudioContext = () => {
 function unlockNotificationSound() {
   try {
     const ctx = getNotificationAudioContext();
-    if (ctx?.state === "suspended") ctx.resume();
+    if (!ctx) return;
+    const ready = ctx.state === "suspended" ? ctx.resume() : Promise.resolve();
+    ready.then(() => {
+      if (ctx.state !== "running") return;
+      const gain = ctx.createGain();
+      gain.gain.setValueAtTime(0.00001, ctx.currentTime);
+      gain.connect(ctx.destination);
+      const osc = ctx.createOscillator();
+      osc.frequency.setValueAtTime(1, ctx.currentTime);
+      osc.connect(gain);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.02);
+    }).catch(() => {});
   } catch { /* sound is optional */ }
+}
+function notifyDeviceFeedback(kind = "bubble") {
+  try {
+    if (navigator.vibrate) navigator.vibrate(kind === "celebration" ? [45, 28, 45] : [35]);
+  } catch { /* vibration is optional */ }
 }
 function playBubbleSound() {
   try {
     const ctx = getNotificationAudioContext();
     if (!ctx) return;
-    if (ctx.state === "suspended") ctx.resume();
-    const now = ctx.currentTime;
-    const gain = ctx.createGain();
-    gain.gain.setValueAtTime(0.0001, now);
-    gain.gain.exponentialRampToValueAtTime(0.09, now + 0.012);
-    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.5);
-    gain.connect(ctx.destination);
-    [660, 880, 1180].forEach((freq, i) => {
-      const osc = ctx.createOscillator();
-      osc.type = "triangle";
-      osc.frequency.setValueAtTime(freq, now + i * 0.075);
-      osc.connect(gain);
-      osc.start(now + i * 0.075);
-      osc.stop(now + i * 0.075 + 0.16);
-    });
+    const ready = ctx.state === "suspended" ? ctx.resume() : Promise.resolve();
+    ready.then(() => {
+      if (ctx.state !== "running") return;
+      const now = ctx.currentTime + 0.02;
+      const gain = ctx.createGain();
+      gain.gain.setValueAtTime(0.0001, now);
+      gain.gain.exponentialRampToValueAtTime(0.09, now + 0.012);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.5);
+      gain.connect(ctx.destination);
+      [660, 880, 1180].forEach((freq, i) => {
+        const osc = ctx.createOscillator();
+        osc.type = "triangle";
+        osc.frequency.setValueAtTime(freq, now + i * 0.075);
+        osc.connect(gain);
+        osc.start(now + i * 0.075);
+        osc.stop(now + i * 0.075 + 0.16);
+      });
+    }).catch(() => {});
   } catch { /* sound is optional */ }
 }
 function playCelebrationSound() {
   try {
     const ctx = getNotificationAudioContext();
     if (!ctx) return;
-    if (ctx.state === "suspended") ctx.resume();
-    const now = ctx.currentTime;
-    const master = ctx.createGain();
-    master.gain.setValueAtTime(0.0001, now);
-    master.gain.exponentialRampToValueAtTime(0.12, now + 0.018);
-    master.gain.exponentialRampToValueAtTime(0.0001, now + 0.72);
-    master.connect(ctx.destination);
-    [523.25, 659.25, 783.99, 1046.5].forEach((freq, i) => {
-      const osc = ctx.createOscillator();
-      osc.type = i === 3 ? "sine" : "triangle";
-      osc.frequency.setValueAtTime(freq, now + i * 0.095);
-      osc.connect(master);
-      osc.start(now + i * 0.095);
-      osc.stop(now + i * 0.095 + 0.22);
-    });
+    const ready = ctx.state === "suspended" ? ctx.resume() : Promise.resolve();
+    ready.then(() => {
+      if (ctx.state !== "running") return;
+      const now = ctx.currentTime + 0.02;
+      const master = ctx.createGain();
+      master.gain.setValueAtTime(0.0001, now);
+      master.gain.exponentialRampToValueAtTime(0.12, now + 0.018);
+      master.gain.exponentialRampToValueAtTime(0.0001, now + 0.72);
+      master.connect(ctx.destination);
+      [523.25, 659.25, 783.99, 1046.5].forEach((freq, i) => {
+        const osc = ctx.createOscillator();
+        osc.type = i === 3 ? "sine" : "triangle";
+        osc.frequency.setValueAtTime(freq, now + i * 0.095);
+        osc.connect(master);
+        osc.start(now + i * 0.095);
+        osc.stop(now + i * 0.095 + 0.22);
+      });
+    }).catch(() => {});
   } catch { /* sound is optional */ }
 }
 
@@ -500,6 +523,14 @@ function CelebrationOverlay({ show }) {
       <div className="celebrate-card">Trato <span>completado</span><div className="celebrate-sub">Pago liberado con éxito</div></div>
     </div>
   );
+}
+
+function isSupportNotification(evt) {
+  const tipo = String(evt?.tipo || "");
+  const metadata = evt?.datos?.metadata || {};
+  return ["admin", "admin_masiva", "admin_trato", "soporte", "mensaje_soporte"].includes(tipo)
+    || metadata.from_admin === true
+    || metadata.sender_label === "Soporte - TratoYA";
 }
 
 // ─── Avatar ───────────────────────────────────────────
@@ -1909,12 +1940,14 @@ function AppShell({ session, setSession, toast }) {
   const [celebration, setCelebration] = useState(false);
   const showFloatingNote = useCallback((note) => {
     setFloatingNote(note);
+    notifyDeviceFeedback(note?.tipo === "trato_completado" ? "celebration" : "bubble");
     playBubbleSound();
     setTimeout(() => setFloatingNote(n => n === note ? null : n), 9000);
   }, []);
   const estadoLabel = useCallback((estado) => (ESTADO[estado]?.l || estado || "Actualizado").replace(/[^\p{L}\p{N}\s]/gu, "").trim(), []);
   const showCompletionCelebration = useCallback(() => {
     setCelebration(true);
+    notifyDeviceFeedback("celebration");
     playCelebrationSound();
     setTimeout(() => setCelebration(false), 2600);
   }, []);
@@ -1942,9 +1975,17 @@ function AppShell({ session, setSession, toast }) {
 
   useEffect(() => {
     const unlock = () => unlockNotificationSound();
-    const events = ["pointerdown", "keydown", "touchstart", "click"];
+    const events = ["pointerdown", "keydown", "touchstart", "touchend", "click", "focus", "pageshow"];
+    const unlockWhenVisible = () => {
+      if (document.visibilityState === "visible") unlockNotificationSound();
+    };
+    unlockNotificationSound();
     events.forEach(evt => window.addEventListener(evt, unlock, { passive: true }));
-    return () => events.forEach(evt => window.removeEventListener(evt, unlock));
+    document.addEventListener("visibilitychange", unlockWhenVisible);
+    return () => {
+      events.forEach(evt => window.removeEventListener(evt, unlock));
+      document.removeEventListener("visibilitychange", unlockWhenVisible);
+    };
   }, []);
 
   useEffect(() => {
@@ -1989,10 +2030,11 @@ function AppShell({ session, setSession, toast }) {
             try {
               const evt = JSON.parse(dataLine.slice(5).trim());
               if (evt.tipo !== "conectado") {
+                const supportNote = isSupportNotification(evt);
                 const note = {
                   tipo: evt.tipo,
-                  icon: ["pago_liberado", "trato_completado"].includes(evt.tipo) ? "🔔" : "💬",
-                  titulo: evt.datos?.titulo || evt.tipo,
+                  icon: supportNote || ["pago_liberado", "trato_completado"].includes(evt.tipo) ? "🔔" : "💬",
+                  titulo: supportNote ? 'Mensaje de "Soporte - TratoYA"' : (evt.datos?.titulo || evt.tipo),
                   cuerpo: evt.datos?.cuerpo || evt.datos?.mensaje || "Nueva actividad en tu cuenta",
                   trato_id: evt.datos?.metadata?.trato_id || evt.datos?.trato_id,
                 };

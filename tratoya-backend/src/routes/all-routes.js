@@ -890,7 +890,7 @@ adminRouter.post('/tratos/:id/contactar', async (req, res, next) => {
     await Promise.all(uniqueTargets.map(usuario_id => notificar(usuario_id, 'admin_trato', {
       titulo,
       cuerpo,
-      metadata: { trato_id: trato.id, creado_por: req.user.id, destino },
+      metadata: { trato_id: trato.id, creado_por: req.user.id, destino, from_admin: true, sender_label: 'Soporte - TratoYA' },
     })));
     await Mensaje.create({
       trato_id: trato.id,
@@ -1137,7 +1137,7 @@ adminRouter.post('/users/:id/notificacion', async (req, res, next) => {
     await notificar(user.id, 'admin', {
       titulo,
       cuerpo,
-      metadata: { creado_por: req.user.id },
+      metadata: { creado_por: req.user.id, from_admin: true, sender_label: 'Soporte - TratoYA' },
     });
     res.status(201).json({ success: true, data: { usuario_id: user.id }, message: 'Notificación creada' });
   } catch (err) { next(err); }
@@ -1175,7 +1175,7 @@ adminRouter.post('/notificaciones/masiva', async (req, res, next) => {
     await Promise.all(users.map(u => notificar(u.id, 'admin_masiva', {
       titulo,
       cuerpo,
-      metadata: { segmento, creado_por: req.user.id },
+      metadata: { segmento, creado_por: req.user.id, from_admin: true, sender_label: 'Soporte - TratoYA' },
     })));
     res.json({ success: true, data: { enviados: users.length }, message: 'Notificación enviada' });
   } catch (err) { next(err); }
