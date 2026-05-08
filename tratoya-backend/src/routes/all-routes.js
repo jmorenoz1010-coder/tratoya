@@ -136,15 +136,25 @@ function canAccessDeal(trato, user) {
 }
 
 paymentsRouter.all('/epayco/response', (req, res) => {
-  const payload = readWebhookPayload(req);
+  let payload = {};
+  try {
+    payload = readWebhookPayload(req);
+  } catch {
+    payload = { ...(req.query || {}) };
+  }
   const reference = req.query.reference || payload.x_id_invoice || payload.x_extra3 || payload.invoice || payload.reference || '';
   const params = new URLSearchParams();
   if (reference) params.set('reference', reference);
   for (const key of ['ref_payco', 'x_ref_payco', 'x_transaction_id', 'x_response', 'x_cod_transaction_state']) {
-    if (payload[key]) params.set(key, payload[key]);
+    const value = req.query[key] || payload[key];
+    if (value) params.set(key, value);
   }
-  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
-  return res.redirect(303, `${frontendUrl}/pago/resultado?${params.toString()}`);
+  const frontendUrl = process.env.FRONTEND_URL || 'https://tratoya-frontend.vercel.app';
+  const targetUrl = `${frontendUrl}/pago/resultado${params.toString() ? `?${params.toString()}` : ''}`;
+  res.status(302);
+  res.setHeader('Location', targetUrl);
+  res.setHeader('Content-Type', 'text/html; charset=utf-8');
+  return res.end(`<!doctype html><html><head><meta charset="utf-8"><meta http-equiv="refresh" content="0;url=${targetUrl}"></head><body>Redirigiendo a TratoYa...</body></html>`);
 });
 
 paymentsRouter.use(auth);
