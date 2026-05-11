@@ -1,0 +1,378 @@
+import { useState, useEffect, useRef } from "react";
+import { api } from "../lib/api";
+import { fmt, fmtDate, timeAgo, ESTADO, TIPO_ICO, calcularComisionUI, openEpaycoCheckout } from "../lib/utils";
+import CommissionBreakdown from "../components/CommissionBreakdown";
+import DealProgress from "../components/DealProgress";
+import StarRating from "../components/StarRating";
+import Avatar from "../components/Avatar";
+import EpaycoMark from "../components/EpaycoMark";
+
+function ReviewBox({ tratoId, reviews, user, toast, onSaved }) {
+  const mine = reviews.find((r) => r.autor_id === user?.id);
+  const [rating, setRating] = useState(mine?.calificacion || 0);
+  const [comment, setComment] = useState(mine?.comentario || "");
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    setRating(mine?.calificacion || 0);
+    setComment(mine?.comentario || "");
+  }, [mine?.id]);
+
+  const submit = async () => {
+    if (!rating) return toast("Selecciona una valoración de 1 a 5 estrellas", "error");
+    setBusy(true);
+    try {
+      await api.post(`/reviews/deal/${tratoId}`, { calificacion: rating, comentario: comment });
+      toast(mine ? "Reseña actualizada" : "Reseña publicada", "success");
+      onSaved?.();
+    } catch (e) { toast(e.message, "error"); }
+    setBusy(false);
+  };
+
+  return (
+    <div className="review-card fi">
+      <h3 style={{ fontSize: 15, marginBottom: 6 }}>Deja tu reseña</h3>
+      <p style={{ fontSize: 12.5, color: "var(--s600)", marginBottom: 10 }}>Valora a tu contraparte y cuéntanos cómo fue el trato.</p>
+      <StarRating value={rating} onChange={setRating} disabled={busy} />
+      <textarea className="inp" rows="3" style={{ marginTop: 10 }} placeholder="Escribe un comentario corto sobre tu experiencia..." value={comment} onChange={(e) => setComment(e.target.value)} maxLength={1000} />
+      <button className="btn bp" style={{ width: "100%", marginTop: 10 }} onClick={submit} disabled={busy || !rating}>
+        {busy ? <div className="spin" /> : mine ? "Actualizar reseña" : "Publicar reseña"}
+      </button>
+      {reviews.length > 0 && (
+        <div style={{ marginTop: 12, display: "grid", gap: 8 }}>
+          {reviews.map((r) => (
+            <div key={r.id} style={{ background: "var(--s50)", borderRadius: 9, padding: "9px 10px" }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
+                <strong style={{ fontSize: 12.5 }}>{r.autor?.nombre || (r.autor_id === user?.id ? "Tu reseña" : "Usuario")}</strong>
+                <span style={{ color: "var(--g2)", fontWeight: 800, fontSize: 12 }}>{r.calificacion}★</span>
+              </div>
+              {r.comentario && <div style={{ fontSize: 12, color: "var(--s600)", marginTop: 4, lineHeight: 1.45 }}>{r.comentario}</div>}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default function TratoDetalle({ tratoId, setPage, setDisputeTratoId, user, toast, onStatusUpdate }) {
+  const [trato, setTrato] = useState(null);
+  const [msgs, setMsgs] = useState([]);
+  const [reviews, setReviews] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [msg, setMsg] = useState("");
+  const [guia, setGuia] = useState({ guia: "", transportadora: "", medio_envio: "servientrega", numero_contacto: "", punto_encuentro: "" });
+  const [pruebaFotos, setPruebaFotos] = useState([]);
+  const [busy, setBusy] = useState(false);
+  const [paymentOrder, setPaymentOrder] = useState(null);
+  const previousEstadoRef = useRef(null);
+  const chatEndRef = useRef(null);
+
+  const load = async (silent = false) => {
+    try {
+      const [t, m, rv] = await Promise.all([
+        api.get(`/tratos/${tratoId}`),
+        api.get(`/messages/${tratoId}`).catch(() => ({ data: [] })),
+        api.get(`/reviews/deal/${tratoId}`).catch(() => ({ data: [] })),
+      ]);
+      const nextTrato = t.data;
+      if (silent && previousEstadoRef.current && previousEstadoRef.current !== nextTrato.estado) {
+        onStatusUpdate?.(nextTrato, previousEstadoRef.current, nextTrato.estado);
+      }
+      previousEstadoRef.current = nextTrato.estado;
+      setTrato(nextTrato);
+      setMsgs(m.data || []);
+      setReviews(rv.data || []);
+    } catch (e) {
+      if (!silent) toast(e.message, "error");
+    }
+    if (!silent) setLoading(false);
+  };
+
+  useEffect(() => {
+    previousEstadoRef.current = null;
+    load();
+    const t = setInterval(() => load(true), 8000);
+    return () => clearInterval(t);
+  }, [tratoId]);
+
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [msgs.length]);
+
+  const sendMsg = async () => {
+    if (!msg.trim()) return;
+    try { await api.post(`/messages/${tratoId}`, { contenido: msg }); setMsg(""); load(); }
+    catch (e) { toast(e.message, "error"); }
+  };
+
+  const action = async (fn, successMsg) => {
+    setBusy(true);
+    try { await fn(); toast(successMsg, "success"); load(); }
+    catch (e) { toast(e.message, "error"); }
+    setBusy(false);
+  };
+
+  const pagarEpayco = async () => {
+    const pago = calcularComisionUI(parseFloat(trato?.monto || 0), trato?.quien_paga_comision || "comprador");
+    if (!window.confirm(`Vas a pagar ${fmt(pago.totalPagar)} COP por este acuerdo en TratoYa. Este pago se procesará por ePayco.`)) return;
+    setBusy(true);
+    try {
+      const r = await api.post(`/payments/epayco/create`, { dealId: tratoId });
+      const order = r.data || r;
+      if (!order?.publicKey || !order?.checkoutData) throw new Error("No se pudo generar el checkout de ePayco");
+      setPaymentOrder(order);
+      await openEpaycoCheckout(order);
+    } catch (e) { toast(e.message, "error"); }
+    setBusy(false);
+  };
+
+  const simularPago = async () => {
+    setBusy(true);
+    try {
+      await api.post(`/payments/sandbox-approve/${tratoId}`, { metodo_pago: "pse" });
+      toast("Pago beta aprobado. El dinero quedó en custodia de TratoYA.", "success");
+      setTimeout(() => { window.location.href = "/"; }, 900);
+    } catch (e) { toast(e.message, "error"); }
+    setBusy(false);
+  };
+
+  const abrirDisputa = () => {
+    setDisputeTratoId?.(tratoId);
+    setPage("disputas");
+  };
+
+  if (loading) return (
+    <div className="page" style={{ textAlign: "center", padding: 60 }}>
+      <div className="spin" style={{ margin: "0 auto", color: "var(--s400)" }} />
+    </div>
+  );
+  if (!trato) return <div className="page"><p>Trato no encontrado</p></div>;
+
+  const ec = ESTADO[trato.estado] || ESTADO.borrador;
+  const esV = trato.vendedor?.id === user?.id;
+  const esC = trato.comprador?.id === user?.id;
+  const cp = esV ? trato.comprador : trato.vendedor;
+  const montoTrato = parseFloat(trato.monto || 0);
+  const quienComision = trato.quien_paga_comision || "comprador";
+  const commissionCalc = calcularComisionUI(montoTrato, quienComision);
+  const neto = commissionCalc.vendedorRecibe;
+  const entrega = trato.metadata?.datos_entrega || {};
+  const medioEnvio = entrega.medio_envio || trato.metadata?.medio_envio;
+  const telefonoDomiciliario = entrega.numero_contacto || trato.metadata?.numero_contacto_domiciliario;
+  const puntoEncuentro = entrega.punto_encuentro || trato.metadata?.punto_encuentro;
+
+  const steps = [
+    { l: "Trato creado",   s: "Condiciones aceptadas", done: true },
+    { l: "Pago en custodia", s: `${fmt(montoTrato)} protegido`, done: ["pago_retenido","en_entrega","confirmado","completado"].includes(trato.estado), active: trato.estado === "pago_retenido" },
+    { l: "En entrega",    s: trato.guia_envio ? (medioEnvio === "en_persona" ? `📍 ${puntoEncuentro || "En persona"}` : medioEnvio === "domiciliario" ? `🛵 ${telefonoDomiciliario || "contacto"}` : `Guía ${trato.guia_envio}`) : "Pendiente", done: ["en_entrega","confirmado","completado"].includes(trato.estado), active: trato.estado === "en_entrega" },
+    { l: "Confirmación",  s: "Comprador verifica", done: ["confirmado","completado"].includes(trato.estado), active: trato.estado === "confirmado" },
+    { l: "Pago liberado", s: `${fmt(neto)} al vendedor`, done: trato.estado === "completado" },
+  ];
+
+  const canPay = esC && trato.estado === "pago_pendiente";
+  const canConfirm = esC && ["en_entrega","pendiente_confirmacion"].includes(trato.estado);
+  const canShip = esV && trato.estado === "pago_retenido";
+
+  return (
+    <div className="page fi">
+      <div style={{ display: "flex", alignItems: "center", gap: 9, marginBottom: 16 }}>
+        <button className="btn bg_ bsm" onClick={() => setPage("tratos")}>← Volver</button>
+        <div style={{ height: 14, width: 1, background: "var(--s200)" }} />
+        <span style={{ fontFamily: "Manrope", fontWeight: 700, fontSize: 12.5, color: "var(--g2)" }}>{trato.codigo}</span>
+        <span className={`bdg ${ec.c}`}>{ec.l}</span>
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 305px", gap: 14 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 13 }}>
+          {/* Info del trato */}
+          <div className="card" style={{ padding: "18px 20px" }}>
+            <div style={{ display: "flex", gap: 13, marginBottom: 14 }}>
+              <div style={{ width: 48, height: 48, borderRadius: 12, background: "var(--cr)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, flexShrink: 0 }}>
+                {TIPO_ICO[trato.tipo] || "📋"}
+              </div>
+              <div style={{ flex: 1 }}>
+                <h2 style={{ fontSize: 17, marginBottom: 2 }}>{trato.titulo}</h2>
+                <div style={{ fontSize: 13, color: "var(--s600)" }}>
+                  {cp ? `${esV ? "Comprador" : "Vendedor"}: ${cp.nombre} ${cp.apellido}` : <span style={{ color: "var(--or)" }}>⚠ Esperando que alguien acepte el trato</span>}
+                </div>
+              </div>
+              <div style={{ textAlign: "right" }}>
+                <div style={{ fontFamily: "Manrope", fontSize: 22, fontWeight: 800 }}>{fmt(montoTrato)}</div>
+                <div style={{ fontSize: 11.5, color: "var(--s400)" }}>{fmtDate(trato.createdAt)}</div>
+              </div>
+            </div>
+
+            {trato.descripcion && (
+              <p style={{ fontSize: 13, color: "var(--s600)", lineHeight: 1.6, marginBottom: 14 }}>{trato.descripcion}</p>
+            )}
+
+            {/* Progreso visual */}
+            <DealProgress steps={steps} />
+
+            <CommissionBreakdown monto={montoTrato} quien={quienComision} />
+
+            {/* Acciones del vendedor: envío */}
+            {canShip && (
+              <div style={{ marginTop: 14 }}>
+                <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 10 }}>📦 Registrar envío</div>
+                <div className="fg">
+                  <label className="fl">Medio de envío</label>
+                  <select className="inp" value={guia.medio_envio} onChange={(e) => setGuia((g) => ({ ...g, medio_envio: e.target.value }))}>
+                    <option value="servientrega">Transportadora (Servientrega, Envia, etc.)</option>
+                    <option value="domiciliario">Domiciliario</option>
+                    <option value="en_persona">Entrega en persona</option>
+                  </select>
+                </div>
+                {guia.medio_envio === "servientrega" && (
+                  <div className="g2" style={{ gap: 9 }}>
+                    <div className="fg"><label className="fl">Número de guía</label><input className="inp" placeholder="TRA1234567" value={guia.guia} onChange={(e) => setGuia((g) => ({ ...g, guia: e.target.value }))} /></div>
+                    <div className="fg"><label className="fl">Transportadora</label><input className="inp" placeholder="Servientrega" value={guia.transportadora} onChange={(e) => setGuia((g) => ({ ...g, transportadora: e.target.value }))} /></div>
+                  </div>
+                )}
+                {guia.medio_envio === "domiciliario" && (
+                  <div className="fg"><label className="fl">Número de contacto del domiciliario</label><input className="inp" placeholder="300 123 4567" value={guia.numero_contacto} onChange={(e) => setGuia((g) => ({ ...g, numero_contacto: e.target.value }))} /></div>
+                )}
+                {guia.medio_envio === "en_persona" && (
+                  <div className="fg"><label className="fl">Punto de encuentro</label><input className="inp" placeholder="Ej: Centro Comercial El Tesoro, entrada principal" value={guia.punto_encuentro} onChange={(e) => setGuia((g) => ({ ...g, punto_encuentro: e.target.value }))} /></div>
+                )}
+                <div className="fg">
+                  <label className="fl">Fotos de prueba de entrega ({pruebaFotos.length}/2 mínimo)</label>
+                  <div className="uz" onClick={() => document.getElementById("prueba-input").click()}>
+                    <div style={{ fontSize: 22, marginBottom: 4 }}>📷</div>
+                    <div style={{ fontSize: 13, color: "var(--s600)" }}>{pruebaFotos.length > 0 ? `${pruebaFotos.length} foto(s) seleccionada(s)` : "Toca para agregar fotos del producto o empaque"}</div>
+                  </div>
+                  <input id="prueba-input" type="file" accept="image/*" multiple style={{ display: "none" }} onChange={(e) => setPruebaFotos(Array.from(e.target.files))} />
+                </div>
+                <button
+                  className="btn bp"
+                  style={{ width: "100%" }}
+                  disabled={busy || pruebaFotos.length < 2}
+                  onClick={async () => {
+                    setBusy(true);
+                    try {
+                      const fd = new FormData();
+                      pruebaFotos.forEach((f, i) => fd.append(`foto_${i}`, f));
+                      await api.upload(`/tratos/${tratoId}/prueba-entrega`, fd);
+                      await api.post(`/tratos/${tratoId}/registrar-guia`, guia);
+                      toast("Envío registrado con prueba de entrega ✓", "success");
+                      load();
+                    } catch (e) { toast(e.message, "error"); }
+                    setBusy(false);
+                  }}
+                >
+                  {busy ? <div className="spin" /> : `📦 Confirmar envío ${pruebaFotos.length < 2 ? `(${2 - pruebaFotos.length} foto${pruebaFotos.length === 1 ? "" : "s"} más)` : "✓"}`}
+                </button>
+              </div>
+            )}
+
+            {/* Acción del vendedor: simular pago beta */}
+            {esV && ["borrador","activo"].includes(trato.estado) && (
+              <div style={{ marginTop: 11, background: "var(--cr)", padding: 13, borderRadius: 10, fontSize: 13, color: "var(--s600)" }}>
+                <div style={{ fontWeight: 700, color: "var(--n)", marginBottom: 4 }}>Este link es para que tu contraparte acepte y pague.</div>
+                <div style={{ display: "flex", gap: 9, marginTop: 10, flexWrap: "wrap" }}>
+                  <button className="btn bp" onClick={simularPago} disabled={busy}>{busy ? <div className="spin" /> : "Simular pago beta"}</button>
+                  <button className="btn bo bsm" onClick={() => { navigator.clipboard.writeText(`${window.location.origin}/t/${trato.link_compartir}`); toast("Link copiado ✓", "success"); }}>🔗 Copiar link</button>
+                </div>
+              </div>
+            )}
+
+            {/* Acción del comprador: pagar */}
+            {canPay && (
+              <div style={{ marginTop: 11 }}>
+                <button className="btn bp blg" style={{ width: "100%" }} onClick={pagarEpayco} disabled={busy}>
+                  {busy ? <div className="spin" /> : <><span>Pagar con</span><EpaycoMark /></>}
+                </button>
+                {paymentOrder?.reference && (
+                  <div style={{ fontSize: 11, color: "var(--s600)", marginTop: 8 }}>Referencia: {paymentOrder.reference}</div>
+                )}
+              </div>
+            )}
+
+            {/* Acción del comprador: confirmar */}
+            {canConfirm && (
+              <div style={{ marginTop: 11, display: "flex", gap: 9 }}>
+                <button className="btn bp" style={{ flex: 1 }} onClick={() => action(() => api.post(`/tratos/${tratoId}/confirmar`), "¡Entrega confirmada! El pago será liberado.")} disabled={busy}>
+                  {busy ? <div className="spin" /> : "✅ Confirmar que lo recibí"}
+                </button>
+                <button className="btn bdd" onClick={abrirDisputa}>Disputar</button>
+              </div>
+            )}
+
+            {/* Completado */}
+            {trato.estado === "completado" && (
+              <div style={{ marginTop: 14, background: "var(--cr)", borderRadius: 11, padding: "13px 15px", textAlign: "center" }}>
+                <div style={{ fontSize: 22, marginBottom: 4 }}>🎉</div>
+                <div style={{ fontWeight: 800, fontSize: 14, color: "var(--g2)" }}>¡Trato completado con éxito!</div>
+              </div>
+            )}
+          </div>
+
+          {/* Reseña */}
+          {trato.estado === "completado" && (
+            <ReviewBox tratoId={tratoId} reviews={reviews} user={user} toast={toast} onSaved={() => load(true)} />
+          )}
+        </div>
+
+        {/* Columna derecha: chat + acciones */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 11 }}>
+          <div className="card chat-card">
+            <div style={{ display: "flex", alignItems: "center", gap: 9, paddingBottom: 10, borderBottom: "1px solid var(--s100)", marginBottom: 9 }}>
+              <Avatar name={cp ? `${cp.nombre} ${cp.apellido}` : "?"} size={28} />
+              <div>
+                <div style={{ fontWeight: 700, fontSize: 13 }}>{cp ? `${cp.nombre} ${cp.apellido}` : "Sin contraparte"}</div>
+                <div style={{ fontSize: 10.5, color: "var(--s400)" }}>Chat del trato</div>
+              </div>
+            </div>
+            <div style={{ flex: 1, overflowY: "auto", display: "flex", flexDirection: "column", gap: 7 }}>
+              {msgs.length === 0 && (
+                <div style={{ textAlign: "center", color: "var(--s400)", fontSize: 13, marginTop: 18 }}>Sin mensajes aún.</div>
+              )}
+              {msgs.map((m, i) => {
+                const mine = m.remitente_id === user?.id;
+                return (
+                  <div key={i} style={{ maxWidth: "85%", alignSelf: mine ? "flex-end" : "flex-start" }}>
+                    <div style={{ background: mine ? "var(--n)" : "var(--s50)", color: mine ? "#fff" : "var(--n)", borderRadius: mine ? "11px 11px 3px 11px" : "11px 11px 11px 3px", padding: "8px 12px", fontSize: 13, border: mine ? "none" : "1px solid var(--s100)" }}>
+                      {m.contenido}
+                    </div>
+                    <div style={{ fontSize: 10, color: "var(--s400)", marginTop: 2, textAlign: mine ? "right" : "left" }}>
+                      {timeAgo(m.createdAt)}
+                    </div>
+                  </div>
+                );
+              })}
+              <div ref={chatEndRef} />
+            </div>
+            {cp && (
+              <div style={{ display: "flex", gap: 6, paddingTop: 9, borderTop: "1px solid var(--s100)", marginTop: 7 }}>
+                <input
+                  className="inp"
+                  style={{ height: 34, fontSize: 13 }}
+                  placeholder="Escribe un mensaje..."
+                  value={msg}
+                  onChange={(e) => setMsg(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && sendMsg()}
+                />
+                <button className="btn bp bsm" onClick={sendMsg}>→</button>
+              </div>
+            )}
+          </div>
+
+          <div className="card" style={{ padding: 13 }}>
+            <div style={{ fontSize: 10.5, fontWeight: 700, color: "var(--s600)", textTransform: "uppercase", letterSpacing: ".5px", marginBottom: 9 }}>Acciones</div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              <button className="btn bo bsm" style={{ justifyContent: "flex-start" }} onClick={() => { navigator.clipboard.writeText(`${window.location.origin}/t/${trato.link_compartir}`); toast("Link copiado ✓", "success"); }}>
+                🔗 Copiar link del trato
+              </button>
+              {!["disputado","completado","cancelado"].includes(trato.estado) && (
+                <button className="btn bdd bsm" style={{ justifyContent: "flex-start" }} onClick={abrirDisputa}>
+                  ⚖️ Abrir disputa
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

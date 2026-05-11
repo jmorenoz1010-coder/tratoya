@@ -134,7 +134,10 @@ router.post('/refresh', async (req, res, next) => {
     if (!refresh_token) return res.status(400).json({ success: false, message: 'Refresh token requerido' });
     const decoded = jwt.verify(refresh_token, process.env.JWT_REFRESH_SECRET);
     const user = await User.findByPk(decoded.id);
-    if (!user) return res.status(401).json({ success: false, message: 'Token inválido' });
+    if (!user || !user.refresh_token) return res.status(401).json({ success: false, message: 'Token inválido' });
+    const isValid = await bcrypt.compare(refresh_token, user.refresh_token);
+    if (!isValid) return res.status(401).json({ success: false, message: 'Refresh token inválido' });
+    if (user.is_blocked) return res.status(403).json({ success: false, message: 'Cuenta suspendida' });
     const token = signToken(user.id);
     res.json({ success: true, token });
   } catch {

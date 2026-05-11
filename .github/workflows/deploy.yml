@@ -1,0 +1,88 @@
+name: Deploy TratoYA
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  # ── Verificar que el backend arranca sin errores ────────
+  test-backend:
+    name: Backend lint & syntax
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: tratoya-backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: tratoya-backend/package-lock.json
+      - run: npm ci
+      - name: Syntax check
+        run: node --check src/index.js
+
+  # ── Verificar que el frontend compila ──────────────────
+  build-frontend:
+    name: Frontend build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: tratoya-frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: tratoya-frontend/package-lock.json
+      - run: npm ci
+      - name: Build
+        env:
+          VITE_API_URL: ${{ secrets.VITE_API_URL }}
+        run: npm run build
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-dist
+          path: tratoya-frontend/dist
+          retention-days: 1
+
+  # ── Deploy a Railway (solo en push a main) ─────────────
+  deploy-backend:
+    name: Deploy backend → Railway
+    needs: [test-backend, build-frontend]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Railway CLI
+        run: npm install -g @railway/cli
+      - name: Deploy
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        run: |
+          cd tratoya-backend
+          railway up --service tratoya-backend --detach
+
+  # ── Deploy a Vercel (solo en push a main) ──────────────
+  deploy-frontend:
+    name: Deploy frontend → Vercel
+    needs: [test-backend, build-frontend]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Vercel CLI
+        run: npm install -g vercel
+      - name: Deploy
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        run: |
+          cd tratoya-frontend
+          vercel --prod --token "$VERCEL_TOKEN"

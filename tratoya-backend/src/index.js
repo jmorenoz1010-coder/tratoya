@@ -10,6 +10,14 @@ const { connectRedis } = require('./config/redis');
 const logger = require('./utils/logger');
 const errorHandler = require('./middleware/errorHandler');
 
+// ── Handlers globales de errores no capturados ─────────
+process.on('uncaughtException', (err) => {
+  logger.error('💥 uncaughtException — proceso continuará:', err);
+});
+process.on('unhandledRejection', (reason) => {
+  logger.error('💥 unhandledRejection:', reason instanceof Error ? reason.message : reason);
+});
+
 // Rutas
 const authRoutes     = require('./routes/auth');
 const tratoRoutes    = require('./routes/tratos');
