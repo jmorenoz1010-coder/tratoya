@@ -50,7 +50,12 @@ export const api = {
       .json()
       .catch(() => ({ success: false, message: "Error de conexión" }));
     if (!r.ok) {
-      const err = new Error(d.message || `Error ${r.status}`);
+      // express-validator devuelve { errors: [{msg, path}] } sin campo message
+      let msg = d.message;
+      if (!msg && Array.isArray(d.errors) && d.errors.length > 0) {
+        msg = d.errors.map((e) => e.msg).join(". ");
+      }
+      const err = new Error(msg || `Error ${r.status}`);
       err.status = r.status;
       if (r.status === 401 && tok) {
         clearSession();
