@@ -551,7 +551,10 @@ messagesRouter.post('/:trato_id', [
   bodyMsg('contenido').notEmpty().trim().withMessage('Mensaje vacío'),
 ], async (req, res, next) => {
   const errors = validMsg(req);
-  if (!errors.isEmpty()) return res.status(400).json({ success: false, errors: errors.array() });
+  if (!errors.isEmpty()) {
+    const msgs = errors.array().map((e) => e.msg);
+    return res.status(400).json({ success: false, message: msgs[0], errors: errors.array() });
+  }
   try {
     const { Op } = require('sequelize');
     const trato = await Trato.findOne({
@@ -678,7 +681,10 @@ disputesRouter.post('/', [
   bodyD('tipo').isIn(['producto_danado','no_recibido','diferente','servicio_incompleto','fraude','otro']),
 ], async (req, res, next) => {
   const errors = validD(req);
-  if (!errors.isEmpty()) return res.status(400).json({ success: false, errors: errors.array() });
+  if (!errors.isEmpty()) {
+    const msgs = errors.array().map((e) => e.msg);
+    return res.status(400).json({ success: false, message: msgs[0], errors: errors.array() });
+  }
   try {
     const { trato_id, motivo, descripcion, tipo } = req.body;
     const { Op } = require('sequelize');

@@ -51,7 +51,10 @@ router.post('/register', [
   body('cedula').notEmpty().trim().withMessage('Número de identificación requerido'),
 ], async (req, res, next) => {
   const errors = validationResult(req);
-  if (!errors.isEmpty()) return res.status(400).json({ success: false, errors: errors.array() });
+  if (!errors.isEmpty()) {
+    const msgs = errors.array().map((e) => e.msg);
+    return res.status(400).json({ success: false, message: msgs[0], errors: errors.array() });
+  }
   try {
     const { nombre, apellido, email, password, telefono, cedula, tipo_identificacion = 'CC' } = req.body;
     const existe = await User.findOne({ where: { email } });
@@ -83,7 +86,10 @@ router.post('/login', [
   body('password').notEmpty(),
 ], async (req, res, next) => {
   const errors = validationResult(req);
-  if (!errors.isEmpty()) return res.status(400).json({ success: false, errors: errors.array() });
+  if (!errors.isEmpty()) {
+    const msgs = errors.array().map((e) => e.msg);
+    return res.status(400).json({ success: false, message: msgs[0], errors: errors.array() });
+  }
   try {
     const { email, password } = req.body;
     const user = await User.findOne({ where: { email } });

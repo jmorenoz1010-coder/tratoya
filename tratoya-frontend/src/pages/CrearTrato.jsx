@@ -175,7 +175,7 @@ export default function CrearTrato({ setPage, toast, user }) {
               className="btn bp blg"
               style={{ width: "100%", marginTop: 6 }}
               onClick={() => {
-                if (!f.titulo) { toast("El título es obligatorio", "error"); return; }
+                if (!f.titulo || f.titulo.trim().length < 5) { toast("El título debe tener mínimo 5 caracteres", "error"); return; }
                 if (monto < MONTO_MINIMO_TRATO) { toast(`El monto mínimo es ${fmt(MONTO_MINIMO_TRATO)}`, "error"); return; }
                 setStep(2);
               }}

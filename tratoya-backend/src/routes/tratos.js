@@ -93,11 +93,14 @@ router.get('/', async (req, res, next) => {
 // ── POST /api/tratos ─────────────────────────
 router.post('/', kycRequired, [
   body('titulo').notEmpty().trim().isLength({ min: 5 }).withMessage('Título mínimo 5 caracteres'),
-  body('tipo').isIn(['producto','servicio','reserva','vehiculo','inmueble','otro']),
+  body('tipo').isIn(['producto','servicio','reserva','vehiculo','inmueble','otro']).withMessage('Tipo de trato inválido'),
   body('monto').isFloat({ min: MONTO_MINIMO_TRATO }).withMessage(`Monto mínimo $${MONTO_MINIMO_TRATO.toLocaleString('es-CO')} COP`),
 ], async (req, res, next) => {
   const errors = validationResult(req);
-  if (!errors.isEmpty()) return res.status(400).json({ success: false, errors: errors.array() });
+  if (!errors.isEmpty()) {
+    const msgs = errors.array().map((e) => e.msg);
+    return res.status(400).json({ success: false, message: msgs[0], errors: errors.array() });
+  }
   try {
     const { titulo, descripcion, tipo, monto, dias_inspeccion = 7, quien_paga_comision = 'comprador', notas, contraparte_usuario_unico } = req.body;
     const montoNumero = parseFloat(monto);
