@@ -213,6 +213,7 @@ router.post('/:id/prueba-entrega', async (req, res, next) => {
       const trato = await Trato.findByPk(req.params.id);
       if (!trato) return res.status(404).json({ success: false, message: 'Trato no encontrado' });
       if (trato.vendedor_id !== req.user.id) return res.status(403).json({ success: false, message: 'Solo el vendedor puede subir pruebas' });
+      if (!req.files || req.files.length === 0) return res.status(400).json({ success: false, message: 'Debes adjuntar al menos 1 foto de prueba de entrega.' });
 
       const { s3Upload } = require('../services/s3Service');
       const urls = [];

@@ -227,7 +227,7 @@ export default function TratoDetalle({ tratoId, setPage, setDisputeTratoId, user
                   <div className="fg"><label className="fl">Punto de encuentro</label><input className="inp" placeholder="Ej: Centro Comercial El Tesoro, entrada principal" value={guia.punto_encuentro} onChange={(e) => setGuia((g) => ({ ...g, punto_encuentro: e.target.value }))} /></div>
                 )}
                 <div className="fg">
-                  <label className="fl">Fotos de prueba de entrega <span style={{ color: "var(--s400)", fontWeight: 400 }}>(opcional, máx 5)</span></label>
+                  <label className="fl">Fotos de prueba de entrega <span style={{ color: "var(--re)", fontWeight: 600 }}>*</span> <span style={{ color: "var(--s400)", fontWeight: 400 }}>(mín. 1, máx. 5)</span></label>
                   <label htmlFor={`prueba-input-${tratoId}`} className="uz" style={{ cursor: "pointer", display: "block" }}>
                     <div style={{ fontSize: 22, marginBottom: 4 }}>📷</div>
                     <div style={{ fontSize: 13, color: "var(--s600)" }}>
@@ -261,15 +261,14 @@ export default function TratoDetalle({ tratoId, setPage, setDisputeTratoId, user
                 <button
                   className="btn bp"
                   style={{ width: "100%" }}
-                  disabled={busy}
+                  disabled={busy || pruebaFotos.length === 0}
                   onClick={async () => {
+                    if (pruebaFotos.length === 0) { toast("Debes adjuntar al menos 1 foto de prueba de entrega.", "error"); return; }
                     setBusy(true);
                     try {
-                      if (pruebaFotos.length > 0) {
-                        const fd = new FormData();
-                        pruebaFotos.forEach((f, i) => fd.append(`foto_${i}`, f));
-                        await api.upload(`/tratos/${tratoId}/prueba-entrega`, fd).catch(() => {});
-                      }
+                      const fd = new FormData();
+                      pruebaFotos.forEach((f, i) => fd.append(`foto_${i}`, f));
+                      await api.upload(`/tratos/${tratoId}/prueba-entrega`, fd).catch(() => {});
                       await api.post(`/tratos/${tratoId}/registrar-guia`, guia);
                       toast("Envío registrado ✓", "success");
                       load();
