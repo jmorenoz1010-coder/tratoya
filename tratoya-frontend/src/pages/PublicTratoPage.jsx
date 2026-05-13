@@ -45,16 +45,6 @@ export default function PublicTratoPage({ link, session, goAuth, toast }) {
     setBusy(false);
   };
 
-  const simularPago = async () => {
-    setBusy(true);
-    try {
-      await api.post(`/payments/sandbox-approve/${trato.id}`, { metodo_pago: "pse" });
-      toast("Pago aprobado en beta. El dinero quedó en custodia de TratoYA.", "success");
-      setTimeout(() => { window.location.href = "/"; }, 900);
-    } catch (e) { toast(e.message, "error"); }
-    setBusy(false);
-  };
-
   if (loading) return (
     <div style={{ minHeight: "100vh", display: "grid", placeItems: "center" }}>
       <div className="spin" style={{ color: "var(--s400)" }} />
@@ -123,9 +113,8 @@ export default function PublicTratoPage({ link, session, goAuth, toast }) {
           ) : isSeller ? (
             <div style={{ background: "var(--cr)", padding: 13, borderRadius: 10, fontSize: 13, color: "var(--s600)" }}>
               <div style={{ fontWeight: 700, color: "var(--n)", marginBottom: 4 }}>Este link es para que tu contraparte acepte y pague.</div>
-              <div style={{ marginBottom: 12 }}>Para pruebas beta puedes simular el pago completo y dejar el dinero en custodia de TratoYA.</div>
+              <div style={{ marginBottom: 12 }}>Comparte este link con tu comprador para que lo acepte y pague con ePayco.</div>
               <div style={{ display: "flex", gap: 9, flexWrap: "wrap" }}>
-                <button className="btn bp" onClick={simularPago} disabled={busy}>{busy ? <div className="spin" /> : "Simular pago beta completo"}</button>
                 <button className="btn bo" onClick={() => { window.location.href = "/"; }}>Ir a mi dashboard</button>
               </div>
             </div>

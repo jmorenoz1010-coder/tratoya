@@ -52,6 +52,10 @@ usersRouter.put('/profile', async (req, res, next) => {
       const existingDoc = await User.findOne({ where: { cedula, id: { [Op.ne]: req.user.id } } });
       if (existingDoc) return res.status(409).json({ success: false, message: 'Ese número de identificación ya está registrado' });
     }
+    if (telefono !== undefined && telefono) {
+      const existingTel = await User.findOne({ where: { telefono, id: { [Op.ne]: req.user.id } } });
+      if (existingTel) return res.status(409).json({ success: false, message: 'Ese número de WhatsApp ya está registrado en otra cuenta' });
+    }
 
     await req.user.update(updates);
     const fresh = await User.findByPk(req.user.id, { attributes: { exclude: ['password_hash', 'refresh_token', 'two_factor_secret'] } });
@@ -138,7 +142,7 @@ usersRouter.post('/bank-accounts', async (req, res, next) => {
   try {
     const { banco, tipo, numero, titular } = req.body;
     if (!banco || !tipo || !numero) return res.status(400).json({ success: false, message: 'Banco, tipo y número son requeridos' });
-    if (!['ahorros','corriente','nequi','daviplata'].includes(tipo)) return res.status(400).json({ success: false, message: 'Tipo de cuenta inválido' });
+    if (!['ahorros','corriente','nequi','daviplata','breb'].includes(tipo)) return res.status(400).json({ success: false, message: 'Tipo de cuenta inválido' });
     const cuenta = await CuentaBancaria.create({
       usuario_id: req.user.id,
       banco,
@@ -503,15 +507,55 @@ paymentsRouter.get('/history', async (req, res, next) => {
     const { Op } = require('sequelize');
     const tratos = await Trato.findAll({
       where: { [Op.or]: [{ comprador_id: req.user.id }, { vendedor_id: req.user.id }] },
-      attributes: ['id'],
+      attributes: ['id', 'codigo', 'titulo', 'monto', 'estado'],
     });
     const tratoIds = tratos.map(t => t.id);
-    const pagos = await Pago.findAll({
-      where: { trato_id: { [Op.in]: tratoIds } },
-      include: [{ model: Trato, attributes: ['codigo', 'titulo'] }],
+    const tratoMap = Object.fromEntries(tratos.map(t => [t.id, t]));
+
+    // PaymentIntents — estado real de cada cobro ePayco
+    const intents = await PaymentIntent.findAll({
+      where: { deal_id: { [Op.in]: tratoIds } },
       order: [['createdAt', 'DESC']],
     });
-    res.json({ success: true, data: pagos });
+
+    // Pagos confirmados (webhook)
+    const pagos = await Pago.findAll({
+      where: { trato_id: { [Op.in]: tratoIds } },
+      order: [['createdAt', 'DESC']],
+    });
+
+    // Unificar en una sola lista normalizada con el estado real
+    const normalize = (item, source) => {
+      if (source === 'intent') {
+        const trato = tratoMap[item.deal_id] || {};
+        // Mapear status de ePayco al estado mostrado en UI
+        const statusMap = {
+          PAID: 'aprobado', PAYMENT_PENDING: 'pendiente', CREATED: 'creado',
+          PAYMENT_DECLINED: 'rechazado', PAYMENT_ERROR: 'error', PAYMENT_VOIDED: 'anulado',
+        };
+        return {
+          id: item.id,
+          tipo: 'cargo',
+          monto: item.amount_cop,
+          pasarela: item.provider || 'epayco',
+          estado: statusMap[item.status] || item.status?.toLowerCase() || 'pendiente',
+          estado_raw: item.status,
+          referencia: item.reference,
+          Trato: { codigo: trato.codigo, titulo: trato.titulo },
+          createdAt: item.createdAt,
+          _source: 'intent',
+        };
+      }
+      const trato = tratoMap[item.trato_id] || {};
+      return { ...item.toJSON(), Trato: { codigo: trato.codigo, titulo: trato.titulo }, _source: 'pago' };
+    };
+
+    const history = [
+      ...intents.map(i => normalize(i, 'intent')),
+      ...pagos.map(p => normalize(p, 'pago')),
+    ].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+    res.json({ success: true, data: history });
   } catch (err) { next(err); }
 });
 

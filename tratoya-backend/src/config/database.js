@@ -22,6 +22,24 @@ const sequelize = new Sequelize(
   }
 );
 
+async function ensureBrebEnumValue() {
+  try {
+    await sequelize.query(`
+      DO $$
+      BEGIN
+        IF NOT EXISTS (
+          SELECT 1 FROM pg_enum
+          WHERE enumtypid = (SELECT oid FROM pg_type WHERE typname = 'enum_cuentas_bancarias_tipo')
+          AND enumlabel = 'breb'
+        ) THEN
+          ALTER TYPE enum_cuentas_bancarias_tipo ADD VALUE 'breb';
+        END IF;
+      END
+      $$;
+    `);
+  } catch { /* si el ENUM no existe aún, sync lo creará correctamente */ }
+}
+
 async function ensureUserRegistrationColumns() {
   await sequelize.query(`
     DO $$
@@ -46,6 +64,7 @@ async function connectDB() {
   } else if (process.env.DB_SYNC !== 'false') {
     await sequelize.sync();
   }
+  await ensureBrebEnumValue();
   await ensureUserRegistrationColumns();
 
   if (process.env.ADMIN_EMAIL && process.env.ADMIN_PASSWORD) {
@@ -315,7 +334,7 @@ const CuentaBancaria = sequelize.define('CuentaBancaria', {
   id:         { type: DataTypes.UUID, defaultValue: DataTypes.UUIDV4, primaryKey: true },
   usuario_id: { type: DataTypes.UUID },
   banco:      { type: DataTypes.STRING(100), allowNull: false },
-  tipo:       { type: DataTypes.ENUM('ahorros','corriente','nequi','daviplata'), allowNull: false },
+  tipo:       { type: DataTypes.ENUM('ahorros','corriente','nequi','daviplata','breb'), allowNull: false },
   numero:     { type: DataTypes.STRING(30) },
   titular:    { type: DataTypes.STRING(200) },
   cedula_titular: { type: DataTypes.STRING(20) },

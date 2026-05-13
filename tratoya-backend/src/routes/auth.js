@@ -61,6 +61,10 @@ router.post('/register', [
     if (existe) return res.status(409).json({ success: false, message: 'El email ya está registrado' });
     const cedulaExiste = await User.findOne({ where: { cedula } });
     if (cedulaExiste) return res.status(409).json({ success: false, message: 'El número de identificación ya está registrado' });
+    if (telefono) {
+      const telExiste = await User.findOne({ where: { telefono } });
+      if (telExiste) return res.status(409).json({ success: false, message: 'El número de WhatsApp ya está registrado en otra cuenta' });
+    }
 
     const password_hash = await bcrypt.hash(password, 12);
     const usuario_unico = await makeUniqueHandle(email.split('@')[0]);

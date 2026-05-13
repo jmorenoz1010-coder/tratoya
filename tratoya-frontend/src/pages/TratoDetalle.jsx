@@ -127,16 +127,6 @@ export default function TratoDetalle({ tratoId, setPage, setDisputeTratoId, user
     setBusy(false);
   };
 
-  const simularPago = async () => {
-    setBusy(true);
-    try {
-      await api.post(`/payments/sandbox-approve/${tratoId}`, { metodo_pago: "pse" });
-      toast("Pago beta aprobado. El dinero quedó en custodia de TratoYA.", "success");
-      setTimeout(() => { window.location.href = "/"; }, 900);
-    } catch (e) { toast(e.message, "error"); }
-    setBusy(false);
-  };
-
   const abrirDisputa = () => {
     setDisputeTratoId?.(tratoId);
     setPage("disputas");
@@ -237,42 +227,71 @@ export default function TratoDetalle({ tratoId, setPage, setDisputeTratoId, user
                   <div className="fg"><label className="fl">Punto de encuentro</label><input className="inp" placeholder="Ej: Centro Comercial El Tesoro, entrada principal" value={guia.punto_encuentro} onChange={(e) => setGuia((g) => ({ ...g, punto_encuentro: e.target.value }))} /></div>
                 )}
                 <div className="fg">
-                  <label className="fl">Fotos de prueba de entrega ({pruebaFotos.length}/2 mínimo)</label>
-                  <div className="uz" onClick={() => document.getElementById("prueba-input").click()}>
+                  <label className="fl">Fotos de prueba de entrega <span style={{ color: "var(--s400)", fontWeight: 400 }}>(opcional, máx 5)</span></label>
+                  <label htmlFor={`prueba-input-${tratoId}`} className="uz" style={{ cursor: "pointer", display: "block" }}>
                     <div style={{ fontSize: 22, marginBottom: 4 }}>📷</div>
-                    <div style={{ fontSize: 13, color: "var(--s600)" }}>{pruebaFotos.length > 0 ? `${pruebaFotos.length} foto(s) seleccionada(s)` : "Toca para agregar fotos del producto o empaque"}</div>
-                  </div>
-                  <input id="prueba-input" type="file" accept="image/*" multiple style={{ display: "none" }} onChange={(e) => setPruebaFotos(Array.from(e.target.files))} />
+                    <div style={{ fontSize: 13, color: "var(--s600)" }}>
+                      {pruebaFotos.length > 0
+                        ? `${pruebaFotos.length} foto(s) seleccionada(s) — toca para cambiar`
+                        : "Toca para adjuntar fotos del producto o empaque"}
+                    </div>
+                  </label>
+                  <input
+                    id={`prueba-input-${tratoId}`}
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    style={{ display: "none" }}
+                    onChange={(e) => setPruebaFotos(Array.from(e.target.files))}
+                  />
+                  {pruebaFotos.length > 0 && (
+                    <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 8 }}>
+                      {pruebaFotos.map((f, i) => (
+                        <div key={i} style={{ position: "relative" }}>
+                          <img src={URL.createObjectURL(f)} alt="" style={{ width: 60, height: 60, objectFit: "cover", borderRadius: 8, border: "1px solid var(--s100)" }} />
+                          <button
+                            onClick={() => setPruebaFotos((p) => p.filter((_, j) => j !== i))}
+                            style={{ position: "absolute", top: -6, right: -6, width: 18, height: 18, borderRadius: "50%", background: "var(--re)", color: "#fff", border: "none", cursor: "pointer", fontSize: 10, display: "flex", alignItems: "center", justifyContent: "center" }}
+                          >×</button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
                 <button
                   className="btn bp"
                   style={{ width: "100%" }}
-                  disabled={busy || pruebaFotos.length < 2}
+                  disabled={busy}
                   onClick={async () => {
                     setBusy(true);
                     try {
-                      const fd = new FormData();
-                      pruebaFotos.forEach((f, i) => fd.append(`foto_${i}`, f));
-                      await api.upload(`/tratos/${tratoId}/prueba-entrega`, fd);
+                      if (pruebaFotos.length > 0) {
+                        const fd = new FormData();
+                        pruebaFotos.forEach((f, i) => fd.append(`foto_${i}`, f));
+                        await api.upload(`/tratos/${tratoId}/prueba-entrega`, fd).catch(() => {});
+                      }
                       await api.post(`/tratos/${tratoId}/registrar-guia`, guia);
-                      toast("Envío registrado con prueba de entrega ✓", "success");
+                      toast("Envío registrado ✓", "success");
                       load();
                     } catch (e) { toast(e.message, "error"); }
                     setBusy(false);
                   }}
                 >
-                  {busy ? <div className="spin" /> : `📦 Confirmar envío ${pruebaFotos.length < 2 ? `(${2 - pruebaFotos.length} foto${pruebaFotos.length === 1 ? "" : "s"} más)` : "✓"}`}
+                  {busy ? <div className="spin" /> : "📦 Confirmar envío"}
                 </button>
               </div>
             )}
 
-            {/* Acción del vendedor: simular pago beta */}
+            {/* Info vendedor: link para compartir */}
             {esV && ["borrador","activo"].includes(trato.estado) && (
               <div style={{ marginTop: 11, background: "var(--cr)", padding: 13, borderRadius: 10, fontSize: 13, color: "var(--s600)" }}>
-                <div style={{ fontWeight: 700, color: "var(--n)", marginBottom: 4 }}>Este link es para que tu contraparte acepte y pague.</div>
+                <div style={{ fontWeight: 700, color: "var(--n)", marginBottom: 4 }}>Comparte este link con tu contraparte para que acepte y pague.</div>
                 <div style={{ display: "flex", gap: 9, marginTop: 10, flexWrap: "wrap" }}>
-                  <button className="btn bp" onClick={simularPago} disabled={busy}>{busy ? <div className="spin" /> : "Simular pago beta"}</button>
-                  <button className="btn bo bsm" onClick={() => { navigator.clipboard.writeText(`${window.location.origin}/t/${trato.link_compartir}`); toast("Link copiado ✓", "success"); }}>🔗 Copiar link</button>
+                  <button className="btn bo bsm" onClick={() => { navigator.clipboard.writeText(`${window.location.origin}/t/${trato.link_compartir}`); toast("Link copiado ✓", "success"); }}>🔗 Copiar link del trato</button>
+                  <button className="btn bo bsm" onClick={() => {
+                    const txt = `Hola, te comparto el link de nuestro trato seguro en TratoYa:%0A%0A🔒 *${trato.titulo || trato.codigo}*%0A%0A👉 ${encodeURIComponent(`${window.location.origin}/t/${trato.link_compartir}`)}`;
+                    window.open(`https://wa.me/?text=${txt}`, "_blank");
+                  }}>📲 WhatsApp</button>
                 </div>
               </div>
             )}

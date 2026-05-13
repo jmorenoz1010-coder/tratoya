@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { api, saveSession } from "../lib/api";
-import { passwordChecks, strongPasswordOk, normalizeHandle, DOC_TYPES, FINANCIAL_ENTITIES } from "../lib/utils";
+import { passwordChecks, strongPasswordOk, normalizeHandle, DOC_TYPES, FINANCIAL_ENTITIES, getBankType, BREB_ENTITY } from "../lib/utils";
 
 export default function Auth({ setSession, toast }) {
   const [mode, setMode] = useState("login");
@@ -9,6 +9,8 @@ export default function Auth({ setSession, toast }) {
   const [f, setF_] = useState({ nombre: "", apellido: "", email: "", password: "", confirm_password: "", telefono: "", tipo_identificacion: "CC", cedula: "", banco: "", tipo_cuenta: "ahorros", numero_cuenta: "" });
   const sf = (k, v) => setF_((p) => ({ ...p, [k]: v }));
   const checks = passwordChecks(f.password, f);
+  const bankKind = getBankType(f.banco); // "bank" | "wallet" | "breb"
+  const usernamePreview = normalizeHandle(f.email.split("@")[0]);
 
   const login = async (e) => {
     e?.preventDefault();
@@ -33,7 +35,14 @@ export default function Auth({ setSession, toast }) {
       const r = await api.post("/auth/login", { email: f.email, password: f.password });
       saveSession(r.token, r.refresh_token, r.user);
       if (f.banco && f.numero_cuenta) {
-        await api.post("/users/bank-accounts", { banco: f.banco, tipo: f.tipo_cuenta, numero: f.numero_cuenta, titular: `${f.nombre} ${f.apellido}` });
+        const bkind = getBankType(f.banco);
+        let tipo = f.tipo_cuenta;
+        if (bkind === "breb") tipo = "breb";
+        else if (bkind === "wallet") {
+          const wmap = { "Nequi": "nequi", "Daviplata": "daviplata" };
+          tipo = wmap[f.banco] || "nequi";
+        }
+        await api.post("/users/bank-accounts", { banco: f.banco, tipo, numero: f.numero_cuenta, titular: `${f.nombre} ${f.apellido}` });
       }
       setSession({ user: r.user, token: r.token });
       toast("Registro confirmado. Tu cuenta quedó lista.", "success");
@@ -135,31 +144,55 @@ export default function Auth({ setSession, toast }) {
               {step === 3 && (
                 <div className="fi">
                   <button className="btn bg_ bsm" style={{ marginBottom: 16 }} onClick={() => setStep(2)}>← Atrás</button>
+
+                  {usernamePreview && (
+                    <div style={{ background: "var(--s50)", border: "1px solid var(--s100)", borderRadius: 9, padding: "10px 14px", marginBottom: 14, fontSize: 13 }}>
+                      <span style={{ color: "var(--s500)" }}>Tu nombre de usuario será: </span>
+                      <strong style={{ color: "var(--g2)" }}>@{usernamePreview}</strong>
+                      <div style={{ fontSize: 11.5, color: "var(--s400)", marginTop: 3 }}>Podrás cambiarlo después en tu perfil.</div>
+                    </div>
+                  )}
+
                   <p style={{ fontSize: 13, color: "var(--s600)", marginBottom: 14 }}>Opcional: agrega tu cuenta bancaria para recibir pagos.</p>
                   <div className="fg">
                     <label className="fl">Entidad financiera</label>
-                    <select className="inp" value={f.banco} onChange={(e) => sf("banco", e.target.value)}>
+                    <select className="inp" value={f.banco} onChange={(e) => { sf("banco", e.target.value); sf("numero_cuenta", ""); }}>
                       <option value="">— Omitir por ahora —</option>
                       {FINANCIAL_ENTITIES.map((b) => <option key={b} value={b}>{b}</option>)}
                     </select>
                   </div>
-                  {f.banco && (
-                    <div className="g2 fi" style={{ gap: 10 }}>
+
+                  {f.banco && bankKind === "bank" && (
+                    <div className="g2" style={{ gap: 10 }}>
                       <div className="fg">
-                        <label className="fl">Tipo</label>
+                        <label className="fl">Tipo de cuenta</label>
                         <select className="inp" value={f.tipo_cuenta} onChange={(e) => sf("tipo_cuenta", e.target.value)}>
-                          <option value="ahorros">Ahorros</option>
-                          <option value="corriente">Corriente</option>
-                          <option value="nequi">Nequi</option>
-                          <option value="daviplata">Daviplata</option>
+                          <option value="ahorros">Cuenta de ahorros</option>
+                          <option value="corriente">Cuenta corriente</option>
                         </select>
                       </div>
                       <div className="fg">
-                        <label className="fl">Número</label>
-                        <input className="inp" placeholder="3001234567" value={f.numero_cuenta} onChange={(e) => sf("numero_cuenta", e.target.value.replace(/\D/g, ""))} />
+                        <label className="fl">Número de cuenta</label>
+                        <input className="inp" placeholder="123456789" value={f.numero_cuenta} onChange={(e) => sf("numero_cuenta", e.target.value.replace(/\D/g, ""))} />
                       </div>
                     </div>
                   )}
+
+                  {f.banco && bankKind === "wallet" && (
+                    <div className="fg">
+                      <label className="fl">Número de teléfono</label>
+                      <input className="inp" placeholder="3001234567" value={f.numero_cuenta} onChange={(e) => sf("numero_cuenta", e.target.value.replace(/\D/g, ""))} />
+                    </div>
+                  )}
+
+                  {f.banco && bankKind === "breb" && (
+                    <div className="fg">
+                      <label className="fl">Llave Bre-B</label>
+                      <input className="inp" placeholder="@ingresa tu llave" value={f.numero_cuenta} onChange={(e) => sf("numero_cuenta", e.target.value)} style={{ color: f.numero_cuenta ? undefined : "var(--s400)" }} />
+                      <div className="fh">Puede ser tu número de celular, email o alias con @</div>
+                    </div>
+                  )}
+
                   <button className="btn bp blg" style={{ width: "100%" }} onClick={register} disabled={loading}>
                     {loading ? <><div className="spin" /> Creando cuenta...</> : "✅ Crear cuenta"}
                   </button>

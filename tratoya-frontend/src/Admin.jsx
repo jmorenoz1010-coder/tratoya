@@ -455,7 +455,7 @@ function Usuarios({ toast }) {
 
       <div className="tw">
         <table>
-          <thead><tr><th>#</th><th>Usuario</th><th>Email</th><th>ID único</th><th>Identificación</th><th>Banco</th><th>Rol</th><th>Estado</th><th>Tratos</th><th>Registro</th><th>Acciones</th></tr></thead>
+          <thead><tr><th>#</th><th>Usuario</th><th>Email</th><th>Nombre de usuario</th><th>Identificación</th><th>Banco</th><th>Rol</th><th>Estado</th><th>Tratos</th><th>Registro</th><th>Acciones</th></tr></thead>
           <tbody>
             {loading
               ? <tr><td colSpan={11} style={{ textAlign: "center", padding: 32, color: "var(--s400)" }}><div className="spin" style={{ margin: "0 auto" }} /></td></tr>
@@ -508,7 +508,7 @@ function Usuarios({ toast }) {
             </div>
             <div className="modal-bd">
               <div className="g2" style={{ gap: 10, marginBottom: 14 }}>
-                {[["Email", selected.email],["ID único", selected.usuario_unico || "—"],["Teléfono", selected.telefono||"—"],["Identificación", [selected.tipo_identificacion, selected.cedula].filter(Boolean).join(" ") || "—"],["Rol", rolLabel(selected.rol)],["Estado", selected.estado],["Plan", selected.plan||"gratuito"],["Tratos", selected.total_tratos||0],["Exitosos", selected.tratos_exitosos||0],["Reputación", `${parseFloat(selected.reputacion||0).toFixed(1)}★`]].map(([k,v]) => (
+                {[["Email", selected.email],["Nombre de usuario", selected.usuario_unico ? `@${selected.usuario_unico}` : "—"],["Teléfono", selected.telefono||"—"],["Identificación", [selected.tipo_identificacion, selected.cedula].filter(Boolean).join(" ") || "—"],["Rol", rolLabel(selected.rol)],["Estado", selected.estado],["Plan", selected.plan||"gratuito"],["Tratos", selected.total_tratos||0],["Exitosos", selected.tratos_exitosos||0],["Reputación", `${parseFloat(selected.reputacion||0).toFixed(1)}★`]].map(([k,v]) => (
                   <div key={k} style={{ background: "var(--s50)", borderRadius: 8, padding: "9px 11px" }}>
                     <div style={{ fontSize: 9.5, color: "var(--s400)", fontWeight: 600, textTransform: "uppercase", letterSpacing: ".4px", marginBottom: 2 }}>{k}</div>
                     <div style={{ fontSize: 13, fontWeight: 600 }}>{v}</div>
@@ -1051,7 +1051,7 @@ function PersonCard({ title, user }) {
       {user ? (
         <div className="g2" style={{ gap: 8 }}>
           <MiniField label="Nombre" value={`${user.nombre || ""} ${user.apellido || ""}`.trim() || "—"} />
-          <MiniField label="ID único" value={user.usuario_unico || "—"} mono />
+          <MiniField label="Nombre de usuario" value={user.usuario_unico ? `@${user.usuario_unico}` : "—"} mono />
           <MiniField label="Email" value={user.email} mono />
           <MiniField label="Teléfono" value={user.telefono || "—"} />
           <MiniField label="Identificación" value={doc || "—"} mono />

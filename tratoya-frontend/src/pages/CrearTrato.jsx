@@ -36,7 +36,7 @@ export default function CrearTrato({ setPage, toast, user }) {
   };
 
   const create = async () => {
-    if (f.directo && !lookup.data) { toast("Busca y confirma el ID único de tu contraparte.", "error"); return; }
+    if (f.directo && !lookup.data) { toast("Busca y confirma el nombre de usuario de tu contraparte.", "error"); return; }
     if (monto < MONTO_MINIMO_TRATO) { toast(`El monto mínimo es ${fmt(MONTO_MINIMO_TRATO)}`, "error"); return; }
     setLoading(true);
     try {
@@ -209,16 +209,16 @@ export default function CrearTrato({ setPage, toast, user }) {
             <div className="fg" style={{ marginTop: 6 }}>
               <label style={{ display: "flex", alignItems: "center", gap: 9, cursor: "pointer" }}>
                 <input type="checkbox" checked={f.directo} onChange={(e) => sf("directo", e.target.checked)} style={{ width: 16, height: 16 }} />
-                <span className="fl" style={{ marginBottom: 0 }}>Invitar directamente a mi contraparte por su ID único</span>
+                <span className="fl" style={{ marginBottom: 0 }}>Invitar directamente a mi contraparte por su nombre de usuario</span>
               </label>
             </div>
             {f.directo && (
               <div className="fg fi">
-                <label className="fl">ID único de tu contraparte</label>
+                <label className="fl">Nombre de usuario de tu contraparte</label>
                 <div style={{ display: "flex", gap: 8 }}>
                   <input
                     className="inp"
-                    placeholder="su_id_unico"
+                    placeholder="@sunombredeusuario"
                     value={f.contraparte}
                     onChange={(e) => sf("contraparte", normalizeHandle(e.target.value))}
                     onKeyDown={(e) => e.key === "Enter" && buscarContraparte()}

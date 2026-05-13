@@ -223,10 +223,6 @@ router.post('/:id/prueba-entrega', async (req, res, next) => {
         urls.push(url);
       }
 
-      if (urls.length < 2) {
-        return res.status(400).json({ success: false, message: `Se necesitan mínimo 2 fotos. Solo subiste ${urls.length}.` });
-      }
-
       const metadata = { ...(trato.metadata || {}), prueba_entrega_urls: urls, prueba_entrega_fecha: new Date().toISOString() };
       await trato.update({ metadata });
       logger.info(`[TRATO] Prueba entrega subida: ${trato.codigo} · ${urls.length} fotos`);

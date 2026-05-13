@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { api } from "../lib/api";
-import { normalizeHandle, DOC_TYPES, FINANCIAL_ENTITIES } from "../lib/utils";
+import { normalizeHandle, DOC_TYPES, FINANCIAL_ENTITIES, getBankType, BREB_ENTITY } from "../lib/utils";
 import Avatar from "../components/Avatar";
 
 export default function Perfil({ user, setUser, toast }) {
@@ -15,6 +15,7 @@ export default function Perfil({ user, setUser, toast }) {
     cedula: user?.cedula || "",
   });
   const [bank, setBank] = useState({ banco: "", tipo: "ahorros", numero: "", titular: `${user?.nombre || ""} ${user?.apellido || ""}`.trim() });
+  const bankKind = getBankType(bank.banco); // "bank" | "wallet" | "breb"
   const [accounts, setAccounts] = useState([]);
 
   useEffect(() => {
@@ -26,7 +27,7 @@ export default function Perfil({ user, setUser, toast }) {
 
   const saveProfile = async () => {
     const handle = normalizeHandle(profile.usuario_unico);
-    if (!/^[a-z0-9]{5,24}$/.test(handle)) { toast("El ID único debe tener de 5 a 24 letras/números.", "error"); return; }
+    if (!/^[a-z0-9]{5,24}$/.test(handle)) { toast("El nombre de usuario debe tener de 5 a 24 letras/números.", "error"); return; }
     setLoading(true);
     try {
       const r = await api.put("/users/profile", { ...profile, usuario_unico: handle });
@@ -41,10 +42,20 @@ export default function Perfil({ user, setUser, toast }) {
   };
 
   const saveBank = async () => {
-    if (!bank.banco || !bank.numero) { toast("Selecciona entidad y escribe número de cuenta o teléfono.", "error"); return; }
+    if (!bank.banco) { toast("Selecciona la entidad financiera.", "error"); return; }
+    if (bankKind === "breb" && !bank.numero) { toast("Ingresa tu llave Bre-B.", "error"); return; }
+    if (bankKind !== "breb" && !bank.numero) { toast("Escribe el número de cuenta o teléfono.", "error"); return; }
+    const payload = {
+      ...bank,
+      tipo: bankKind === "breb" ? "breb" : bankKind === "wallet" ? bank.banco.toLowerCase().replace(/[^a-z]/g, "").slice(0, 10) : bank.tipo,
+    };
+    // Fix tipo to match valid enum values
+    if (!["ahorros","corriente","nequi","daviplata","breb"].includes(payload.tipo)) {
+      payload.tipo = "nequi"; // wallet genérico
+    }
     setLoading(true);
     try {
-      const r = await api.post("/users/bank-accounts", bank);
+      const r = await api.post("/users/bank-accounts", payload);
       setAccounts((p) => [r.data, ...p]);
       setBank({ banco: "", tipo: "ahorros", numero: "", titular: `${user?.nombre || ""} ${user?.apellido || ""}`.trim() });
       toast("Información bancaria registrada", "success");
@@ -69,7 +80,7 @@ export default function Perfil({ user, setUser, toast }) {
               </div>
             </div>
             <div className="g2" style={{ gap: 10 }}>
-              {[["Email", user?.email], ["ID único", user?.usuario_unico || "—"], ["Teléfono", user?.telefono || "—"], ["Reputación", `${parseFloat(user?.reputacion || 0).toFixed(1)}★`]].map(([k, v]) => (
+              {[["Email", user?.email], ["Nombre de usuario", user?.usuario_unico ? `@${user.usuario_unico}` : "—"], ["Teléfono", user?.telefono || "—"], ["Reputación", `${parseFloat(user?.reputacion || 0).toFixed(1)}★`]].map(([k, v]) => (
                 <div key={k}>
                   <div style={{ fontSize: 10, color: "var(--s400)", fontWeight: 600, textTransform: "uppercase", letterSpacing: ".4px", marginBottom: 2 }}>{k}</div>
                   <div style={{ fontSize: 13, fontWeight: 600 }}>{v}</div>
@@ -85,9 +96,9 @@ export default function Perfil({ user, setUser, toast }) {
               <div className="fg"><label className="fl">Apellido</label><input className="inp" value={profile.apellido} onChange={(e) => sp("apellido", e.target.value)} /></div>
             </div>
             <div className="fg">
-              <label className="fl">ID único</label>
+              <label className="fl">Nombre de usuario</label>
               <input className="inp" value={profile.usuario_unico} onChange={(e) => sp("usuario_unico", normalizeHandle(e.target.value))} placeholder="letrasynumeros" />
-              <div className="fh">5 a 24 letras/números. Sirve para recibir tratos directos.</div>
+              <div className="fh">5 a 24 letras/números. Sirve para recibir tratos directos (ej. @{profile.usuario_unico || "tunombre"}).</div>
             </div>
             <div className="g2" style={{ gap: 10 }}>
               <div className="fg">
@@ -127,21 +138,34 @@ export default function Perfil({ user, setUser, toast }) {
               {FINANCIAL_ENTITIES.map((b) => <option key={b} value={b}>{b}</option>)}
             </select>
           </div>
-          <div className="g2" style={{ gap: 10 }}>
-            <div className="fg">
-              <label className="fl">Tipo</label>
-              <select className="inp" value={bank.tipo} onChange={(e) => sb("tipo", e.target.value)}>
-                <option value="ahorros">Cuenta de ahorros</option>
-                <option value="corriente">Cuenta corriente</option>
-                <option value="nequi">Nequi</option>
-                <option value="daviplata">Daviplata</option>
-              </select>
+          {bankKind === "bank" && (
+            <div className="g2" style={{ gap: 10 }}>
+              <div className="fg">
+                <label className="fl">Tipo de cuenta</label>
+                <select className="inp" value={bank.tipo} onChange={(e) => sb("tipo", e.target.value)}>
+                  <option value="ahorros">Cuenta de ahorros</option>
+                  <option value="corriente">Cuenta corriente</option>
+                </select>
+              </div>
+              <div className="fg">
+                <label className="fl">Número de cuenta</label>
+                <input className="inp" value={bank.numero} onChange={(e) => sb("numero", e.target.value.replace(/[^\d]/g, ""))} placeholder="123456789" />
+              </div>
             </div>
+          )}
+          {bankKind === "wallet" && (
             <div className="fg">
-              <label className="fl">Número cuenta/teléfono</label>
+              <label className="fl">Número de teléfono</label>
               <input className="inp" value={bank.numero} onChange={(e) => sb("numero", e.target.value.replace(/[^\d]/g, ""))} placeholder="3001234567" />
             </div>
-          </div>
+          )}
+          {bankKind === "breb" && (
+            <div className="fg">
+              <label className="fl">Llave Bre-B</label>
+              <input className="inp" value={bank.numero} onChange={(e) => sb("numero", e.target.value)} placeholder="@ingresa tu llave" style={{ color: bank.numero ? undefined : "var(--s400)" }} />
+              <div className="fh">Puede ser tu celular, email o alias con @</div>
+            </div>
+          )}
           <div className="fg">
             <label className="fl">Titular</label>
             <input className="inp" value={bank.titular} onChange={(e) => sb("titular", e.target.value)} />

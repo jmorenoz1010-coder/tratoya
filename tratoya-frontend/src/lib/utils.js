@@ -45,12 +45,32 @@ export const DOC_TYPES = [
   ["OTRO", "Otro"],
 ];
 
-export const FINANCIAL_ENTITIES = [
-  "Bancolombia","Nequi","Davivienda","Daviplata","Banco de Bogotá","Banco de Occidente",
+// Entidades clasificadas por tipo de cuenta
+// "breb" = Llave Bre-B (alias interoperabilidad Banco de la República)
+// "wallet" = solo número de teléfono
+// "bank" = ahorros o corriente
+export const BANK_ENTITIES = [
+  "Bancolombia","Davivienda","Banco de Bogotá","Banco de Occidente",
   "Banco Popular","Banco AV Villas","BBVA Colombia","Scotiabank Colpatria","Itaú Colombia",
   "Banco Caja Social","Banco Agrario","Banco Falabella","Banco Pichincha","Bancoomeva",
-  "Banco W","Banco Serfinanza","Banco GNB Sudameris","Lulo Bank","Nu Colombia",
-  "RappiPay","Movii","Dale!","Coink",
+  "Banco W","Banco Serfinanza","Banco GNB Sudameris",
+];
+export const WALLET_ENTITIES = [
+  "Nequi","Daviplata","Lulo Bank","Nu Colombia","RappiPay","Movii","Dale!","Coink",
+];
+export const BREB_ENTITY = "Llave Bre-B";
+
+export const getBankType = (entity) => {
+  if (entity === BREB_ENTITY) return "breb";
+  if (WALLET_ENTITIES.includes(entity)) return "wallet";
+  return "bank";
+};
+
+// Lista completa para el selector (Bre-B primero, luego wallets, luego bancos)
+export const FINANCIAL_ENTITIES = [
+  BREB_ENTITY,
+  ...WALLET_ENTITIES,
+  ...BANK_ENTITIES,
 ];
 
 export const passwordChecks = (password, f = {}) => [

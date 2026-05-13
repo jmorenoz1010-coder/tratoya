@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, lazy, Suspense } from "react";
+import { useState, useCallback, useEffect, useRef, lazy, Suspense } from "react";
 import { api, clearSession } from "../lib/api";
 import { ESTADO, isSupportNotification } from "../lib/utils";
 import { API_URL } from "../lib/api";
@@ -107,6 +107,7 @@ export default function AppShell({ session, setSession, toast }) {
   const [disputeTratoId, setDisputeTratoId] = useState(null);
   const [floatingNote, setFloatingNote] = useState(null);
   const [celebration, setCelebration] = useState(false);
+  const shownNotifIds = useRef(new Set());
 
   const showFloatingNote = useCallback((note) => {
     setFloatingNote(note);
@@ -195,6 +196,8 @@ export default function AppShell({ session, setSession, toast }) {
             try {
               const evt = JSON.parse(dataLine.slice(5).trim());
               if (evt.tipo !== "conectado") {
+                const evtId = evt.id || evt.datos?.id;
+                if (evtId) shownNotifIds.current.add(String(evtId));
                 const supportNote = isSupportNotification(evt);
                 showFloatingNote({
                   tipo: evt.tipo,
@@ -214,6 +217,38 @@ export default function AppShell({ session, setSession, toast }) {
     };
     connect();
     return () => ctrl.abort();
+  }, [session?.token, showFloatingNote, showCompletionCelebration]);
+
+  // Polling fallback: captura notificaciones perdidas cuando SSE se corta (Vercel timeout ~30s)
+  useEffect(() => {
+    if (!session?.token) return;
+    const INTERVAL = 25000; // 25 segundos
+    const poll = async () => {
+      try {
+        const r = await api.get("/users/notifications");
+        const notifs = r.data || [];
+        const unread = notifs.filter((n) => !n.leida && !shownNotifIds.current.has(String(n.id)));
+        // Mostrar solo la más reciente no vista para no saturar
+        if (unread.length > 0) {
+          const latest = unread[0];
+          shownNotifIds.current.add(String(latest.id));
+          const supportNote = isSupportNotification(latest);
+          const tipo = latest.tipo || "notificacion";
+          showFloatingNote({
+            tipo,
+            icon: supportNote || ["pago_liberado", "trato_completado"].includes(tipo) ? "🔔" : "💬",
+            titulo: supportNote ? 'Mensaje de "Soporte - TratoYA"' : (latest.titulo || "Nueva actividad"),
+            cuerpo: latest.cuerpo || "Toca para ver el detalle.",
+            trato_id: latest.datos?.trato_id || latest.datos?.metadata?.trato_id,
+          });
+          if (["pago_liberado", "trato_completado"].includes(tipo)) showCompletionCelebration();
+          // Marcar como leída para no repetirla
+          api.put(`/users/notifications/${latest.id}/read`).catch(() => {});
+        }
+      } catch { /* silencioso */ }
+    };
+    const id = setInterval(poll, INTERVAL);
+    return () => clearInterval(id);
   }, [session?.token, showFloatingNote, showCompletionCelebration]);
 
   const openFloatingNote = () => {
