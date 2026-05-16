@@ -181,6 +181,12 @@ tbody tr:hover td{background:var(--s50)}
 .empty-d{font-size:13px}
 .logo-row{display:flex;align-items:center;gap:10px;min-width:0}
 
+/* ── Share actions ──────────────────────────────────── */
+.share-actions{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:9px;margin-bottom:9px;align-items:stretch}
+.share-actions .btn{min-width:0;display:inline-flex;align-items:center;justify-content:center;gap:7px;text-align:center;line-height:1.2;white-space:normal}
+.share-actions .share-wa{width:100%;padding-left:14px;padding-right:14px}
+.share-actions .share-copy{min-width:94px;padding-left:14px;padding-right:14px}
+
 /* ── KPI cards ──────────────────────────────────────── */
 .kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:11px;margin-bottom:18px}
 .kpi{background:#fff;border-radius:13px;padding:15px 17px;border:1px solid var(--s100);transition:transform .2s,box-shadow .2s}
@@ -349,4 +355,6 @@ tbody tr:hover td{background:var(--s50)}
   .chat-card{height:330px}
   .table-wrap{overflow-x:auto}
   .footer-links{display:none}
+  .share-actions{grid-template-columns:1fr}
+  .share-actions .share-copy{width:100%;min-width:0}
 }

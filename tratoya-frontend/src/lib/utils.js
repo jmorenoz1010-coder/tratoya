@@ -137,10 +137,11 @@ export const calcularComisionUI = (monto, quien = "comprador") => {
   };
 };
 
-export const loadEpaycoCheckout = () =>
+export const loadEpaycoCheckout = (version = "1") =>
   new Promise((resolve, reject) => {
     if (window.ePayco?.checkout) return resolve(window.ePayco);
-    const existing = document.querySelector('script[data-epayco-checkout="true"]');
+    const isV2 = String(version) === "2";
+    const existing = document.querySelector(`script[data-epayco-checkout="${isV2 ? "v2" : "v1"}"]`);
     if (existing) {
       existing.addEventListener("load", () => resolve(window.ePayco), { once: true });
       existing.addEventListener(
@@ -151,9 +152,9 @@ export const loadEpaycoCheckout = () =>
       return;
     }
     const script = document.createElement("script");
-    script.src = "https://checkout.epayco.co/checkout.js";
+    script.src = isV2 ? "https://checkout.epayco.co/checkout-v2.js" : "https://checkout.epayco.co/checkout.js";
     script.async = true;
-    script.dataset.epaycoCheckout = "true";
+    script.dataset.epaycoCheckout = isV2 ? "v2" : "v1";
     script.onload = () =>
       window.ePayco?.checkout
         ? resolve(window.ePayco)
@@ -163,7 +164,19 @@ export const loadEpaycoCheckout = () =>
   });
 
 export const openEpaycoCheckout = async (order) => {
-  const ePayco = await loadEpaycoCheckout();
+  const isV2 = String(order.checkoutVersion || order.checkout_version || "") === "2" || Boolean(order.sessionId);
+  const ePayco = await loadEpaycoCheckout(isV2 ? "2" : "1");
+  if (isV2) {
+    if (!order.sessionId) throw new Error("No se recibió la sesión de ePayco");
+    const checkout = ePayco.checkout.configure({
+      sessionId: order.sessionId,
+      type: order.checkoutType || "standard",
+      test: order.test === true || order.test === "true",
+    });
+    if (checkout.onErrors) checkout.onErrors((errors) => console.error("ePayco checkout error", errors));
+    checkout.open();
+    return;
+  }
   const handler = ePayco.checkout.configure({
     key: order.publicKey,
     test: order.checkoutData?.test === true || order.checkoutData?.test === "true",

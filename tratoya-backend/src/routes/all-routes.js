@@ -3,6 +3,7 @@
 // =============================================
 const express = require('express');
 const bcrypt = require('bcryptjs');
+const axios = require('axios');
 const { Op } = require('sequelize');
 const usersRouter = express.Router();
 const auth = require('../middleware/auth');
@@ -179,15 +180,26 @@ const normalizeEpaycoStatus = (response, stateCode) => {
 
 const paymentFailedStatuses = ['PAYMENT_DECLINED', 'PAYMENT_ERROR', 'PAYMENT_VOIDED'];
 
+const envBool = (value, fallback = false) => {
+  if (value === undefined || value === null || value === '') return fallback;
+  return ['1', 'true', 'yes', 'si', 'sí', 'on'].includes(String(value).trim().toLowerCase());
+};
+
 function getEpaycoConfig() {
-  const env = process.env.EPAYCO_ENV || (process.env.NODE_ENV === 'production' ? 'production' : 'test');
+  const explicitEnv = String(process.env.EPAYCO_ENV || '').trim().toLowerCase();
+  const isTest = explicitEnv
+    ? !['production', 'prod', 'live'].includes(explicitEnv)
+    : envBool(process.env.EPAYCO_TEST, process.env.NODE_ENV !== 'production');
+  const env = isTest ? 'test' : 'production';
   const publicKey = process.env.EPAYCO_PUBLIC_KEY || process.env.EPAYCO_P_PUBLIC_KEY || '';
-  const customerId = process.env.EPAYCO_CUSTOMER_ID || process.env.EPAYCO_P_CUST_ID_CLIENTE || '';
-  const pKey = process.env.EPAYCO_P_KEY || '';
+  const customerId = process.env.EPAYCO_CUSTOMER_ID || process.env.EPAYCO_P_CUST_ID_CLIENTE || process.env.EPAYCO_P_CUST_ID || '';
+  const pKey = process.env.EPAYCO_PRIVATE_KEY || process.env.EPAYCO_SECRET_KEY || process.env.EPAYCO_P_KEY || '';
   const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
   const backendUrl = process.env.BACKEND_URL || 'http://localhost:4000';
-  const realEnabled = process.env.PAYMENTS_REAL_ENABLED === 'true';
+  const realEnabled = envBool(process.env.PAYMENTS_REAL_ENABLED);
   const maxTestAmountCop = Number(process.env.PAYMENTS_MAX_TEST_AMOUNT_COP || 100000);
+  const checkoutVersion = String(process.env.EPAYCO_CHECKOUT_VERSION || '2').trim();
+  const checkoutType = String(process.env.EPAYCO_CHECKOUT_TYPE || 'standard').trim().toLowerCase() === 'onpage' ? 'onpage' : 'standard';
 
   if (!publicKey) {
     const err = new Error('Falta variable ePayco: EPAYCO_PUBLIC_KEY');
@@ -196,9 +208,48 @@ function getEpaycoConfig() {
     throw err;
   }
   if (!customerId || !pKey) {
-    logger.warn('EPAYCO_SIGNATURE_KEYS_MISSING: el checkout puede abrir, pero el webhook no aprobará pagos sin EPAYCO_CUSTOMER_ID y EPAYCO_P_KEY');
+    logger.warn('EPAYCO_SIGNATURE_KEYS_MISSING: faltan EPAYCO_CUSTOMER_ID/EPAYCO_P_CUST_ID y EPAYCO_P_KEY para sesión v2 o validación de webhook');
   }
-  return { env, publicKey, customerId, pKey, frontendUrl, backendUrl, realEnabled, maxTestAmountCop };
+  return { env, isTest, publicKey, customerId, pKey, frontendUrl, backendUrl, realEnabled, maxTestAmountCop, checkoutVersion, checkoutType };
+}
+
+async function createEpaycoSmartSession(config, sessionPayload) {
+  if (!config.pKey) {
+    const err = new Error('Falta variable ePayco: EPAYCO_P_KEY');
+    err.statusCode = 503;
+    err.expose = true;
+    throw err;
+  }
+  const basic = Buffer.from(`${config.publicKey}:${config.pKey}`).toString('base64');
+  const login = await axios.post('https://apify.epayco.co/login', {}, {
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Basic ${basic}`,
+    },
+    timeout: 15000,
+  });
+  const token = login.data?.token || login.data?.data?.token;
+  if (!token) {
+    const err = new Error('ePayco no devolvió token de autenticación');
+    err.statusCode = 502;
+    err.expose = true;
+    throw err;
+  }
+  const session = await axios.post('https://apify.epayco.co/payment/session/create', sessionPayload, {
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    timeout: 15000,
+  });
+  const sessionId = session.data?.data?.sessionId || session.data?.sessionId;
+  if (!sessionId) {
+    const err = new Error(session.data?.textResponse || session.data?.titleResponse || 'ePayco no devolvió sessionId');
+    err.statusCode = 502;
+    err.expose = true;
+    throw err;
+  }
+  return { sessionId, raw: session.data };
 }
 
 function canAccessDeal(trato, user) {
@@ -241,7 +292,7 @@ paymentsRouter.post('/epayco/create', async (req, res, next) => {
     if (!dealId) return res.status(400).json({ success: false, message: 'dealId requerido' });
 
     const config = getEpaycoConfig();
-    if (config.env === 'production' && !config.realEnabled) {
+    if (!config.isTest && !config.realEnabled) {
       return res.status(403).json({ success: false, message: 'Pagos reales deshabilitados por configuración' });
     }
 
@@ -264,7 +315,7 @@ paymentsRouter.post('/epayco/create', async (req, res, next) => {
     if (!Number.isFinite(amountCop) || amountCop <= 0) {
       return res.status(400).json({ success: false, message: 'El monto del trato no es válido' });
     }
-    if (amountCop > config.maxTestAmountCop) {
+    if (config.isTest && amountCop > config.maxTestAmountCop) {
       return res.status(400).json({
         success: false,
         message: `Durante pruebas reales solo se permiten pagos hasta ${config.maxTestAmountCop} COP.`,
@@ -292,7 +343,7 @@ paymentsRouter.post('/epayco/create', async (req, res, next) => {
       response: responseUrl,
       confirmation: confirmationUrl,
       method_confirmation: 'POST',
-      test: config.env !== 'production',
+      test: config.isTest,
       name_billing: `${req.user.nombre || ''} ${req.user.apellido || ''}`.trim() || req.user.email,
       email_billing: req.user.email,
       mobilephone_billing: req.user.telefono || '',
@@ -301,6 +352,42 @@ paymentsRouter.post('/epayco/create', async (req, res, next) => {
       extra2: req.user.id,
       extra3: reference,
     };
+    const smartSessionPayload = {
+      checkout_version: '2',
+      name: 'TratoYA',
+      description: trato.titulo || `Trato ${trato.codigo || trato.id}`,
+      currency,
+      amount: amountCop,
+      lang: 'ES',
+      country: 'CO',
+      taxBase: amountCop,
+      tax: 0,
+      response: responseUrl,
+      confirmation: confirmationUrl,
+      invoice: reference,
+      Invoice: reference,
+      method: 'GET',
+      forceResponse: true,
+      uniqueTransactionPerBill: true,
+      extras: {
+        extra1: String(trato.id),
+        extra2: String(req.user.id),
+        extra3: reference,
+      },
+      billing: {
+        email: req.user.email,
+        name: `${req.user.nombre || ''} ${req.user.apellido || ''}`.trim() || req.user.email,
+        typeDoc: req.user.tipo_identificacion || 'CC',
+        numberDoc: req.user.cedula || '',
+        callingCode: '+57',
+        mobilePhone: req.user.telefono || '',
+      },
+    };
+
+    let smartSession = null;
+    if (config.checkoutVersion === '2') {
+      smartSession = await createEpaycoSmartSession(config, smartSessionPayload);
+    }
 
     const intent = await PaymentIntent.create({
       provider: 'epayco',
@@ -312,7 +399,15 @@ paymentsRouter.post('/epayco/create', async (req, res, next) => {
       deal_id: trato.id,
       created_by_user_id: req.user.id,
       checkout_url: responseUrl,
-      raw_response: { responseUrl, confirmationUrl, checkoutData, env: config.env },
+      raw_response: {
+        responseUrl,
+        confirmationUrl,
+        checkoutData,
+        smartSessionPayload,
+        smartSession: smartSession ? { sessionId: smartSession.sessionId, raw: smartSession.raw } : null,
+        env: config.env,
+        checkoutVersion: config.checkoutVersion,
+      },
     });
     await trato.update({ estado: 'pago_pendiente' });
     await AuditLog.create({
@@ -324,10 +419,7 @@ paymentsRouter.post('/epayco/create', async (req, res, next) => {
     });
 
     logger.info(`EPAYCO_CREATE_PAYMENT_SUCCESS ${reference}`);
-    res.json({
-      success: true,
-      ok: true,
-      data: { reference, amountInCents, amountCop, currency, provider: 'epayco', publicKey: config.publicKey, checkoutData },
+    const paymentData = {
       reference,
       amountInCents,
       amountCop,
@@ -335,6 +427,16 @@ paymentsRouter.post('/epayco/create', async (req, res, next) => {
       provider: 'epayco',
       publicKey: config.publicKey,
       checkoutData,
+      checkoutVersion: smartSession ? '2' : '1',
+      checkoutType: config.checkoutType,
+      sessionId: smartSession?.sessionId || null,
+      test: config.isTest,
+    };
+    res.json({
+      success: true,
+      ok: true,
+      data: paymentData,
+      ...paymentData,
     });
   } catch (err) { next(err); }
 });
@@ -1592,8 +1694,8 @@ webhooksRouter.all('/epayco', async (req, res) => {
     const amount = payload.x_amount || payload.x_amount_ok || null;
     const currency = payload.x_currency_code || 'COP';
     const checksum = payload.x_signature || null;
-    const customerId = process.env.EPAYCO_CUSTOMER_ID || process.env.EPAYCO_P_CUST_ID_CLIENTE || '';
-    const pKey = process.env.EPAYCO_P_KEY || '';
+    const customerId = process.env.EPAYCO_CUSTOMER_ID || process.env.EPAYCO_P_CUST_ID_CLIENTE || process.env.EPAYCO_P_CUST_ID || '';
+    const pKey = process.env.EPAYCO_PRIVATE_KEY || process.env.EPAYCO_SECRET_KEY || process.env.EPAYCO_P_KEY || '';
     const expectedChecksum = customerId && pKey && refPayco && txId && amount && currency
       ? crypto.createHash('sha256').update(`${customerId}^${pKey}^${refPayco}^${txId}^${amount}^${currency}`).digest('hex')
       : null;

@@ -86,15 +86,15 @@ export default function CrearTrato({ setPage, toast, user }) {
           {qrUrl && <img src={qrUrl} alt="QR Trato" style={{ width: 180, height: 180, display: "block" }} />}
           <div style={{ fontSize: 10.5, color: "var(--s400)", marginTop: 6 }}>⏱ Válido 12 h · Expira al aceptarse</div>
         </div>
-        <div style={{ display: "flex", gap: 9, marginBottom: 9 }}>
-          <button className="btn bp" style={{ flex: 1 }} onClick={() => {
+        <div className="share-actions">
+          <button className="btn bp share-wa" onClick={() => {
             const waMsj = `Hola, te comparto el link de nuestro trato seguro en TratoYa:%0A%0A🔒 *${done.titulo || done.codigo}*%0A💰 Monto: ${done.monto_fmt || ""}%0A%0A👉 ${encodeURIComponent(done.link_publico || `${window.location.origin}/t/${done.link_compartir}`)}`;
             window.open(`https://wa.me/?text=${waMsj}`, "_blank");
           }}>
-            📲 Compartir por WhatsApp
+            <span>📲</span><span>Compartir por WhatsApp</span>
           </button>
-          <button className="btn bo" onClick={() => { navigator.clipboard.writeText(done.link_publico); toast("Link copiado ✓", "success"); }}>
-            🔗 Copiar
+          <button className="btn bo share-copy" onClick={() => { navigator.clipboard.writeText(done.link_publico); toast("Link copiado ✓", "success"); }}>
+            <span>🔗</span><span>Copiar</span>
           </button>
         </div>
         <div style={{ display: "flex", gap: 9 }}>
