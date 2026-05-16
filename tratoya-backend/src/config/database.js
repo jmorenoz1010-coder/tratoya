@@ -41,18 +41,30 @@ async function ensureBrebEnumValue() {
 }
 
 async function ensureUserRegistrationColumns() {
-  await sequelize.query(`
-    DO $$
-    BEGIN
-      IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'enum_users_tipo_identificacion') THEN
-        CREATE TYPE enum_users_tipo_identificacion AS ENUM ('CC','CE','TI','PA','PEP','NIT','OTRO');
-      END IF;
-    END
-    $$;
-  `);
-  await sequelize.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS usuario_unico VARCHAR(40);`);
-  await sequelize.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS tipo_identificacion enum_users_tipo_identificacion DEFAULT 'CC';`);
-  await sequelize.query(`CREATE UNIQUE INDEX IF NOT EXISTS users_usuario_unico_unique ON users (usuario_unico) WHERE usuario_unico IS NOT NULL;`);
+  try {
+    await sequelize.query(`
+      DO $$
+      BEGIN
+        IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'enum_users_tipo_identificacion') THEN
+          CREATE TYPE enum_users_tipo_identificacion AS ENUM ('CC','CE','TI','PA','PEP','NIT','OTRO');
+        END IF;
+      END
+      $$;
+    `);
+    await sequelize.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS usuario_unico VARCHAR(40);`);
+    await sequelize.query(`
+      DO $$
+      BEGIN
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='tipo_identificacion') THEN
+          ALTER TABLE users ADD COLUMN tipo_identificacion VARCHAR(10) DEFAULT 'CC';
+        END IF;
+      END
+      $$;
+    `);
+    await sequelize.query(`CREATE UNIQUE INDEX IF NOT EXISTS users_usuario_unico_unique ON users (usuario_unico) WHERE usuario_unico IS NOT NULL;`);
+  } catch (e) {
+    console.warn('[DB] ensureUserRegistrationColumns warning:', e.message);
+  }
 }
 
 async function connectDB() {

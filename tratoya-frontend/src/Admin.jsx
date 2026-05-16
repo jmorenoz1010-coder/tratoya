@@ -425,7 +425,7 @@ function Usuarios({ toast }) {
     setLoading(true);
     api.get(`/admin/users${q ? `?q=${q}` : ""}`)
       .then(r => setUsers(r.data || []))
-      .catch(() => toast("Error cargando usuarios", "error"))
+      .catch(e => toast(e.message || "Error cargando usuarios", "error"))
       .finally(() => setLoading(false));
   };
   useEffect(load, []);
@@ -515,7 +515,7 @@ function Usuarios({ toast }) {
                     <td style={{ fontSize: 12 }}>{u.email}</td>
                     <td className="mono" style={{ fontSize: 11.5 }}>{u.usuario_unico || "—"}</td>
                     <td className="mono" style={{ fontSize: 11.5 }}>{[u.tipo_identificacion, u.cedula].filter(Boolean).join(" ") || "—"}</td>
-                    <td style={{ fontSize: 11.5 }}>{(u.CuentaBancaria || u.CuentaBancariae || u.CuentaBancarias || [])[0]?.banco || "—"}</td>
+                    <td style={{ fontSize: 11.5 }}>{(u.CuentaBancarias || u.CuentaBancaria || [])[0]?.banco || "—"}</td>
                     <td><span className={`bdg ${ROLE_BADGE[u.rol] || "bg"}`}>{rolLabel(u.rol)}</span></td>
                     <td><span className={`bdg ${u.estado === "activo" ? "gn" : u.estado === "suspendido" ? "rd" : "bg"}`}>{u.estado}</span></td>
                     <td style={{ fontFamily: "Syne", fontWeight: 700, fontSize: 12.5 }}>{u.total_tratos || 0}</td>

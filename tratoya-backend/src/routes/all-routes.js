@@ -1245,12 +1245,30 @@ adminRouter.get('/users', async (req, res, next) => {
 
     const users = await User.findAll({
       where,
-      include: [{ model: CuentaBancaria, limit: 5, separate: true, order: [['createdAt', 'DESC']] }],
       attributes: { exclude: ['password_hash', 'refresh_token'] },
       order: [['createdAt', 'DESC']],
       limit: 200,
     });
-    res.json({ success: true, data: users.map(cleanUser) });
+    const userIds = users.map(u => u.id);
+    let cuentasMap = {};
+    if (userIds.length > 0) {
+      try {
+        const cuentas = await CuentaBancaria.findAll({
+          where: { usuario_id: { [Op.in]: userIds } },
+          order: [['createdAt', 'DESC']],
+        });
+        cuentas.forEach(c => {
+          if (!cuentasMap[c.usuario_id]) cuentasMap[c.usuario_id] = [];
+          if (cuentasMap[c.usuario_id].length < 5) cuentasMap[c.usuario_id].push(c.toJSON());
+        });
+      } catch { /* no crash si la tabla de cuentas no está disponible */ }
+    }
+    const data = users.map(u => {
+      const clean = cleanUser(u);
+      clean.CuentaBancarias = cuentasMap[u.id] || [];
+      return clean;
+    });
+    res.json({ success: true, data });
   } catch (err) { next(err); }
 });
 
