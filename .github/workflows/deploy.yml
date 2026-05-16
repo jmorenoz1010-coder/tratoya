@@ -78,9 +78,8 @@ jobs:
         working-directory: tratoya-frontend
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-          VITE_API_URL: ${{ secrets.VITE_API_URL }}
-          VERCEL_ORG_ID: ${{ env.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ env.VERCEL_PROJECT_ID }}
+          # VITE_API_URL la provee el dashboard de Vercel (env var de producción).
+          # NO la sobreescribimos aquí para que vercel build la tome del proyecto.
         run: vercel build --prod --token "$VERCEL_TOKEN" --yes
       - name: Deploy prebuilt → Vercel
         working-directory: tratoya-frontend

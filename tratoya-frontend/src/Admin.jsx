@@ -6,7 +6,7 @@ import { Fragment, useState, useEffect, useCallback, useRef } from "react";
    Ruta: /admin  |  Solo accesible con rol = 'admin'
    ═══════════════════════════════════════════════════════════ */
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:4000/api";
+const API_URL = import.meta.env.VITE_API_URL || "/api";
 
 const api = {
   _tok: () => localStorage.getItem("ty_admin_token_v2"),
