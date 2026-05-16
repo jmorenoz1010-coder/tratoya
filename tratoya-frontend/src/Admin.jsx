@@ -10,18 +10,41 @@ const API_URL = import.meta.env.VITE_API_URL || "/api";
 
 const api = {
   _tok: () => localStorage.getItem("ty_admin_token_v2"),
-  async req(method, path, body = null, isForm = false) {
+  _ref: () => localStorage.getItem("ty_admin_refresh_v2"),
+  async req(method, path, body = null, isForm = false, _retry = false) {
     const h = {};
     const tok = this._tok();
     if (tok) h["Authorization"] = `Bearer ${tok}`;
     if (!isForm) h["Content-Type"] = "application/json";
-    const r = await fetch(`${API_URL}${path}`, {
-      method, headers: h,
-      body: body ? (isForm ? body : JSON.stringify(body)) : null,
-    });
+    let r;
+    try {
+      r = await fetch(`${API_URL}${path}`, {
+        method, headers: h,
+        body: body ? (isForm ? body : JSON.stringify(body)) : null,
+      });
+    } catch {
+      throw new Error("No se pudo conectar con el servidor. Verifica tu conexión.");
+    }
     const d = await r.json().catch(() => ({ success: false, message: "Error de conexión" }));
-    if (!r.ok && r.status === 401 && path.startsWith("/admin")) {
+    if (!r.ok && r.status === 401 && !_retry) {
+      // Intenta refrescar el token antes de cerrar sesión
+      const refresh = this._ref();
+      if (refresh) {
+        try {
+          const rr = await fetch(`${API_URL}/auth/refresh`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ refresh_token: refresh }),
+          });
+          const rd = await rr.json().catch(() => ({}));
+          if (rr.ok && rd.token) {
+            localStorage.setItem("ty_admin_token_v2", rd.token);
+            return this.req(method, path, body, isForm, true); // reintento con nuevo token
+          }
+        } catch { /* sigue al logout */ }
+      }
       localStorage.removeItem("ty_admin_token_v2");
+      localStorage.removeItem("ty_admin_refresh_v2");
       localStorage.removeItem("ty_admin_user_v2");
       localStorage.removeItem("ty_admin_token");
       window.dispatchEvent(new CustomEvent("ty-admin-auth-expired", { detail: d.message || "Sesión vencida" }));
@@ -418,6 +441,7 @@ function Usuarios({ toast }) {
   const [detailLoading, setDetailLoading] = useState(false);
   const [modal, setModal] = useState(null);
   const [busy, setBusy] = useState(false);
+  const [kycBusy, setKycBusy] = useState(null); // id del usuario cuyo KYC está cambiando
   const [pwForm, setPwForm] = useState({ password: "", confirmar: "" });
   const [msgForm, setMsgForm] = useState({ titulo: "", cuerpo: "" });
 
@@ -454,14 +478,22 @@ function Usuarios({ toast }) {
   };
 
   const toggleKyc = async (user) => {
-    const nextLevel = user.kyc_nivel === 'premium' ? 'verificado' : user.kyc_nivel === 'verificado' ? 'premium' : user.kyc_nivel === 'basico' ? 'verificado' : 'basico';
-    setBusy(true);
+    const levels = ['ninguno', 'basico', 'verificado', 'premium'];
+    const cur = levels.indexOf(user.kyc_nivel || 'ninguno');
+    const nextLevel = levels[Math.min(cur + 1, levels.length - 1)] === user.kyc_nivel
+      ? levels[Math.max(cur - 1, 0)]
+      : levels[Math.min(cur + 1, levels.length - 1)];
+    // Ciclo: ninguno → basico → verificado → premium → ninguno
+    const cycle = { ninguno: 'basico', basico: 'verificado', verificado: 'premium', premium: 'ninguno' };
+    const next = cycle[user.kyc_nivel || 'ninguno'] || 'basico';
+    setKycBusy(user.id);
     try {
-      await api.patch(`/admin/users/${user.id}/kyc`, { kyc_nivel: nextLevel });
-      toast(`Verificación cambiada a ${nextLevel}`, 'success');
-      load();
+      const r = await api.patch(`/admin/users/${user.id}/kyc`, { kyc_nivel: next });
+      // Actualiza el usuario en la lista local sin recargar toda la tabla
+      setUsers(prev => prev.map(u => u.id === user.id ? { ...u, kyc_nivel: next, kyc_estado: r.data?.kyc_estado || 'aprobado' } : u));
+      toast(`✓ ${user.nombre}: verificación → ${next}`, 'success');
     } catch (e) { toast(e.message, 'error'); }
-    setBusy(false);
+    setKycBusy(null);
   };
 
   const sendPush = async () => {
@@ -529,10 +561,18 @@ function Usuarios({ toast }) {
                     <td style={{ fontSize: 11.5 }}>{(u.CuentaBancarias || u.CuentaBancaria || [])[0]?.banco || "—"}</td>
                     <td>
                       {u.kyc_nivel === 'premium'
-                        ? <span style={{display:'inline-flex',alignItems:'center',gap:3,background:'#1877F2',color:'#fff',padding:'2px 7px',borderRadius:20,fontSize:10,fontWeight:700}}>💙 PREMIUM</span>
-                        : u.kyc_nivel && u.kyc_nivel !== 'ninguno'
-                          ? <span className="bdg gn" style={{fontSize:10}}>✓ Verif.</span>
-                          : <span className="bdg bg" style={{fontSize:10}}>Sin verif.</span>}
+                        ? <span style={{display:'inline-flex',alignItems:'center',gap:4,background:'#1877F2',color:'#fff',padding:'2px 8px',borderRadius:20,fontSize:10,fontWeight:700}}>
+                            <span style={{display:'inline-flex',alignItems:'center',justifyContent:'center',width:14,height:14,background:'#fff',borderRadius:'50%',color:'#1877F2',fontSize:10,fontWeight:900,lineHeight:1,flexShrink:0}}>✓</span>
+                            PREMIUM
+                          </span>
+                        : u.kyc_nivel === 'verificado'
+                          ? <span style={{display:'inline-flex',alignItems:'center',gap:4,background:'#1877F2',color:'#fff',padding:'2px 8px',borderRadius:20,fontSize:10,fontWeight:700}}>
+                              <span style={{display:'inline-flex',alignItems:'center',justifyContent:'center',width:14,height:14,background:'#fff',borderRadius:'50%',color:'#1877F2',fontSize:10,fontWeight:900,lineHeight:1,flexShrink:0}}>✓</span>
+                              Verif.
+                            </span>
+                          : u.kyc_nivel === 'basico'
+                            ? <span className="bdg gn" style={{fontSize:10}}>✓ Básico</span>
+                            : <span className="bdg bg" style={{fontSize:10}}>Sin verif.</span>}
                     </td>
                     <td><span className={`bdg ${ROLE_BADGE[u.rol] || "bg"}`}>{rolLabel(u.rol)}</span></td>
                     <td><span className={`bdg ${u.estado === "activo" ? "gn" : u.estado === "suspendido" ? "rd" : "bg"}`}>{u.estado}</span></td>
@@ -541,12 +581,17 @@ function Usuarios({ toast }) {
                     <td>
                       <div style={{ display: "flex", gap: 4 }}>
                         <button
-                          className={`btn bsm ${u.kyc_nivel === 'premium' ? 'bpu' : u.kyc_nivel !== 'ninguno' && u.kyc_nivel ? 'bp' : 'bg_'}`}
-                          title={`Verificación: ${u.kyc_nivel || 'ninguno'}. Clic para cambiar.`}
+                          className={`btn bsm ${u.kyc_nivel === 'premium' || u.kyc_nivel === 'verificado' ? 'bp' : u.kyc_nivel === 'basico' ? 'bor' : 'bg_'}`}
+                          title={`Verificación actual: ${u.kyc_nivel || 'ninguno'}. Clic para cambiar.`}
                           onClick={() => toggleKyc(u)}
-                          disabled={busy}
+                          disabled={kycBusy === u.id}
+                          style={{minWidth:28}}
                         >
-                          {u.kyc_nivel === 'premium' ? '💙' : u.kyc_nivel && u.kyc_nivel !== 'ninguno' ? '✓' : '○'}
+                          {kycBusy === u.id
+                            ? <div className="spin" style={{width:12,height:12}} />
+                            : u.kyc_nivel === 'premium' || u.kyc_nivel === 'verificado'
+                              ? <span style={{display:'inline-flex',alignItems:'center',justifyContent:'center',width:15,height:15,background:'#1877F2',borderRadius:'50%',color:'#fff',fontSize:11,fontWeight:900,lineHeight:1}}>✓</span>
+                              : u.kyc_nivel === 'basico' ? '✓' : '○'}
                         </button>
                         <button className="btn bg_ bsm" title="Ver perfil" onClick={() => openUserDetail(u)}>👁</button>
                         <button className="btn bg_ bsm" title="Restablecer contraseña" onClick={() => { setSelected(u); setModal("pw"); }}>🔑</button>
@@ -2256,6 +2301,7 @@ function AdminLogin({ onLogin, toast }) {
       }
       const adminUser = { ...r.user, rol: userRol };
       localStorage.setItem("ty_admin_token_v2", r.token);
+      localStorage.setItem("ty_admin_refresh_v2", r.refresh_token || "");
       localStorage.setItem("ty_admin_user_v2", JSON.stringify(adminUser));
       localStorage.removeItem("ty_admin_token");
       onLogin(adminUser);
@@ -2326,6 +2372,7 @@ export default function TratoYaAdmin() {
 
   const logout = () => {
     localStorage.removeItem("ty_admin_token_v2");
+    localStorage.removeItem("ty_admin_refresh_v2");
     localStorage.removeItem("ty_admin_user_v2");
     localStorage.removeItem("ty_admin_token");
     setAdmin(null);
