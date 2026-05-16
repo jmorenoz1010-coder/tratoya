@@ -20,7 +20,7 @@ const api = {
       body: body ? (isForm ? body : JSON.stringify(body)) : null,
     });
     const d = await r.json().catch(() => ({ success: false, message: "Error de conexión" }));
-    if (!r.ok && (r.status === 401 || r.status === 403) && path.startsWith("/admin")) {
+    if (!r.ok && r.status === 401 && path.startsWith("/admin")) {
       localStorage.removeItem("ty_admin_token_v2");
       localStorage.removeItem("ty_admin_user_v2");
       localStorage.removeItem("ty_admin_token");
@@ -92,13 +92,13 @@ code,pre,.mono{font-family:'JetBrains Mono',monospace}
 .fi{animation:fi .3s ease both}.fi2{animation:fi .3s .06s ease both}.fi3{animation:fi .3s .12s ease both}.popi{animation:pi .28s cubic-bezier(.34,1.56,.64,1) both}
 .spin{width:18px;height:18px;border:2.5px solid currentColor;border-top-color:transparent;border-radius:50%;animation:sp .7s linear infinite;display:inline-block;flex-shrink:0}
 
-/* Layout */
-.adm{display:grid;grid-template-columns:220px 1fr;min-height:100vh}
-.sb{background:#060F1E;border-right:1px solid rgba(255,255,255,.05);display:flex;flex-direction:column;position:sticky;top:0;height:100vh;overflow-y:auto}
+/* Layout — sidebar fijo + admin-main con margen, igual al patrón del AppShell */
+.admin-shell{min-height:100vh;background:var(--s50)}
+.admin-sidebar{width:220px;background:#060F1E;border-right:1px solid rgba(255,255,255,.05);display:flex;flex-direction:column;position:fixed;left:0;top:0;height:100vh;overflow-y:auto;z-index:100}
 .sb-top{padding:18px 14px 12px;border-bottom:1px solid rgba(255,255,255,.05)}
 .sb-logo{display:flex;align-items:center;gap:9px}
 .logo-mk{width:30px;height:30px;background:var(--g);border-radius:8px;display:flex;align-items:center;justify-content:center;font-family:'Syne';font-weight:800;font-size:15px;color:var(--n);flex-shrink:0}
-.sb-nav{flex:1;padding:8px 7px}
+.sb-nav{flex:1;padding:8px 7px;overflow-y:auto}
 .nav-sec{font-size:9px;font-weight:700;color:rgba(255,255,255,.22);letter-spacing:1.4px;text-transform:uppercase;padding:10px 8px 4px}
 .ni{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:500;color:rgba(255,255,255,.45);transition:all .15s;margin-bottom:1px;user-select:none;white-space:nowrap}
 .ni:hover{background:rgba(255,255,255,.06);color:rgba(255,255,255,.8)}
@@ -106,7 +106,7 @@ code,pre,.mono{font-family:'JetBrains Mono',monospace}
 .ni-badge{margin-left:auto;background:var(--rd);color:#fff;font-size:9.5px;font-weight:800;padding:1px 6px;border-radius:10px}
 .sb-bot{padding:10px 12px 14px;border-top:1px solid rgba(255,255,255,.05)}
 
-.main{background:var(--s50);display:flex;flex-direction:column;min-height:100vh}
+.admin-main{margin-left:220px;background:var(--s50);display:flex;flex-direction:column;min-height:100vh}
 .topbar{background:#fff;border-bottom:1px solid var(--s100);padding:0 20px;height:54px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:80}
 .page{padding:18px 20px;flex:1}
 
@@ -209,6 +209,27 @@ tbody tr:last-child td{border-bottom:none}tbody tr:hover td{background:var(--s50
 /* Grid helpers */
 .g2{display:grid;grid-template-columns:1fr 1fr;gap:11px}
 .g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:11px}
+@media (max-width:900px){
+  .admin-shell{display:block!important;min-height:100vh}
+  .admin-sidebar{position:fixed!important;left:0!important;right:0!important;bottom:0!important;top:auto!important;width:100%!important;min-width:0!important;max-width:none!important;height:72px!important;z-index:120;border-right:0;border-top:1px solid rgba(255,255,255,.08);overflow:hidden}
+  .sb-top,.sb-bot,.nav-sec{display:none}
+  .sb-nav{height:72px;display:flex;align-items:center;gap:4px;overflow-x:auto;overflow-y:hidden;padding:7px 8px}
+  .ni{min-width:70px;flex:1;flex-direction:column;justify-content:center;gap:3px;text-align:center;font-size:10px;padding:7px 5px;margin:0;white-space:normal}
+  .ni span{font-size:16px!important}
+  .ni-badge{position:absolute;margin-left:0;top:4px;right:8px}
+  .admin-main{margin-left:0!important;padding-bottom:82px;min-width:0}
+  .topbar{height:auto;min-height:54px;padding:9px 12px;gap:8px;align-items:flex-start;flex-wrap:wrap}
+  .topbar>div{min-width:0;flex-wrap:wrap}
+  .page{padding:14px 12px}
+  .stat-grid,.role-grid,.g2,.g3{grid-template-columns:1fr!important}
+  .tw{margin-left:-2px;margin-right:-2px}
+  table{min-width:780px}
+  .modal{max-width:calc(100vw - 20px);max-height:92vh}
+  .modal-hd,.modal-bd,.modal-ft{padding-left:14px;padding-right:14px}
+  .toast-wrap{left:10px;right:10px;top:10px}
+  .toast{max-width:none}
+  .search{width:100%!important}
+}
 `;
 
 // ─── Toast ────────────────────────────────────────────
@@ -256,7 +277,7 @@ const NAV = [
 
 function Sidebar({ page, setPage, admin, disputasPendientes = 0 }) {
   return (
-    <aside className="sb">
+    <aside className="admin-sidebar">
       <div className="sb-top">
         <div className="sb-logo">
           <div className="logo-mk">T</div>
@@ -393,6 +414,8 @@ function Usuarios({ toast }) {
   const [loading, setLoading] = useState(true);
   const [q, setQ] = useState("");
   const [selected, setSelected] = useState(null);
+  const [selectedDetail, setSelectedDetail] = useState(null);
+  const [detailLoading, setDetailLoading] = useState(false);
   const [modal, setModal] = useState(null);
   const [busy, setBusy] = useState(false);
   const [pwForm, setPwForm] = useState({ password: "", confirmar: "" });
@@ -441,6 +464,22 @@ function Usuarios({ toast }) {
     setBusy(false);
   };
 
+  const openUserDetail = async (user) => {
+    setSelected(user);
+    setSelectedDetail(null);
+    setModal(null);
+    setDetailLoading(true);
+    try {
+      const r = await api.get(`/admin/users/${user.id}/detalle`);
+      setSelectedDetail(r.data);
+      setSelected(r.data?.user || user);
+    } catch (e) {
+      toast(e.message, "error");
+    } finally {
+      setDetailLoading(false);
+    }
+  };
+
   const filtered = users.filter(u => !q || `${u.nombre} ${u.apellido} ${u.email} ${u.usuario_unico || ""} ${u.cedula || ""}`.toLowerCase().includes(q.toLowerCase()));
 
   return (
@@ -468,7 +507,7 @@ function Usuarios({ toast }) {
                       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                         <div style={{ width: 28, height: 28, borderRadius: "50%", background: "var(--n)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "Syne", fontWeight: 800, fontSize: 11, color: "var(--g)", flexShrink: 0 }}>{(u.nombre || "?")[0]}</div>
                         <div>
-                          <div style={{ fontWeight: 600, fontSize: 12.5 }}>{u.nombre} {u.apellido}</div>
+                          <button className="btn bg_ bsm" style={{ height: "auto", padding: 0, justifyContent: "flex-start", fontWeight: 800, fontSize: 12.5, color: "var(--n)" }} onClick={() => openUserDetail(u)}>{u.nombre} {u.apellido}</button>
                           <div style={{ fontSize: 10.5, color: "var(--s400)" }}>UUID: {u.id?.slice?.(0,8) || u.id}</div>
                         </div>
                       </div>
@@ -483,7 +522,7 @@ function Usuarios({ toast }) {
                     <td style={{ fontSize: 11, color: "var(--s400)" }}>{fmtDate(u.createdAt)}</td>
                     <td>
                       <div style={{ display: "flex", gap: 4 }}>
-                        <button className="btn bg_ bsm" title="Ver perfil" onClick={() => setSelected(u)}>👁</button>
+                        <button className="btn bg_ bsm" title="Ver perfil" onClick={() => openUserDetail(u)}>👁</button>
                         <button className="btn bg_ bsm" title="Restablecer contraseña" onClick={() => { setSelected(u); setModal("pw"); }}>🔑</button>
                         <button className="btn bg_ bsm" title="Enviar notificación" onClick={() => { setSelected(u); setModal("msg"); }}>🔔</button>
                         <button className={`btn bsm ${u.estado === "activo" ? "brd" : "bor"}`} title={u.estado === "activo" ? "Suspender" : "Reactivar"} onClick={() => toggleBan(u)} disabled={busy}>
@@ -501,14 +540,15 @@ function Usuarios({ toast }) {
       {/* Modal perfil */}
       {selected && !modal && (
         <div className="overlay" onClick={() => setSelected(null)}>
-          <div className="modal" onClick={e => e.stopPropagation()}>
+          <div className="modal" style={{ maxWidth: 860 }} onClick={e => e.stopPropagation()}>
             <div className="modal-hd">
               <h3 style={{ fontSize: 16 }}>Perfil — {selected.nombre} {selected.apellido}</h3>
               <button className="btn bg_ bsm" onClick={() => setSelected(null)}>✕</button>
             </div>
             <div className="modal-bd">
+              {detailLoading && <div style={{ padding: 20, textAlign: "center", color: "var(--s400)" }}><div className="spin" style={{ margin: "0 auto" }} /></div>}
               <div className="g2" style={{ gap: 10, marginBottom: 14 }}>
-                {[["Email", selected.email],["Nombre de usuario", selected.usuario_unico ? `@${selected.usuario_unico}` : "—"],["Teléfono", selected.telefono||"—"],["Identificación", [selected.tipo_identificacion, selected.cedula].filter(Boolean).join(" ") || "—"],["Rol", rolLabel(selected.rol)],["Estado", selected.estado],["Plan", selected.plan||"gratuito"],["Tratos", selected.total_tratos||0],["Exitosos", selected.tratos_exitosos||0],["Reputación", `${parseFloat(selected.reputacion||0).toFixed(1)}★`]].map(([k,v]) => (
+                {[["ID interno", selected.id],["Email", selected.email],["Nombre de usuario", selected.usuario_unico ? `@${selected.usuario_unico}` : "—"],["Teléfono", selected.telefono||"—"],["Ciudad", selected.ciudad||"—"],["Identificación", [selected.tipo_identificacion, selected.cedula].filter(Boolean).join(" ") || "—"],["Rol", rolLabel(selected.rol)],["Estado", selected.estado],["KYC", `${selected.kyc_nivel || "—"} / ${selected.kyc_estado || "—"}`],["Plan", selected.plan||"gratuito"],["Tratos", selected.total_tratos||0],["Exitosos", selected.tratos_exitosos||0],["Reputación", `${parseFloat(selected.reputacion||0).toFixed(1)}★`],["Último login", fmtTime(selected.last_login)]].map(([k,v]) => (
                   <div key={k} style={{ background: "var(--s50)", borderRadius: 8, padding: "9px 11px" }}>
                     <div style={{ fontSize: 9.5, color: "var(--s400)", fontWeight: 600, textTransform: "uppercase", letterSpacing: ".4px", marginBottom: 2 }}>{k}</div>
                     <div style={{ fontSize: 13, fontWeight: 600 }}>{v}</div>
@@ -521,9 +561,25 @@ function Usuarios({ toast }) {
               </div>
               <div style={{ marginTop: 12 }}>
                 <h4 style={{ fontSize: 13, marginBottom: 8 }}>Información bancaria</h4>
-                {((selected.CuentaBancaria || selected.CuentaBancariae || selected.CuentaBancarias || []).length)
-                  ? (selected.CuentaBancaria || selected.CuentaBancariae || selected.CuentaBancarias).map(a => <div key={a.id} style={{ background: "var(--s50)", borderRadius: 8, padding: "9px 11px", marginBottom: 7, fontSize: 12.5 }}><b>{a.banco}</b> · {a.tipo} · <span className="mono">{String(a.numero || "").replace(/\d(?=\d{4})/g, "*")}</span> · {a.titular || "Sin titular"}</div>)
+                {((selectedDetail?.cuentas_bancarias || selected.CuentaBancaria || selected.CuentaBancariae || selected.CuentaBancarias || []).length)
+                  ? (selectedDetail?.cuentas_bancarias || selected.CuentaBancaria || selected.CuentaBancariae || selected.CuentaBancarias).map(a => <div key={a.id} style={{ background: "var(--s50)", borderRadius: 8, padding: "9px 11px", marginBottom: 7, fontSize: 12.5 }}><b>{a.banco}</b> · {a.tipo} · <span className="mono">{String(a.numero || "—")}</span> · {a.titular || "Sin titular"} · {a.cedula_titular || "Sin cédula titular"}</div>)
                   : <div style={{ color: "var(--s400)", fontSize: 12.5 }}>Sin cuenta bancaria registrada.</div>}
+              </div>
+              <div style={{ marginTop: 12 }}>
+                <h4 style={{ fontSize: 13, marginBottom: 8 }}>Historial de tratos</h4>
+                {(selectedDetail?.tratos || []).length ? (
+                  <div className="tw"><table><thead><tr><th>Código</th><th>Rol</th><th>Título</th><th>Monto</th><th>Estado</th><th>Fecha</th></tr></thead><tbody>
+                    {selectedDetail.tratos.map(t => <tr key={t.id}><td className="mono">{t.codigo}</td><td>{t.comprador_id === selected.id ? "Comprador" : "Vendedor"}</td><td>{t.titulo}</td><td>{fmt(t.monto)}</td><td><span className={`bdg ${TRATO_EST[t.estado] || "bg"}`}>{t.estado}</span></td><td>{fmtDate(t.createdAt)}</td></tr>)}
+                  </tbody></table></div>
+                ) : <div style={{ color: "var(--s400)", fontSize: 12.5 }}>Sin tratos registrados.</div>}
+              </div>
+              <div style={{ marginTop: 12 }}>
+                <h4 style={{ fontSize: 13, marginBottom: 8 }}>Pagos del usuario</h4>
+                {(selectedDetail?.pagos || []).length ? (
+                  <div className="tw"><table><thead><tr><th>Trato</th><th>Tipo</th><th>Monto</th><th>Pasarela</th><th>Estado</th><th>Referencia</th></tr></thead><tbody>
+                    {selectedDetail.pagos.map(p => <tr key={p.id}><td>{p.Trato?.codigo || "—"}</td><td>{p.tipo}</td><td>{fmt(p.monto)}</td><td>{p.pasarela}</td><td>{p.estado}</td><td className="mono">{p.pasarela_ref || "—"}</td></tr>)}
+                  </tbody></table></div>
+                ) : <div style={{ color: "var(--s400)", fontSize: 12.5 }}>Sin pagos registrados.</div>}
               </div>
             </div>
             <div className="modal-ft">
@@ -2272,7 +2328,7 @@ export default function TratoYaAdmin() {
       {!admin ? (
         <AdminLogin onLogin={setAdmin} toast={toast} />
       ) : tratoDetailId ? (
-        <div className="main" style={{ minHeight: "100vh" }}>
+        <div className="admin-main" style={{ minHeight: "100vh", marginLeft: 0 }}>
           <div className="topbar">
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
               <a href="/admin" className="btn bg_ bsm" style={{ textDecoration: "none" }}>← Admin</a>
@@ -2286,9 +2342,9 @@ export default function TratoYaAdmin() {
           <TratoAdminFullPage tratoId={tratoDetailId} toast={toast} />
         </div>
       ) : (
-        <div className="adm">
+        <div className="admin-shell">
           <Sidebar page={page} setPage={setPage} admin={admin} disputasPendientes={disputasPendientes} />
-          <div className="main">
+          <div className="admin-main">
             <div className="topbar">
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                 <span style={{ fontFamily: "Syne", fontWeight: 700, fontSize: 14 }}>{NAV.find(n => n.id === page)?.l || "Dashboard"}</span>
