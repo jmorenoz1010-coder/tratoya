@@ -59,21 +59,6 @@ function playCelebration() {
   } catch { /* silencioso */ }
 }
 
-function PendingTratosPopup({ show, onDismiss, onGoToTratos }) {
-  if (!show) return null;
-  return (
-    <div style={{ position: "fixed", top: 14, left: "50%", transform: "translateX(-50%)", zIndex: 1200, background: "#fff", border: "1.5px solid var(--or)", borderRadius: 12, padding: "13px 18px", boxShadow: "0 8px 28px rgba(7,25,47,.14)", display: "flex", alignItems: "center", gap: 14, maxWidth: 480, width: "90vw", animation: "fi .3s ease both" }}>
-      <span style={{ fontSize: 22 }}>⚠️</span>
-      <div style={{ flex: 1 }}>
-        <div style={{ fontWeight: 700, fontSize: 13.5, color: "var(--n)" }}>Tienes tratos sin concretar</div>
-        <div style={{ fontSize: 12, color: "var(--s600)", marginTop: 2 }}>Ingresa al menú Tratos para ver más detalles.</div>
-      </div>
-      <button className="btn bp bsm" onClick={() => { onGoToTratos(); onDismiss(); }}>Ver tratos</button>
-      <button className="btn bg_ bsm" style={{ padding: "0 8px" }} onClick={onDismiss}>×</button>
-    </div>
-  );
-}
-
 function FloatingNotification({ note, onOpen, onClose }) {
   if (!note) return null;
   return (
@@ -307,7 +292,7 @@ export default function AppShell({ session, setSession, toast }) {
 
   return (
     <div>
-      <Sidebar page={page} setPage={setPage} user={session.user} onLogout={logout} />
+      <Sidebar page={page} setPage={(next) => { setPage(next); if (next === "tratos") setPendingTratosAlert(false); }} user={session.user} onLogout={logout} hasPendingTratos={pendingTratosAlert} />
       <div className="main">
         <Topbar title={PAGE_TITLES[page] || "TratoYa"} user={session.user} page={page} setPage={setPage} />
         <Suspense fallback={<PageLoader />}>
@@ -323,7 +308,6 @@ export default function AppShell({ session, setSession, toast }) {
           </div>
         </Suspense>
       </div>
-      <PendingTratosPopup show={pendingTratosAlert && page === "dashboard"} onDismiss={() => setPendingTratosAlert(false)} onGoToTratos={() => setPage("tratos")} />
       <FloatingNotification note={floatingNote} onOpen={openFloatingNote} onClose={() => setFloatingNote(null)} />
       <CelebrationOverlay show={celebration} />
     </div>

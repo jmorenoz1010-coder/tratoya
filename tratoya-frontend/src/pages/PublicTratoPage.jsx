@@ -128,7 +128,7 @@ export default function PublicTratoPage({ link, session, goAuth, toast }) {
             <button className="btn bp blg" onClick={aceptar} disabled={busy}>{busy ? <div className="spin" /> : "Aceptar trato y continuar al pago"}</button>
           ) : canPay ? (
             <div>
-              <button className="btn bp blg" style={{ width: "100%" }} onClick={pagar} disabled={busy}>
+              <button className="btn bp blg" style={{ width: "100%" }} onClick={() => pagar()} disabled={busy}>
                 {busy ? <div className="spin" /> : <><span>Pagar con</span><EpaycoMark /></>}
               </button>
               {order?.reference && <div style={{ fontSize: 11, color: "var(--s600)", marginTop: 8 }}>Referencia: {order.reference}</div>}

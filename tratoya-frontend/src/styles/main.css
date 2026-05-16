@@ -216,9 +216,11 @@ tbody tr:hover td{background:var(--s50)}
 .sb-mk{width:32px;height:32px;background:var(--g);border-radius:9px;display:flex;align-items:center;justify-content:center;font-family:'Manrope';font-weight:800;font-size:16px;color:var(--n);flex-shrink:0}
 .sb-nav{flex:1;padding:8px 7px;overflow-y:auto}
 .nav-lbl{font-size:9.5px;font-weight:700;color:rgba(255,255,255,.28);letter-spacing:1.2px;text-transform:uppercase;padding:9px 9px 4px}
-.ni{display:flex;align-items:center;gap:8px;padding:9px 10px;border-radius:9px;cursor:pointer;font-size:13px;font-weight:500;color:rgba(255,255,255,.55);transition:all .15s;margin-bottom:1px;user-select:none}
+.ni{display:flex;align-items:center;gap:8px;padding:9px 10px;border-radius:9px;cursor:pointer;font-size:13px;font-weight:500;color:rgba(255,255,255,.55);transition:all .15s;margin-bottom:1px;user-select:none;position:relative}
 .ni:hover{background:rgba(255,255,255,.07);color:#fff}
 .ni.act{background:rgba(168,196,0,.15);color:var(--g);font-weight:600}
+.nav-text{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.nav-bubble{margin-left:auto;min-width:18px;height:18px;padding:0 6px;border-radius:999px;background:var(--or);color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;box-shadow:0 0 0 3px rgba(224,123,0,.16)}
 .sb-usr{padding:11px 13px 14px;border-top:1px solid rgba(255,255,255,.07);display:flex;align-items:center;gap:9px}
 .main{margin-left:228px;min-height:100vh;background:var(--s50)}
 .topbar{background:#fff;border-bottom:1px solid var(--s100);padding:0 22px;height:56px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50;box-shadow:0 1px 0 var(--s100)}
@@ -278,6 +280,8 @@ tbody tr:hover td{background:var(--s50)}
   .sb-nav{height:74px;display:flex;align-items:center;gap:4px;padding:7px 8px;overflow-x:auto;overflow-y:hidden}
   .ni{min-width:68px;flex:1;justify-content:center;flex-direction:column;gap:3px;padding:7px 5px;margin:0;font-size:10.5px;text-align:center;border-radius:12px}
   .ni span{font-size:17px!important}
+  .ni .nav-text{font-size:10.5px!important;max-width:100%}
+  .ni .nav-bubble{position:absolute;top:5px;right:9px;margin-left:0;min-width:15px;height:15px;padding:0 4px;font-size:9px!important;box-shadow:0 0 0 2px rgba(224,123,0,.18)}
   .main{margin-left:0;padding-bottom:82px}
   .topbar{height:54px;padding:0 14px}
   .topbar > span{font-size:14px!important;max-width:46vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}

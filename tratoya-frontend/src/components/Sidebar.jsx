@@ -10,7 +10,7 @@ const NAV = [
 ];
 const BOT = [["perfil", "👤", "Perfil"]];
 
-export default function Sidebar({ page, setPage, user, onLogout }) {
+export default function Sidebar({ page, setPage, user, onLogout, hasPendingTratos = false }) {
   const nom = user ? `${user.nombre} ${user.apellido}` : "";
   return (
     <aside className="sb">
@@ -31,8 +31,13 @@ export default function Sidebar({ page, setPage, user, onLogout }) {
             key={id}
             className={`ni ${page === id ? "act" : ""}`}
             onClick={() => setPage(id)}
+            title={id === "tratos" && hasPendingTratos ? "Tienes tratos sin concretar" : undefined}
           >
-            <span style={{ fontSize: 15 }}>{ic}</span> {l}
+            <span style={{ fontSize: 15 }}>{ic}</span>
+            <span className="nav-text">{l}</span>
+            {id === "tratos" && hasPendingTratos && (
+              <span className="nav-bubble" aria-label="Tienes tratos sin concretar">!</span>
+            )}
           </div>
         ))}
         <div className="nav-lbl" style={{ marginTop: 8 }}>Cuenta</div>

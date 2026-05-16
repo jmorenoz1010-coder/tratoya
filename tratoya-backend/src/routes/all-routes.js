@@ -230,7 +230,7 @@ async function createEpaycoSmartSession(config, sessionPayload) {
   });
   const token = login.data?.token || login.data?.data?.token;
   if (!token) {
-    const err = new Error('ePayco no devolvió token de autenticación');
+    const err = new Error(login.data?.textResponse || login.data?.titleResponse || login.data?.message || 'ePayco no devolvió token de autenticación');
     err.statusCode = 502;
     err.expose = true;
     throw err;
@@ -386,7 +386,12 @@ paymentsRouter.post('/epayco/create', async (req, res, next) => {
 
     let smartSession = null;
     if (config.checkoutVersion === '2') {
-      smartSession = await createEpaycoSmartSession(config, smartSessionPayload);
+      try {
+        smartSession = await createEpaycoSmartSession(config, smartSessionPayload);
+      } catch (sessionErr) {
+        if (envBool(process.env.EPAYCO_STRICT_V2)) throw sessionErr;
+        logger.warn(`EPAYCO_SMART_SESSION_FAILED_FALLBACK_V1: ${sessionErr.message}`);
+      }
     }
 
     const intent = await PaymentIntent.create({
