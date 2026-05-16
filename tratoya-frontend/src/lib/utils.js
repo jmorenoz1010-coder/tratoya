@@ -5,6 +5,26 @@ export const fmt = (n) =>
     minimumFractionDigits: 0,
   }).format(n || 0);
 
+export const parseCopAmount = (value) => {
+  if (typeof value === "number") return Number.isFinite(value) ? value : 0;
+  const raw = String(value || "").trim();
+  if (!raw) return 0;
+  const cleaned = raw.replace(/[^\d.,-]/g, "");
+  if (!cleaned) return 0;
+  const hasComma = cleaned.includes(",");
+  const hasDot = cleaned.includes(".");
+  if (hasComma && hasDot) {
+    return Number(cleaned.replace(/\./g, "").replace(",", ".")) || 0;
+  }
+  if (hasDot && /^\d{1,3}(\.\d{3})+$/.test(cleaned)) {
+    return Number(cleaned.replace(/\./g, "")) || 0;
+  }
+  if (hasComma && /^\d{1,3}(,\d{3})+$/.test(cleaned)) {
+    return Number(cleaned.replace(/,/g, "")) || 0;
+  }
+  return Number(cleaned.replace(",", ".")) || 0;
+};
+
 export const fmtDate = (d) =>
   d
     ? new Date(d).toLocaleDateString("es-CO", {

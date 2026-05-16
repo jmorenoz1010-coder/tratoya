@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { api } from "../lib/api";
-import { fmt, fmtDate, timeAgo, ESTADO, TIPO_ICO, calcularComisionUI, openEpaycoCheckout } from "../lib/utils";
+import { fmt, fmtDate, timeAgo, ESTADO, TIPO_ICO, calcularComisionUI, openEpaycoCheckout, parseCopAmount } from "../lib/utils";
 import CommissionBreakdown from "../components/CommissionBreakdown";
 import DealProgress from "../components/DealProgress";
 import StarRating from "../components/StarRating";
@@ -114,7 +114,8 @@ export default function TratoDetalle({ tratoId, setPage, setDisputeTratoId, user
   };
 
   const pagarEpayco = async () => {
-    const pago = calcularComisionUI(parseFloat(trato?.monto || 0), trato?.quien_paga_comision || "comprador");
+    const montoPago = parseCopAmount(trato?.monto);
+    const pago = calcularComisionUI(montoPago, trato?.quien_paga_comision || "comprador");
     if (!window.confirm(`Vas a pagar ${fmt(pago.totalPagar)} COP por este acuerdo en TratoYa. Este pago se procesará por ePayco.`)) return;
     setBusy(true);
     try {
@@ -143,7 +144,7 @@ export default function TratoDetalle({ tratoId, setPage, setDisputeTratoId, user
   const esV = trato.vendedor?.id === user?.id;
   const esC = trato.comprador?.id === user?.id;
   const cp = esV ? trato.comprador : trato.vendedor;
-  const montoTrato = parseFloat(trato.monto || 0);
+  const montoTrato = parseCopAmount(trato.monto);
   const quienComision = trato.quien_paga_comision || "comprador";
   const commissionCalc = calcularComisionUI(montoTrato, quienComision);
   const neto = commissionCalc.vendedorRecibe;
