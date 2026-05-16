@@ -2,6 +2,29 @@ import { useState } from "react";
 import { api, saveSession } from "../lib/api";
 import { passwordChecks, strongPasswordOk, normalizeHandle, DOC_TYPES, FINANCIAL_ENTITIES, getBankType, BREB_ENTITY } from "../lib/utils";
 
+function playWelcomeSound() {
+  try {
+    const Ctx = window.AudioContext || window.webkitAudioContext;
+    if (!Ctx) return;
+    const ctx = new Ctx();
+    const now = ctx.currentTime + 0.02;
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(0.0001, now);
+    gain.gain.exponentialRampToValueAtTime(0.08, now + 0.02);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.45);
+    gain.connect(ctx.destination);
+    [523.25, 659.25, 783.99].forEach((freq, i) => {
+      const osc = ctx.createOscillator();
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(freq, now + i * 0.08);
+      osc.connect(gain);
+      osc.start(now + i * 0.08);
+      osc.stop(now + i * 0.08 + 0.18);
+    });
+    setTimeout(() => ctx.close().catch(() => {}), 800);
+  } catch { /* silencioso */ }
+}
+
 export default function Auth({ setSession, toast }) {
   const [mode, setMode] = useState("login");
   const [step, setStep] = useState(1);
@@ -45,6 +68,7 @@ export default function Auth({ setSession, toast }) {
         await api.post("/users/bank-accounts", { banco: f.banco, tipo, numero: f.numero_cuenta, titular: `${f.nombre} ${f.apellido}` });
       }
       setSession({ user: r.user, token: r.token });
+      playWelcomeSound();
       toast("Registro confirmado. Tu cuenta quedó lista.", "success");
     } catch (e) { toast(e.message, "error"); }
     setLoading(false);

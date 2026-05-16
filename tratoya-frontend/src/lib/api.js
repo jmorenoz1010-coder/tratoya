@@ -1,10 +1,10 @@
 export const API_URL = import.meta.env.VITE_API_URL || "/api";
 
 const SESSION_KEYS = ["ty_token", "ty_refresh", "ty_user"];
-const sessionStore = () => window.sessionStorage;
+const sessionStore = () => window.localStorage;
 
 export const clearLegacySession = () =>
-  SESSION_KEYS.forEach((k) => localStorage.removeItem(k));
+  SESSION_KEYS.forEach((k) => window.sessionStorage.removeItem(k));
 
 export const saveSession = (token, refresh, user) => {
   clearLegacySession();
@@ -28,6 +28,7 @@ export const getSavedUser = () => {
 
 export const api = {
   _tok: () => sessionStore().getItem("ty_token"),
+  _refresh: () => sessionStore().getItem("ty_refresh"),
 
   async req(method, path, body = null, isForm = false) {
     const h = {};
@@ -50,6 +51,20 @@ export const api = {
       .json()
       .catch(() => ({ success: false, message: "Error de conexión" }));
     if (!r.ok) {
+      if (r.status === 401 && tok && this._refresh() && path !== "/auth/refresh") {
+        try {
+          const rr = await fetch(`${API_URL}/auth/refresh`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ refresh_token: this._refresh() }),
+          });
+          const rd = await rr.json().catch(() => ({}));
+          if (rr.ok && rd.token) {
+            sessionStore().setItem("ty_token", rd.token);
+            return this.req(method, path, body, isForm);
+          }
+        } catch { /* sigue al cierre de sesión */ }
+      }
       // express-validator devuelve { errors: [{msg, path}] } sin campo message
       let msg = d.message;
       if (!msg && Array.isArray(d.errors) && d.errors.length > 0) {

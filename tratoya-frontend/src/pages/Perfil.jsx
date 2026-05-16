@@ -34,7 +34,7 @@ export default function Perfil({ user, setUser, toast }) {
       const updated = r.data || { ...user, ...profile, usuario_unico: handle };
       setUser(updated);
       import("../lib/api").then(({ saveSession }) => {});
-      window.sessionStorage.setItem("ty_user", JSON.stringify(updated));
+      window.localStorage.setItem("ty_user", JSON.stringify(updated));
       setProfile((p) => ({ ...p, usuario_unico: handle }));
       toast("Perfil actualizado", "success");
     } catch (e) { toast(e.message, "error"); }

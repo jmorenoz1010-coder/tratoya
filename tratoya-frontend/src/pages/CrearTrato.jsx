@@ -14,7 +14,7 @@ export default function CrearTrato({ setPage, toast, user }) {
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState(null);
-  const [f, setF_] = useState({ tipo: "producto", titulo: "", descripcion: "", monto: "", dias: "7", quien: "comprador", notas: "", directo: false, contraparte: "" });
+  const [f, setF_] = useState({ tipo: "producto", titulo: "", descripcion: "", monto: "", dias: "7", quien: "por_definir", notas: "", directo: false, contraparte: "" });
   const [lookup, setLookup] = useState({ loading: false, data: null, error: "" });
   const sf = (k, v) => setF_((p) => ({ ...p, [k]: v }));
   const monto = parseInt((f.monto || "").replace(/\D/g, "")) || 0;
@@ -22,7 +22,7 @@ export default function CrearTrato({ setPage, toast, user }) {
   const buscarContraparte = async () => {
     const handle = normalizeHandle(f.contraparte);
     if (!handle || handle.length < 5) {
-      setLookup({ loading: false, data: null, error: "El ID debe tener mínimo 5 letras/números." });
+      setLookup({ loading: false, data: null, error: "El usuario debe tener mínimo 5 letras/números." });
       return;
     }
     setLookup({ loading: true, data: null, error: "" });
@@ -38,6 +38,7 @@ export default function CrearTrato({ setPage, toast, user }) {
   const create = async () => {
     if (f.directo && !lookup.data) { toast("Busca y confirma el nombre de usuario de tu contraparte.", "error"); return; }
     if (monto < MONTO_MINIMO_TRATO) { toast(`El monto mínimo es ${fmt(MONTO_MINIMO_TRATO)}`, "error"); return; }
+    if (!["comprador", "vendedor", "compartida"].includes(f.quien)) { toast("Define quién paga la comisión.", "error"); setStep(2); return; }
     setLoading(true);
     try {
       const res = await api.post("/tratos", {
@@ -98,7 +99,7 @@ export default function CrearTrato({ setPage, toast, user }) {
         </div>
         <div style={{ display: "flex", gap: 9 }}>
           <button className="btn bp" style={{ flex: 1 }} onClick={() => setPage("tratos")}>Ver tratos</button>
-          <button className="btn bo" onClick={() => { setDone(null); setStep(1); setLookup({ loading: false, data: null, error: "" }); setF_({ tipo: "producto", titulo: "", descripcion: "", monto: "", dias: "7", quien: "comprador", notas: "", directo: false, contraparte: "" }); }}>
+          <button className="btn bo" onClick={() => { setDone(null); setStep(1); setLookup({ loading: false, data: null, error: "" }); setF_({ tipo: "producto", titulo: "", descripcion: "", monto: "", dias: "7", quien: "por_definir", notas: "", directo: false, contraparte: "" }); }}>
             Crear otro
           </button>
         </div>
@@ -154,7 +155,10 @@ export default function CrearTrato({ setPage, toast, user }) {
               <textarea className="inp" rows="3" placeholder="Describe el producto o servicio con detalle..." value={f.descripcion} onChange={(e) => sf("descripcion", e.target.value)} />
             </div>
             <div className="fg">
-              <label className="fl">Monto en COP *</label>
+              <label className="fl" style={{ display: "flex", justifyContent: "space-between", gap: 10, alignItems: "baseline" }}>
+                <span>Monto en COP *</span>
+                <span style={{ color: "var(--s400)", fontSize: 11.5, fontWeight: 600 }}>Monto mínimo permitido: {fmt(MONTO_MINIMO_TRATO)}</span>
+              </label>
               <div style={{ position: "relative" }}>
                 <span style={{ position: "absolute", left: 13, top: "50%", transform: "translateY(-50%)", color: "var(--s400)", fontSize: 14 }}>$</span>
                 <input
@@ -166,7 +170,7 @@ export default function CrearTrato({ setPage, toast, user }) {
                 />
               </div>
             </div>
-            {monto > 0 && <CommissionBreakdown monto={monto} quien={f.quien} showMinimum />}
+            {monto > 0 && <CommissionBreakdown monto={monto} quien={f.quien} />}
             <div className="fg" style={{ marginTop: 14 }}>
               <label className="fl">Notas adicionales</label>
               <textarea className="inp" rows="2" placeholder="Condiciones especiales, detalles del envío, etc." value={f.notas} onChange={(e) => sf("notas", e.target.value)} maxLength={500} />
@@ -192,6 +196,7 @@ export default function CrearTrato({ setPage, toast, user }) {
             <div className="fg">
               <label className="fl">¿Quién paga la comisión de TratoYa?</label>
               <select className="inp" value={f.quien} onChange={(e) => sf("quien", e.target.value)}>
+                <option value="por_definir" disabled>Por definir</option>
                 <option value="comprador">La paga el comprador (más común)</option>
                 <option value="vendedor">La asume el vendedor</option>
                 <option value="compartida">50% / 50% compartida</option>
@@ -200,7 +205,7 @@ export default function CrearTrato({ setPage, toast, user }) {
             <div className="fg">
               <label className="fl">Días de inspección para el comprador</label>
               <select className="inp" value={f.dias} onChange={(e) => sf("dias", e.target.value)}>
-                {[1, 2, 3, 5, 7, 10, 14, 21, 30].map((d) => (
+                {[1, 2, 3, 5, 7].map((d) => (
                   <option key={d} value={d}>{d} día{d > 1 ? "s" : ""}</option>
                 ))}
               </select>
@@ -209,16 +214,16 @@ export default function CrearTrato({ setPage, toast, user }) {
             <div className="fg" style={{ marginTop: 6 }}>
               <label style={{ display: "flex", alignItems: "center", gap: 9, cursor: "pointer" }}>
                 <input type="checkbox" checked={f.directo} onChange={(e) => sf("directo", e.target.checked)} style={{ width: 16, height: 16 }} />
-                <span className="fl" style={{ marginBottom: 0 }}>Invitar directamente a mi contraparte por su nombre de usuario</span>
+                <span className="fl" style={{ marginBottom: 0 }}>Invitar por ID de usuario</span>
               </label>
             </div>
             {f.directo && (
               <div className="fg fi">
-                <label className="fl">Nombre de usuario de tu contraparte</label>
+                <label className="fl">Nombre de Usuario</label>
                 <div style={{ display: "flex", gap: 8 }}>
                   <input
                     className="inp"
-                    placeholder="@sunombredeusuario"
+                    placeholder="Ingresar usuario"
                     value={f.contraparte}
                     onChange={(e) => sf("contraparte", normalizeHandle(e.target.value))}
                     onKeyDown={(e) => e.key === "Enter" && buscarContraparte()}
@@ -236,7 +241,10 @@ export default function CrearTrato({ setPage, toast, user }) {
               </div>
             )}
             <CommissionBreakdown monto={monto} quien={f.quien} />
-            <button className="btn bp blg" style={{ width: "100%", marginTop: 14 }} onClick={() => setStep(3)}>
+            <button className="btn bp blg" style={{ width: "100%", marginTop: 14 }} onClick={() => {
+              if (!["comprador", "vendedor", "compartida"].includes(f.quien)) { toast("Define quién paga la comisión.", "error"); return; }
+              setStep(3);
+            }}>
               Continuar →
             </button>
           </div>
@@ -247,7 +255,7 @@ export default function CrearTrato({ setPage, toast, user }) {
             <button className="btn bg_ bsm" style={{ marginBottom: 16 }} onClick={() => setStep(2)}>← Atrás</button>
             <h2 style={{ fontSize: 21, marginBottom: 16 }}>Confirmar trato</h2>
             <div className="card" style={{ padding: "18px 20px", marginBottom: 14 }}>
-              {[["Tipo", f.tipo], ["Título", f.titulo], ["Monto", fmt(monto)], ["Comisión", `La paga el ${f.quien}`], ["Días de inspección", `${f.dias} días`]].map(([k, v]) => (
+              {[["Tipo", f.tipo], ["Título", f.titulo], ["Monto", fmt(monto)], ["Comisión", f.quien === "comprador" ? "La paga el comprador" : f.quien === "vendedor" ? "La asume el vendedor" : "50% / 50% compartida"], ["Días de inspección", `${f.dias} días`]].map(([k, v]) => (
                 <div key={k} style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", borderBottom: "1px solid var(--s100)", fontSize: 13 }}>
                   <span style={{ color: "var(--s600)" }}>{k}</span>
                   <span style={{ fontWeight: 600 }}>{v}</span>

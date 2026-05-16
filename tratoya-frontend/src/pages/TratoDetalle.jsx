@@ -160,7 +160,7 @@ export default function TratoDetalle({ tratoId, setPage, setDisputeTratoId, user
     { l: "Pago liberado", s: `${fmt(neto)} al vendedor`, done: trato.estado === "completado" },
   ];
 
-  const canPay = esC && trato.estado === "pago_pendiente";
+  const canPay = esC && ["activo", "pago_pendiente"].includes(trato.estado);
   const canConfirm = esC && ["en_entrega","pendiente_confirmacion"].includes(trato.estado);
   const canShip = esV && trato.estado === "pago_retenido";
 

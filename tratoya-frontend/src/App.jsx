@@ -14,7 +14,7 @@ export default function TratoYaApp() {
   const { toasts, show, remove } = useToast();
   const [session, setSession] = useState(() => {
     const u = getSavedUser();
-    const t = window.sessionStorage.getItem("ty_token");
+    const t = window.localStorage.getItem("ty_token");
     return u && t ? { user: u, token: t } : null;
   });
   const [authMode, setAuthMode] = useState(null);

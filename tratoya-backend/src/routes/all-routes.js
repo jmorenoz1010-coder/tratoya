@@ -1254,6 +1254,33 @@ adminRouter.get('/users', async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
+adminRouter.get('/users/:id/detalle', async (req, res, next) => {
+  try {
+    const { Trato, Pago } = require('../config/database');
+    const user = await User.findByPk(req.params.id, {
+      include: [{ model: CuentaBancaria, separate: true, order: [['createdAt', 'DESC']] }],
+      attributes: { exclude: ['password_hash', 'refresh_token'] },
+    });
+    if (!user) return res.status(404).json({ success: false, message: 'Usuario no encontrado' });
+    const tratos = await Trato.findAll({
+      where: { [Op.or]: [{ comprador_id: user.id }, { vendedor_id: user.id }] },
+      include: [
+        { model: User, as: 'comprador', attributes: ['id', 'nombre', 'apellido', 'email', 'usuario_unico'] },
+        { model: User, as: 'vendedor', attributes: ['id', 'nombre', 'apellido', 'email', 'usuario_unico'] },
+      ],
+      order: [['createdAt', 'DESC']],
+      limit: 100,
+    });
+    const pagos = await Pago.findAll({
+      where: { usuario_id: user.id },
+      include: [{ model: Trato, attributes: ['id', 'codigo', 'titulo', 'estado'] }],
+      order: [['createdAt', 'DESC']],
+      limit: 100,
+    });
+    res.json({ success: true, data: { user: cleanUser(user), cuentas_bancarias: user.CuentaBancaria || user.CuentaBancariae || user.CuentaBancarias || [], tratos, pagos } });
+  } catch (err) { next(err); }
+});
+
 adminRouter.post('/users', requireSuperadmin, async (req, res, next) => {
   try {
     const { nombre, apellido = '', email, password, telefono, rol = 'user' } = req.body;

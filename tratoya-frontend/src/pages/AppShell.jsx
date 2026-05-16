@@ -156,13 +156,13 @@ export default function AppShell({ session, setSession, toast }) {
     return () => events.forEach((e) => window.removeEventListener(e, unlock));
   }, []);
 
-  // Cierre por inactividad (30 min)
+  // Cierre por inactividad (15 min)
   useEffect(() => {
-    const INACTIVITY_MS = 30 * 60 * 1000;
+    const INACTIVITY_MS = 15 * 60 * 1000;
     let timerId;
     const reset = () => {
       clearTimeout(timerId);
-      timerId = setTimeout(() => logout("Sesión cerrada por 30 minutos de inactividad"), INACTIVITY_MS);
+      timerId = setTimeout(() => logout("Sesión cerrada por 15 minutos de inactividad"), INACTIVITY_MS);
     };
     const events = ["mousemove", "mousedown", "keydown", "touchstart", "scroll", "click"];
     events.forEach((e) => window.addEventListener(e, reset, { passive: true }));

@@ -7,8 +7,8 @@ const { User } = require('../config/database');
 const { sendEmail } = require('../services/emailService');
 const logger = require('../utils/logger');
 
-const signToken = (id) => jwt.sign({ id }, process.env.JWT_SECRET, {
-  expiresIn: process.env.JWT_EXPIRES_IN || '7d'
+const signToken = (id, expiresIn = '15m') => jwt.sign({ id }, process.env.JWT_SECRET, {
+  expiresIn
 });
 const signRefresh = (id) => jwt.sign({ id }, process.env.JWT_REFRESH_SECRET, {
   expiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '30d'
@@ -109,10 +109,11 @@ router.post('/login', [
       await user.update({ usuario_unico: await makeUniqueHandle(user.email.split('@')[0], user.id) });
     }
 
-    const token = signToken(user.id);
+    const rol = user.rol || (user.is_admin ? 'admin' : 'user');
+    const isAdminSession = ['admin', 'superadmin'].includes(rol);
+    const token = signToken(user.id, isAdminSession ? (process.env.JWT_ADMIN_EXPIRES_IN || '3650d') : undefined);
     const refresh_token = signRefresh(user.id);
     await user.update({ last_login: new Date(), refresh_token: await bcrypt.hash(refresh_token, 6) });
-    const rol = user.rol || (user.is_admin ? 'admin' : 'user');
 
     res.json({
       success: true,

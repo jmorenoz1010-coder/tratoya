@@ -195,6 +195,7 @@ export const TIPO_ICO = {
 };
 
 export const COMMISSION_PAYER_LABEL = {
+  por_definir: "Por definir",
   comprador: "La paga el comprador",
   vendedor: "La asume el vendedor",
   compartida: "50% comprador / 50% vendedor",

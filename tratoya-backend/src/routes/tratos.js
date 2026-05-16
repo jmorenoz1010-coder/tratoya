@@ -95,6 +95,8 @@ router.post('/', kycRequired, [
   body('titulo').notEmpty().trim().isLength({ min: 5 }).withMessage('Título mínimo 5 caracteres'),
   body('tipo').isIn(['producto','servicio','reserva','vehiculo','inmueble','otro']).withMessage('Tipo de trato inválido'),
   body('monto').isFloat({ min: MONTO_MINIMO_TRATO }).withMessage(`Monto mínimo $${MONTO_MINIMO_TRATO.toLocaleString('es-CO')} COP`),
+  body('dias_inspeccion').optional().isInt({ min: 1, max: 7 }).withMessage('El tiempo máximo de inspección es 7 días'),
+  body('quien_paga_comision').isIn(['comprador','vendedor','compartida']).withMessage('Define quién paga la comisión'),
 ], async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -102,15 +104,16 @@ router.post('/', kycRequired, [
     return res.status(400).json({ success: false, message: msgs[0], errors: errors.array() });
   }
   try {
-    const { titulo, descripcion, tipo, monto, dias_inspeccion = 7, quien_paga_comision = 'comprador', notas, contraparte_usuario_unico } = req.body;
+    const { titulo, descripcion, tipo, monto, dias_inspeccion = 7, quien_paga_comision, notas, contraparte_usuario_unico } = req.body;
     const montoNumero = parseFloat(monto);
+    const diasInspeccion = Math.min(7, Math.max(1, parseInt(dias_inspeccion, 10) || 7));
     const { porcentaje, monto_comision, monto_neto } = calcularComision(montoNumero, quien_paga_comision);
     const codigo = await generarCodigo();
     let contraparte = null;
     const handle = String(contraparte_usuario_unico || '').toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 24);
     if (handle) {
       contraparte = await User.findOne({ where: { usuario_unico: handle, is_active: true, is_blocked: false } });
-      if (!contraparte) return res.status(404).json({ success: false, message: 'No encontramos un usuario registrado con ese ID único' });
+      if (!contraparte) return res.status(404).json({ success: false, message: 'No encontramos un usuario registrado con ese nombre de usuario' });
       if (contraparte.id === req.user.id) return res.status(400).json({ success: false, message: 'No puedes enviarte un trato a ti mismo' });
     }
 
@@ -124,7 +127,7 @@ router.post('/', kycRequired, [
       comision_monto: monto_comision,
       monto_neto,
       quien_paga_comision,
-      dias_inspeccion,
+      dias_inspeccion: diasInspeccion,
       notas,
       estado: contraparte ? 'activo' : 'borrador',
       link_compartir: uuidv4().substring(0, 10),

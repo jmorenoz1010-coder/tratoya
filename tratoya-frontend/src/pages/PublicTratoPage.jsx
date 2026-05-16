@@ -21,26 +21,31 @@ export default function PublicTratoPage({ link, session, goAuth, toast }) {
 
   useEffect(() => { load(); }, [link]);
 
+  const pagar = async (target = trato) => {
+    const pago = calcularComisionUI(parseFloat(target?.monto || 0), target?.quien_paga_comision || "comprador");
+    if (!window.confirm(`Vas a pagar ${fmt(pago.totalPagar)} COP por este acuerdo en TratoYa. Este pago se procesará por ePayco.`)) return;
+    setBusy(true);
+    try {
+      const r = await api.post(`/payments/epayco/create`, { dealId: target.id });
+      const paymentOrder = r.data || r;
+      setOrder(paymentOrder);
+      setTrato((prev) => prev ? { ...prev, estado: "pago_pendiente" } : prev);
+      await openEpaycoCheckout(paymentOrder);
+    } catch (e) { toast(e.message, "error"); }
+    setBusy(false);
+  };
+
   const aceptar = async () => {
     if (!session) { goAuth("login"); return; }
     setBusy(true);
     try {
       const r = await api.put(`/tratos/public/${link}/activar`);
-      setTrato(r.data);
-      toast("Trato aceptado. Ahora puedes pagar.", "success");
-    } catch (e) { toast(e.message, "error"); }
-    setBusy(false);
-  };
-
-  const pagar = async () => {
-    const pago = calcularComisionUI(parseFloat(trato?.monto || 0), trato?.quien_paga_comision || "comprador");
-    if (!window.confirm(`Vas a pagar ${fmt(pago.totalPagar)} COP por este acuerdo en TratoYa. Este pago se procesará por ePayco.`)) return;
-    setBusy(true);
-    try {
-      const r = await api.post(`/payments/epayco/create`, { dealId: trato.id });
-      const paymentOrder = r.data || r;
-      setOrder(paymentOrder);
-      await openEpaycoCheckout(paymentOrder);
+      const accepted = r.data;
+      setTrato(accepted);
+      toast("Trato aceptado. Continuemos con el pago.", "success");
+      setBusy(false);
+      await pagar(accepted);
+      return;
     } catch (e) { toast(e.message, "error"); }
     setBusy(false);
   };
@@ -68,7 +73,7 @@ export default function PublicTratoPage({ link, session, goAuth, toast }) {
   const vendedor = trato.vendedor ? `${trato.vendedor.nombre} ${trato.vendedor.apellido}` : "Vendedor";
   const isSeller = session?.user?.id === trato.vendedor?.id;
   const canAccept = session && !isSeller && trato.estado === "borrador";
-  const canPay = session && !isSeller && trato.estado === "pago_pendiente";
+  const canPay = session && !isSeller && ["activo", "pago_pendiente"].includes(trato.estado);
 
   return (
     <div className="land">

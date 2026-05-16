@@ -1,16 +1,11 @@
-import { fmt, calcularComisionUI, COMMISSION_PAYER_LABEL, MONTO_MINIMO_TRATO } from "../lib/utils";
+import { fmt, calcularComisionUI, COMMISSION_PAYER_LABEL } from "../lib/utils";
 
-export default function CommissionBreakdown({ monto, quien = "comprador", showMinimum = false, note = "" }) {
+export default function CommissionBreakdown({ monto, quien = "comprador", note = "" }) {
   if (!monto) return null;
-  const calc = calcularComisionUI(monto, quien);
+  const payer = quien === "por_definir" ? "comprador" : quien;
+  const calc = calcularComisionUI(monto, payer);
   return (
     <div className="commbox">
-      {showMinimum && (
-        <div className="cr">
-          <span>Monto mínimo permitido</span>
-          <span>{fmt(MONTO_MINIMO_TRATO)}</span>
-        </div>
-      )}
       <div className="cr"><span>Monto del trato</span><span>{fmt(monto)}</span></div>
       <div className="cr"><span>Comisión TratoYa ({calc.label})</span><span>{fmt(calc.comision)}</span></div>
       <div className="cr"><span>Quién paga la comisión</span><span>{COMMISSION_PAYER_LABEL[quien] || quien}</span></div>

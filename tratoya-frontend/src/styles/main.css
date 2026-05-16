@@ -311,6 +311,18 @@ tbody tr:hover td{background:var(--s50)}
   [style*="justify-content: space-between"]{gap:10px}
   .deal-progress{gap:2px}
   .dp-sub{display:none}
+  .commbox{font-size:12px}
+  .cr{align-items:flex-start;gap:12px;line-height:1.35}
+  .cr span:first-child{min-width:0}
+  .cr span:last-child{max-width:52%;overflow-wrap:anywhere}
+  .page [style*="display: flex"][style*="gap: 9px"]{flex-wrap:wrap}
+  .page [style*="display: flex"][style*="gap: 9px"]>.btn{flex:1 1 auto}
+  .page [style*="grid-template-columns: 1fr 305px"],
+  .page [style*="grid-template-columns: 1fr 290px"],
+  .page [style*="grid-template-columns: 1fr .9fr"],
+  .page [style*="grid-template-columns: 1.1fr .9fr"]{grid-template-columns:1fr!important}
+  .wz{width:100%;overflow-x:auto;justify-content:flex-start}
+  .wz-ln{min-width:22px;flex:0 0 22px}
 }
 @media (max-width:520px){
   .lnav{flex-wrap:wrap}
@@ -327,6 +339,12 @@ tbody tr:hover td{background:var(--s50)}
   .commbox{padding:12px}
   .cr{gap:12px}
   .cr span:last-child{text-align:right}
+  .lnav .logo-row{width:100%;justify-content:space-between}
+  .lnav .logo-row + div{width:100%;display:grid!important;grid-template-columns:1fr 1fr}
+  .lnav .logo-row + div .btn{width:100%}
+  .card{box-shadow:0 1px 5px rgba(7,25,47,.08)}
+  .inp{font-size:16px}
+  label.fl span:last-child{display:block;text-align:right}
   .topbar .user-chip span{display:none}
   .chat-card{height:330px}
   .table-wrap{overflow-x:auto}
