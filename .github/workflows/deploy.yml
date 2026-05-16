@@ -9,7 +9,6 @@ on:
 # Vercel project identifiers (not sensitive — same as .vercel/project.json)
 env:
   VERCEL_ORG_ID: team_6apywbrXp3Za1uDp1ZgyhYpF
-  VERCEL_PROJECT_ID: prj_XVFncHYwKu0SKjRMwmNAFAIpViBf
 
 jobs:
   # ── Verificar que el backend arranca sin errores ────────
@@ -47,7 +46,7 @@ jobs:
       - run: npm ci
       - name: Build
         env:
-          VITE_API_URL: ${{ secrets.VITE_API_URL }}
+          VITE_API_URL: https://tratoya-backend.vercel.app/api
         run: npm run build
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
@@ -56,12 +55,37 @@ jobs:
           path: tratoya-frontend/dist
           retention-days: 1
 
-  # ── Deploy a Vercel (solo en push a main) ──────────────
+  # ── Deploy backend → Vercel ────────────────────────────
+  deploy-backend:
+    name: Deploy backend → Vercel
+    needs: [test-backend]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    env:
+      VERCEL_PROJECT_ID: prj_0sznfk1NYdfsQBvirqW9BBRne5ha
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Vercel CLI
+        run: npm install -g vercel@latest
+      - name: Vercel build backend
+        working-directory: tratoya-backend
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: vercel build --prod --token "$VERCEL_TOKEN" --yes
+      - name: Deploy backend prebuilt → Vercel
+        working-directory: tratoya-backend
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: vercel deploy --prebuilt --prod --token "$VERCEL_TOKEN"
+
+  # ── Deploy frontend → Vercel ───────────────────────────
   deploy-frontend:
     name: Deploy frontend → Vercel
     needs: [test-backend, build-frontend]
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    env:
+      VERCEL_PROJECT_ID: prj_XVFncHYwKu0SKjRMwmNAFAIpViBf
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -74,19 +98,14 @@ jobs:
         working-directory: tratoya-frontend
       - name: Install Vercel CLI
         run: npm install -g vercel@latest
-      - name: Vercel build (genera .vercel/output)
+      - name: Vercel build frontend
         working-directory: tratoya-frontend
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           VITE_API_URL: https://tratoya-backend.vercel.app/api
         run: vercel build --prod --token "$VERCEL_TOKEN" --yes
-      - name: Deploy prebuilt → Vercel
+      - name: Deploy frontend prebuilt → Vercel
         working-directory: tratoya-frontend
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
         run: vercel deploy --prebuilt --prod --token "$VERCEL_TOKEN"
-
-  # ── Nota: Railway auto-despliega el backend en cada push a main ──
-  # Railway está conectado directamente al repo de GitHub y detecta
-  # los cambios en tratoya-backend/ automáticamente. No necesita
-  # un paso explícito aquí.
