@@ -453,6 +453,17 @@ function Usuarios({ toast }) {
     setBusy(false);
   };
 
+  const toggleKyc = async (user) => {
+    const nextLevel = user.kyc_nivel === 'premium' ? 'verificado' : user.kyc_nivel === 'verificado' ? 'premium' : user.kyc_nivel === 'basico' ? 'verificado' : 'basico';
+    setBusy(true);
+    try {
+      await api.patch(`/admin/users/${user.id}/kyc`, { kyc_nivel: nextLevel });
+      toast(`Verificación cambiada a ${nextLevel}`, 'success');
+      load();
+    } catch (e) { toast(e.message, 'error'); }
+    setBusy(false);
+  };
+
   const sendPush = async () => {
     if (!msgForm.titulo || !msgForm.cuerpo) { toast("Completa título y mensaje", "error"); return; }
     setBusy(true);
@@ -494,12 +505,12 @@ function Usuarios({ toast }) {
 
       <div className="tw">
         <table>
-          <thead><tr><th>#</th><th>Usuario</th><th>Email</th><th>Nombre de usuario</th><th>Identificación</th><th>Banco</th><th>Rol</th><th>Estado</th><th>Tratos</th><th>Registro</th><th>Acciones</th></tr></thead>
+          <thead><tr><th>#</th><th>Usuario</th><th>Email</th><th>Nombre de usuario</th><th>Identificación</th><th>Banco</th><th>KYC</th><th>Rol</th><th>Estado</th><th>Tratos</th><th>Registro</th><th>Acciones</th></tr></thead>
           <tbody>
             {loading
-              ? <tr><td colSpan={11} style={{ textAlign: "center", padding: 32, color: "var(--s400)" }}><div className="spin" style={{ margin: "0 auto" }} /></td></tr>
+              ? <tr><td colSpan={12} style={{ textAlign: "center", padding: 32, color: "var(--s400)" }}><div className="spin" style={{ margin: "0 auto" }} /></td></tr>
               : filtered.length === 0
-                ? <tr><td colSpan={11} style={{ textAlign: "center", padding: 28, color: "var(--s400)", fontSize: 13 }}>Sin usuarios</td></tr>
+                ? <tr><td colSpan={12} style={{ textAlign: "center", padding: 28, color: "var(--s400)", fontSize: 13 }}>Sin usuarios</td></tr>
                 : filtered.map((u, i) => (
                   <tr key={u.id}>
                     <td style={{ color: "var(--s400)", fontSize: 11 }}>{i + 1}</td>
@@ -516,12 +527,27 @@ function Usuarios({ toast }) {
                     <td className="mono" style={{ fontSize: 11.5 }}>{u.usuario_unico || "—"}</td>
                     <td className="mono" style={{ fontSize: 11.5 }}>{[u.tipo_identificacion, u.cedula].filter(Boolean).join(" ") || "—"}</td>
                     <td style={{ fontSize: 11.5 }}>{(u.CuentaBancarias || u.CuentaBancaria || [])[0]?.banco || "—"}</td>
+                    <td>
+                      {u.kyc_nivel === 'premium'
+                        ? <span style={{display:'inline-flex',alignItems:'center',gap:3,background:'#1877F2',color:'#fff',padding:'2px 7px',borderRadius:20,fontSize:10,fontWeight:700}}>💙 PREMIUM</span>
+                        : u.kyc_nivel && u.kyc_nivel !== 'ninguno'
+                          ? <span className="bdg gn" style={{fontSize:10}}>✓ Verif.</span>
+                          : <span className="bdg bg" style={{fontSize:10}}>Sin verif.</span>}
+                    </td>
                     <td><span className={`bdg ${ROLE_BADGE[u.rol] || "bg"}`}>{rolLabel(u.rol)}</span></td>
                     <td><span className={`bdg ${u.estado === "activo" ? "gn" : u.estado === "suspendido" ? "rd" : "bg"}`}>{u.estado}</span></td>
                     <td style={{ fontFamily: "Syne", fontWeight: 700, fontSize: 12.5 }}>{u.total_tratos || 0}</td>
                     <td style={{ fontSize: 11, color: "var(--s400)" }}>{fmtDate(u.createdAt)}</td>
                     <td>
                       <div style={{ display: "flex", gap: 4 }}>
+                        <button
+                          className={`btn bsm ${u.kyc_nivel === 'premium' ? 'bpu' : u.kyc_nivel !== 'ninguno' && u.kyc_nivel ? 'bp' : 'bg_'}`}
+                          title={`Verificación: ${u.kyc_nivel || 'ninguno'}. Clic para cambiar.`}
+                          onClick={() => toggleKyc(u)}
+                          disabled={busy}
+                        >
+                          {u.kyc_nivel === 'premium' ? '💙' : u.kyc_nivel && u.kyc_nivel !== 'ninguno' ? '✓' : '○'}
+                        </button>
                         <button className="btn bg_ bsm" title="Ver perfil" onClick={() => openUserDetail(u)}>👁</button>
                         <button className="btn bg_ bsm" title="Restablecer contraseña" onClick={() => { setSelected(u); setModal("pw"); }}>🔑</button>
                         <button className="btn bg_ bsm" title="Enviar notificación" onClick={() => { setSelected(u); setModal("msg"); }}>🔔</button>
@@ -2004,8 +2030,12 @@ function RolesAdmin({ toast, currentAdmin }) {
     setBusy(false);
   };
 
-  const filtered = users.filter(u => !q || `${u.nombre} ${u.apellido} ${u.email} ${u.rol}`.toLowerCase().includes(q.toLowerCase()));
-  const totals = ROLE_OPTIONS.map(r => ({ ...r, total: users.filter(u => (u.rol || "user") === r.id).length }));
+  const ADMIN_VISIBLE_ROLES = ['superadmin', 'admin', 'moderador', 'soporte', 'invitado'];
+  const filtered = users
+    .filter(u => u.is_admin || ADMIN_VISIBLE_ROLES.includes(u.rol || 'user'))
+    .filter(u => !q || `${u.nombre} ${u.apellido} ${u.email} ${u.rol}`.toLowerCase().includes(q.toLowerCase()));
+  const adminUsers = users.filter(u => u.is_admin || ADMIN_VISIBLE_ROLES.includes(u.rol || 'user'));
+  const totals = ROLE_OPTIONS.filter(r => r.id !== 'user').map(r => ({ ...r, total: adminUsers.filter(u => (u.rol || "user") === r.id).length }));
 
   return (
     <div className="page fi">

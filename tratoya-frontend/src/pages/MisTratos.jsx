@@ -3,7 +3,7 @@ import { api } from "../lib/api";
 import { fmt, fmtDate, ESTADO, TIPO_ICO } from "../lib/utils";
 import { SkeletonList } from "../components/SkeletonCard";
 
-export default function MisTratos({ setPage, setTratoId, user, toast }) {
+export default function MisTratos({ setPage, setTratoId, user, toast, alertTratoIds = new Set() }) {
   const [tratos, setTratos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("todos");
@@ -98,6 +98,7 @@ export default function MisTratos({ setPage, setTratoId, user, toast }) {
                       <span style={{ fontFamily: "Manrope", fontWeight: 700, fontSize: 11, color: "var(--g2)" }}>
                         {t.codigo}
                       </span>
+                      {alertTratoIds?.has(t.id) && <span style={{color:"var(--or)", fontSize:14, marginLeft:4}} title="Tienes notificaciones sin leer sobre este trato">⚠️</span>}
                     </td>
                     <td style={{ fontWeight: 600, maxWidth: 220 }}>
                       <div style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: 220 }}>

@@ -74,7 +74,12 @@ export default function Perfil({ user, setUser, toast }) {
               <div>
                 <h3 style={{ fontSize: 16, marginBottom: 5 }}>{user?.nombre} {user?.apellido}</h3>
                 <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                  <span className={`bdg ${user?.kyc_nivel !== "ninguno" ? "gn" : "or"}`}>{user?.kyc_nivel !== "ninguno" ? "✓ Verificado" : "Sin verificar"}</span>
+                  {user?.kyc_nivel === "premium"
+                    ? <><span className="bdg gn">✓ Verificado</span><span style={{display:'inline-flex',alignItems:'center',gap:3,background:'#1877F2',color:'#fff',padding:'2px 8px',borderRadius:20,fontSize:10,fontWeight:700,marginLeft:4}}>✔ PREMIUM</span></>
+                    : user?.kyc_nivel === "basico" || user?.kyc_nivel === "verificado"
+                      ? <span className="bdg gn">✓ Verificado</span>
+                      : <span className="bdg bg">⚪ No verificado</span>
+                  }
                   <span className="bdg nb">{user?.plan || "gratuito"}</span>
                 </div>
               </div>

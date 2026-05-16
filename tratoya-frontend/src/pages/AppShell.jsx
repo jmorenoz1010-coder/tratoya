@@ -59,6 +59,21 @@ function playCelebration() {
   } catch { /* silencioso */ }
 }
 
+function PendingTratosPopup({ show, onDismiss, onGoToTratos }) {
+  if (!show) return null;
+  return (
+    <div style={{ position: "fixed", top: 14, left: "50%", transform: "translateX(-50%)", zIndex: 1200, background: "#fff", border: "1.5px solid var(--or)", borderRadius: 12, padding: "13px 18px", boxShadow: "0 8px 28px rgba(7,25,47,.14)", display: "flex", alignItems: "center", gap: 14, maxWidth: 480, width: "90vw", animation: "fi .3s ease both" }}>
+      <span style={{ fontSize: 22 }}>⚠️</span>
+      <div style={{ flex: 1 }}>
+        <div style={{ fontWeight: 700, fontSize: 13.5, color: "var(--n)" }}>Tienes tratos sin concretar</div>
+        <div style={{ fontSize: 12, color: "var(--s600)", marginTop: 2 }}>Ingresa al menú Tratos para ver más detalles.</div>
+      </div>
+      <button className="btn bp bsm" onClick={() => { onGoToTratos(); onDismiss(); }}>Ver tratos</button>
+      <button className="btn bg_ bsm" style={{ padding: "0 8px" }} onClick={onDismiss}>×</button>
+    </div>
+  );
+}
+
 function FloatingNotification({ note, onOpen, onClose }) {
   if (!note) return null;
   return (
@@ -108,6 +123,9 @@ export default function AppShell({ session, setSession, toast }) {
   const [floatingNote, setFloatingNote] = useState(null);
   const [celebration, setCelebration] = useState(false);
   const shownNotifIds = useRef(new Set());
+  const sessionLoadTimeRef = useRef(Date.now());
+  const [unreadTratoIds, setUnreadTratoIds] = useState(new Set());
+  const [pendingTratosAlert, setPendingTratosAlert] = useState(false);
 
   const showFloatingNote = useCallback((note) => {
     setFloatingNote(note);
@@ -147,6 +165,34 @@ export default function AppShell({ session, setSession, toast }) {
   }, [setSession, toast]);
 
   const updateUser = (u) => setSession((s) => ({ ...s, user: u }));
+
+  // Sembrar notificaciones ya leídas/no-leídas al cargar (sin toasts)
+  useEffect(() => {
+    if (!session?.token) return;
+    (async () => {
+      try {
+        const r = await api.get("/users/notifications");
+        const notifs = r.data || [];
+        const tratoIds = [];
+        notifs.forEach((n) => {
+          if (!n.leida) {
+            shownNotifIds.current.add(String(n.id));
+            const tid = n.datos?.trato_id || n.datos?.metadata?.trato_id;
+            if (tid) tratoIds.push(tid);
+          }
+        });
+        setUnreadTratoIds(new Set(tratoIds));
+      } catch { /* silencioso */ }
+      try {
+        const r2 = await api.get("/tratos?limit=50");
+        const tratos = r2.data || [];
+        const pendingEstados = ['activo', 'pago_pendiente', 'en_entrega', 'pago_retenido'];
+        if (tratos.some((t) => pendingEstados.includes(t.estado))) {
+          setPendingTratosAlert(true);
+        }
+      } catch { /* silencioso */ }
+    })();
+  }, [session?.token]);
 
   // Desbloquear audio en primera interacción
   useEffect(() => {
@@ -227,7 +273,7 @@ export default function AppShell({ session, setSession, toast }) {
       try {
         const r = await api.get("/users/notifications");
         const notifs = r.data || [];
-        const unread = notifs.filter((n) => !n.leida && !shownNotifIds.current.has(String(n.id)));
+        const unread = notifs.filter((n) => !n.leida && !shownNotifIds.current.has(String(n.id)) && new Date(n.createdAt || n.updatedAt).getTime() > sessionLoadTimeRef.current - 5000);
         // Mostrar solo la más reciente no vista para no saturar
         if (unread.length > 0) {
           const latest = unread[0];
@@ -267,7 +313,7 @@ export default function AppShell({ session, setSession, toast }) {
         <Suspense fallback={<PageLoader />}>
           <div key={page}>
             {page === "dashboard"  && <Dashboard   {...sharedProps} setPage={setPage} setTratoId={setTratoId} setUser={updateUser} />}
-            {page === "tratos"     && <MisTratos    {...sharedProps} setPage={setPage} setTratoId={setTratoId} />}
+            {page === "tratos"     && <MisTratos    {...sharedProps} setPage={setPage} setTratoId={setTratoId} alertTratoIds={unreadTratoIds} />}
             {page === "crear"      && <CrearTrato   {...sharedProps} setPage={setPage} />}
             {page === "detalle"    && <TratoDetalle {...sharedProps} tratoId={tratoId} setPage={setPage} setDisputeTratoId={setDisputeTratoId} onStatusUpdate={notifyStatusUpdate} />}
             {page === "pagos"      && <Pagos        {...sharedProps} />}
@@ -277,6 +323,7 @@ export default function AppShell({ session, setSession, toast }) {
           </div>
         </Suspense>
       </div>
+      <PendingTratosPopup show={pendingTratosAlert && page === "dashboard"} onDismiss={() => setPendingTratosAlert(false)} onGoToTratos={() => setPage("tratos")} />
       <FloatingNotification note={floatingNote} onOpen={openFloatingNote} onClose={() => setFloatingNote(null)} />
       <CelebrationOverlay show={celebration} />
     </div>

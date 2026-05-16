@@ -905,15 +905,20 @@ adminRouter.get('/stats', async (req, res, next) => {
 adminRouter.get('/reviews', async (req, res, next) => {
   try {
     const { Resena, Trato, User } = require('../config/database');
-    const resenas = await Resena.findAll({
-      include: [
-        { model: Trato, attributes: ['id', 'codigo', 'titulo', 'estado'] },
-        { model: User, as: 'autor', attributes: ['id', 'nombre', 'apellido', 'email'] },
-        { model: User, as: 'destinatario', attributes: ['id', 'nombre', 'apellido', 'email'] },
-      ],
-      order: [['createdAt', 'DESC']],
-      limit: 100,
-    }).catch(async () => Resena.findAll({ order: [['createdAt', 'DESC']], limit: 100 }));
+    let resenas = [];
+    try {
+      resenas = await Resena.findAll({
+        include: [
+          { model: Trato, attributes: ['id', 'codigo', 'titulo', 'estado'] },
+          { model: User, as: 'autor', attributes: ['id', 'nombre', 'apellido', 'email'] },
+          { model: User, as: 'destinatario', attributes: ['id', 'nombre', 'apellido', 'email'] },
+        ],
+        order: [['createdAt', 'DESC']],
+        limit: 100,
+      });
+    } catch {
+      resenas = await Resena.findAll({ order: [['createdAt', 'DESC']], limit: 100 });
+    }
     res.json({ success: true, data: resenas });
   } catch (err) { next(err); }
 });
@@ -1423,6 +1428,21 @@ adminRouter.patch('/users/:id/security', requireSuperadmin, async (req, res, nex
     if (!user) return res.status(404).json({ success: false, message: 'Usuario no encontrado' });
     await user.update({ require_2fa: !!req.body.require_2fa });
     res.json({ success: true, data: cleanUser(user), message: 'Seguridad actualizada' });
+  } catch (err) { next(err); }
+});
+
+adminRouter.patch('/users/:id/kyc', async (req, res, next) => {
+  try {
+    const { kyc_nivel } = req.body;
+    const validLevels = ['ninguno', 'basico', 'verificado', 'premium'];
+    if (!validLevels.includes(kyc_nivel)) return res.status(400).json({ success: false, message: 'Nivel KYC inválido. Usa: ninguno, basico, verificado, premium' });
+    const user = await User.findByPk(req.params.id);
+    if (!user) return res.status(404).json({ success: false, message: 'Usuario no encontrado' });
+    await user.update({
+      kyc_nivel,
+      kyc_estado: kyc_nivel !== 'ninguno' ? 'aprobado' : 'pendiente',
+    });
+    res.json({ success: true, data: cleanUser(await User.findByPk(req.params.id, { attributes: { exclude: ['password_hash', 'refresh_token'] } })), message: `Nivel de verificación actualizado a ${kyc_nivel}` });
   } catch (err) { next(err); }
 });
 

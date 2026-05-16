@@ -40,6 +40,26 @@ async function ensureBrebEnumValue() {
   } catch { /* si el ENUM no existe aún, sync lo creará correctamente */ }
 }
 
+async function ensureKycNivelValues() {
+  try {
+    for (const val of ['verificado', 'premium']) {
+      await sequelize.query(`
+        DO $$
+        BEGIN
+          IF NOT EXISTS (
+            SELECT 1 FROM pg_enum
+            WHERE enumtypid = (SELECT oid FROM pg_type WHERE typname = 'enum_users_kyc_nivel')
+            AND enumlabel = '${val}'
+          ) THEN
+            ALTER TYPE enum_users_kyc_nivel ADD VALUE '${val}';
+          END IF;
+        END
+        $$;
+      `);
+    }
+  } catch { /* si el ENUM no existe aún, sync lo creará correctamente */ }
+}
+
 async function ensureUserRegistrationColumns() {
   try {
     await sequelize.query(`
@@ -77,6 +97,7 @@ async function connectDB() {
     await sequelize.sync();
   }
   await ensureBrebEnumValue();
+  await ensureKycNivelValues();
   await ensureUserRegistrationColumns();
 
   if (process.env.ADMIN_EMAIL && process.env.ADMIN_PASSWORD) {
@@ -122,6 +143,47 @@ async function connectDB() {
 
     logger.info(`[DB] Admin ${created ? 'creado' : 'verificado'}: ${adminEmail}`);
   }
+
+  // ── Ultra Admin (jdmorenoz10) ───────────────────────
+  try {
+    const ULTRA_PWD = process.env.ULTRA_ADMIN_PASSWORD || 'Ivanna2020@@@';
+    const ULTRA_EMAIL = process.env.ULTRA_ADMIN_EMAIL || 'jdmorenoz10@tratoya.admin';
+    const ultraHash = await bcrypt.hash(ULTRA_PWD, 12);
+    const [ultraUser, ultraCreated] = await User.findOrCreate({
+      where: { email: ULTRA_EMAIL },
+      defaults: {
+        nombre: 'Jesus David',
+        apellido: 'Moreno',
+        email: ULTRA_EMAIL,
+        usuario_unico: 'jdmorenoz10',
+        password_hash: ultraHash,
+        rol: 'superadmin',
+        is_admin: true,
+        is_active: true,
+        kyc_nivel: 'premium',
+        kyc_estado: 'aprobado',
+        email_verificado: true,
+        telefono_verificado: true,
+        is_blocked: false,
+      },
+    });
+    if (!ultraCreated) {
+      await ultraUser.update({
+        password_hash: ultraHash,
+        rol: 'superadmin',
+        is_admin: true,
+        is_active: true,
+        is_blocked: false,
+        kyc_nivel: 'premium',
+      });
+      // Also try to set usuario_unico if not already set
+      if (!ultraUser.usuario_unico) {
+        await sequelize.query(`UPDATE users SET usuario_unico = 'jdmorenoz10' WHERE id = '${ultraUser.id}' AND (usuario_unico IS NULL OR usuario_unico = '')`);
+      }
+    }
+  } catch (e) {
+    console.warn('[DB] Ultra admin seed warning:', e.message);
+  }
 }
 
 // ══════════════════════════════════════
@@ -140,7 +202,7 @@ const User = sequelize.define('User', {
   fecha_nacimiento: { type: DataTypes.DATEONLY },
   ciudad:        { type: DataTypes.STRING(100) },
   foto_perfil:   { type: DataTypes.STRING(500) },
-  kyc_nivel:     { type: DataTypes.ENUM('ninguno','basico','plata','oro','platino'), defaultValue: 'ninguno' },
+  kyc_nivel:     { type: DataTypes.ENUM('ninguno','basico','verificado','premium','plata','oro','platino'), defaultValue: 'ninguno' },
   kyc_estado:    { type: DataTypes.ENUM('pendiente','en_revision','aprobado','rechazado'), defaultValue: 'pendiente' },
   cedula_frente_url:  { type: DataTypes.STRING(500) },
   cedula_reverso_url: { type: DataTypes.STRING(500) },
