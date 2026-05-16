@@ -389,8 +389,11 @@ paymentsRouter.post('/epayco/create', async (req, res, next) => {
       try {
         smartSession = await createEpaycoSmartSession(config, smartSessionPayload);
       } catch (sessionErr) {
-        if (envBool(process.env.EPAYCO_STRICT_V2)) throw sessionErr;
-        logger.warn(`EPAYCO_SMART_SESSION_FAILED_FALLBACK_V1: ${sessionErr.message}`);
+        logger.warn(`EPAYCO_SMART_SESSION_FAILED: ${sessionErr.message}`);
+        const err = new Error(`No se pudo iniciar ePayco Smart Checkout. Revisa las llaves API y los medios de pago habilitados en ePayco. Detalle: ${sessionErr.message}`);
+        err.statusCode = sessionErr.statusCode || 502;
+        err.expose = true;
+        throw err;
       }
     }
 
