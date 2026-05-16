@@ -69,22 +69,21 @@ jobs:
           node-version: "20"
           cache: "npm"
           cache-dependency-path: tratoya-frontend/package-lock.json
-      - run: npm ci
+      - name: Install dependencies
+        run: npm ci
         working-directory: tratoya-frontend
+      - name: Build (con variables de entorno)
+        working-directory: tratoya-frontend
+        env:
+          VITE_API_URL: ${{ secrets.VITE_API_URL }}
+        run: npm run build
       - name: Install Vercel CLI
         run: npm install -g vercel@latest
-      - name: Deploy to Vercel
+      - name: Deploy prebuilt → Vercel
+        working-directory: tratoya-frontend
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-        run: |
-          if [ -z "$VERCEL_TOKEN" ]; then
-            echo "⚠️  VERCEL_TOKEN no configurado — omitiendo deploy automático."
-            echo "    Agrégalo en: GitHub → Settings → Secrets and variables → Actions"
-            echo "    Nombre: VERCEL_TOKEN"
-            exit 0
-          fi
-          cd tratoya-frontend
-          vercel --prod --token "$VERCEL_TOKEN" --yes
+        run: vercel deploy --prebuilt --prod --token "$VERCEL_TOKEN"
 
   # ── Nota: Railway auto-despliega el backend en cada push a main ──
   # Railway está conectado directamente al repo de GitHub y detecta
