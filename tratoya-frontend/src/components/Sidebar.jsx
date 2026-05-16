@@ -56,8 +56,22 @@ export default function Sidebar({ page, setPage, user, onLogout }) {
           <div style={{ fontSize: 13, fontWeight: 700, color: "#fff", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
             {nom || "Usuario"}
           </div>
-          <div style={{ fontSize: 10.5, color: "rgba(255,255,255,.35)" }}>
-            {user?.kyc_nivel !== "ninguno" ? "✓ Verificado" : "⚠ Sin verificar"}
+          <div style={{ display: "flex", alignItems: "center", gap: 5, marginTop: 2 }}>
+            {user?.kyc_nivel === "premium" || user?.kyc_nivel === "verificado" ? (
+              <>
+                <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: 14, height: 14, background: "#1877F2", borderRadius: "50%", color: "#fff", fontSize: 10, fontWeight: 900, lineHeight: 1, flexShrink: 0 }}>✓</span>
+                <span style={{ fontSize: 10.5, color: "rgba(255,255,255,.55)", fontWeight: 600 }}>
+                  {user?.kyc_nivel === "premium" ? "Premium" : "Verificado"}
+                </span>
+              </>
+            ) : user?.kyc_nivel === "basico" ? (
+              <>
+                <span style={{ fontSize: 11, color: "rgba(255,255,255,.45)" }}>✓</span>
+                <span style={{ fontSize: 10.5, color: "rgba(255,255,255,.45)" }}>Básico</span>
+              </>
+            ) : (
+              <span style={{ fontSize: 10.5, color: "rgba(255,255,255,.3)" }}>Sin verificar</span>
+            )}
           </div>
         </div>
       </div>
