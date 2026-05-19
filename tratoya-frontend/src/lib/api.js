@@ -1,4 +1,13 @@
-export const API_URL = import.meta.env.VITE_API_URL || "/api";
+const getApiUrl = () => {
+  if (import.meta.env.VITE_API_URL) return import.meta.env.VITE_API_URL;
+  if (typeof window !== "undefined") {
+    const host = window.location.hostname;
+    if (host === "tratoya.com" || host === "www.tratoya.com") return "https://api.tratoya.com/api";
+  }
+  return "/api";
+};
+
+export const API_URL = getApiUrl();
 
 const SESSION_KEYS = ["ty_token", "ty_refresh", "ty_user"];
 const sessionStore = () => window.localStorage;

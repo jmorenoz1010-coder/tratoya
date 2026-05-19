@@ -6,7 +6,14 @@ import { Fragment, useState, useEffect, useCallback, useRef } from "react";
    Ruta: /admin  |  Solo accesible con rol = 'admin'
    ═══════════════════════════════════════════════════════════ */
 
-const API_URL = import.meta.env.VITE_API_URL || "/api";
+const API_URL = (() => {
+  if (import.meta.env.VITE_API_URL) return import.meta.env.VITE_API_URL;
+  if (typeof window !== "undefined") {
+    const host = window.location.hostname;
+    if (host === "tratoya.com" || host === "www.tratoya.com") return "https://api.tratoya.com/api";
+  }
+  return "/api";
+})();
 
 const api = {
   _tok: () => localStorage.getItem("ty_admin_token_v2"),

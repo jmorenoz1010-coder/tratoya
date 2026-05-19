@@ -46,7 +46,7 @@ jobs:
       - run: npm ci
       - name: Build
         env:
-          VITE_API_URL: https://tratoya-backend.vercel.app/api
+          VITE_API_URL: https://api.tratoya.com/api
         run: npm run build
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
@@ -102,7 +102,7 @@ jobs:
         working-directory: tratoya-frontend
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-          VITE_API_URL: https://tratoya-backend.vercel.app/api
+          VITE_API_URL: https://api.tratoya.com/api
         run: vercel build --prod --token "$VERCEL_TOKEN" --yes
       - name: Deploy frontend prebuilt → Vercel
         working-directory: tratoya-frontend

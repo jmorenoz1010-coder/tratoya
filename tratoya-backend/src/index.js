@@ -33,8 +33,17 @@ app.use(helmet({ contentSecurityPolicy: false }));
 app.use(cors({
   origin: (origin, cb) => {
     if (!origin) return cb(null, true);
+    const envOrigins = String(process.env.CORS_ALLOWED_ORIGINS || '')
+      .split(',')
+      .map((item) => item.trim())
+      .filter(Boolean);
     const allowed = [
-      process.env.FRONTEND_URL || 'http://localhost:5173',
+      process.env.FRONTEND_URL || 'https://tratoya.com',
+      'https://tratoya.com',
+      'https://www.tratoya.com',
+      'https://tratoya-frontend.vercel.app',
+      ...envOrigins,
+      'http://localhost:5173',
       'http://localhost:3000',
     ];
     const isLocalNetwork = process.env.NODE_ENV !== 'production'

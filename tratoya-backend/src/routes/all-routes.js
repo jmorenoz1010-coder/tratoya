@@ -194,8 +194,8 @@ function getEpaycoConfig() {
   const publicKey = process.env.EPAYCO_PUBLIC_KEY || process.env.EPAYCO_P_PUBLIC_KEY || '';
   const customerId = process.env.EPAYCO_CUSTOMER_ID || process.env.EPAYCO_P_CUST_ID_CLIENTE || process.env.EPAYCO_P_CUST_ID || '';
   const pKey = process.env.EPAYCO_PRIVATE_KEY || process.env.EPAYCO_SECRET_KEY || process.env.EPAYCO_P_KEY || '';
-  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
-  const backendUrl = process.env.BACKEND_URL || 'http://localhost:4000';
+  const frontendUrl = process.env.FRONTEND_URL || 'https://tratoya.com';
+  const backendUrl = process.env.BACKEND_URL || 'https://api.tratoya.com';
   const realEnabled = envBool(process.env.PAYMENTS_REAL_ENABLED);
   const maxTestAmountCop = Number(process.env.PAYMENTS_MAX_TEST_AMOUNT_COP || 100000);
   const checkoutVersion = String(process.env.EPAYCO_CHECKOUT_VERSION || '2').trim();
@@ -271,7 +271,7 @@ paymentsRouter.all('/epayco/response', (req, res) => {
     const value = req.query[key] || payload[key];
     if (value) params.set(key, value);
   }
-  const frontendUrl = process.env.FRONTEND_URL || 'https://tratoya-frontend.vercel.app';
+  const frontendUrl = process.env.FRONTEND_URL || 'https://tratoya.com';
   const targetUrl = `${frontendUrl}/pago/resultado${params.toString() ? `?${params.toString()}` : ''}`;
   res.status(302);
   res.setHeader('Location', targetUrl);
