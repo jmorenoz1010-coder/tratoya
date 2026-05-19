@@ -7,6 +7,7 @@ import Landing from "./pages/Landing";
 import Auth from "./pages/Auth";
 import PublicTratoPage from "./pages/PublicTratoPage";
 import PaymentResultPage from "./pages/PaymentResultPage";
+import { ADMIN_ENTRY_PATH } from "./lib/routes";
 import "./styles/main.css";
 
 export default function TratoYaApp() {
@@ -20,7 +21,7 @@ export default function TratoYaApp() {
   const [authMode, setAuthMode] = useState(null);
   const toast = useCallback((m, type = "info") => show(m, type), [show]);
 
-  const isAdminRoute = window.location.pathname === "/admin" || window.location.pathname.startsWith("/admin/");
+  const isAdminRoute = window.location.pathname === ADMIN_ENTRY_PATH || window.location.pathname.startsWith(`${ADMIN_ENTRY_PATH}/`);
   const publicMatch  = window.location.pathname.match(/^\/t\/([^/]+)/);
   const isPayResult  = ["/pagos/respuesta", "/pago/resultado"].includes(window.location.pathname);
 

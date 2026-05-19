@@ -1,9 +1,10 @@
 import { Fragment, useState, useEffect, useCallback, useRef } from "react";
+import { ADMIN_ENTRY_PATH } from "./lib/routes";
 
 /* ═══════════════════════════════════════════════════════════
    TRATOYA · PANEL DE ADMINISTRACIÓN
    Superusuario completo — conectado al backend real
-   Ruta: /admin  |  Solo accesible con rol = 'admin'
+   Ruta privada  |  Solo accesible con rol = 'admin'
    ═══════════════════════════════════════════════════════════ */
 
 const API_URL = (() => {
@@ -1232,7 +1233,7 @@ function AdminTratoDetailModal({ detail, loading, onClose, onRefresh, onLiberar,
           </div>
           <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
             {!loading && <span className={`bdg ${TRATO_EST[t.estado] || "bg"}`}>{t.estado}</span>}
-            {fullPage ? <a className="btn bg_ bsm" href="/admin">Volver al admin</a> : <button className="btn bg_ bsm" onClick={onClose}>×</button>}
+            {fullPage ? <a className="btn bg_ bsm" href={ADMIN_ENTRY_PATH}>Volver al admin</a> : <button className="btn bg_ bsm" onClick={onClose}>×</button>}
           </div>
         </div>
         <div className={fullPage ? "" : "modal-bd"} style={fullPage ? { paddingTop: 14 } : { overflowY: "auto", maxHeight: "calc(92vh - 128px)" }}>
@@ -1458,7 +1459,7 @@ function TratosAdmin({ toast }) {
                   <td style={{ fontSize: 11, color: "var(--s400)" }}>{fmtDate(t.createdAt)}</td>
                   <td>
                     <div style={{ display: "flex", gap: 4 }}>
-                      <a className="btn bg_ bsm" href={`/admin?trato=${encodeURIComponent(t.id)}`} target="_blank" rel="noreferrer">👁 Detalle</a>
+                      <a className="btn bg_ bsm" href={`${ADMIN_ENTRY_PATH}?trato=${encodeURIComponent(t.id)}`} target="_blank" rel="noreferrer">👁 Detalle</a>
                       {["pago_retenido","en_entrega","confirmado"].includes(t.estado) && <button className="btn bp bsm" onClick={() => forzarLiberar(t.id)}>💰 Liberar</button>}
                       {!["completado","cancelado","expirado"].includes(t.estado) && <button className="btn brd bsm" onClick={() => forzarCancelar(t.id)}>✕</button>}
                     </div>
@@ -2415,7 +2416,7 @@ export default function TratoYaAdmin() {
         <div className="admin-main" style={{ minHeight: "100vh", marginLeft: 0 }}>
           <div className="topbar">
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <a href="/admin" className="btn bg_ bsm" style={{ textDecoration: "none" }}>← Admin</a>
+              <a href={ADMIN_ENTRY_PATH} className="btn bg_ bsm" style={{ textDecoration: "none" }}>← Admin</a>
               <span style={{ fontFamily: "Syne", fontWeight: 700, fontSize: 14 }}>Detalle completo del trato</span>
             </div>
             <div style={{ display: "flex", gap: 9, alignItems: "center" }}>
