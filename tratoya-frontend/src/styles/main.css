@@ -195,7 +195,9 @@ tbody tr:hover td{background:var(--s50)}
 .secure-pay-btn strong{display:block;font-family:'Manrope';font-size:15px;line-height:1.15}
 .secure-pay-btn small{display:flex;align-items:center;gap:7px;margin-top:7px;flex-wrap:wrap}
 .secure-pay-btn small img{height:24px;width:auto;border-radius:8px;background:#fff;box-shadow:0 4px 12px rgba(0,0,0,.14)}
+.manual-pay-pop{position:fixed;inset:0;z-index:80;background:rgba(7,25,47,.46);display:grid;place-items:center;padding:18px}
 .manual-pay-card{background:#fff;border:1px solid var(--s100);border-radius:15px;padding:15px;box-shadow:0 14px 36px rgba(7,25,47,.12)}
+.manual-pay-pop .manual-pay-card{width:min(720px,100%);max-height:92vh;overflow:auto}
 .manual-pay-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:12px}
 .manual-pay-kicker{font-size:10px;font-weight:800;color:var(--g2);text-transform:uppercase;letter-spacing:.7px;margin-bottom:3px}
 .manual-pay-head h3{font-size:18px}

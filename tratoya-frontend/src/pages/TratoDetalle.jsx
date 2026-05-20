@@ -113,10 +113,17 @@ export default function TratoDetalle({ tratoId, setPage, setDisputeTratoId, user
     setBusy(false);
   };
 
-  const reportarPagoManual = async ({ method, transactionRef, notes }) => {
+  const reportarPagoManual = async ({ method, transactionRef, transferConcept, receipt, notes }) => {
     setBusy(true);
     try {
-      const r = await api.post(`/payments/manual/report`, { dealId: tratoId, method, transactionRef, notes });
+      const fd = new FormData();
+      fd.append("dealId", tratoId);
+      fd.append("method", method);
+      fd.append("transactionRef", transactionRef);
+      fd.append("transferConcept", transferConcept || "");
+      fd.append("notes", notes || "");
+      if (receipt) fd.append("receipt", receipt);
+      const r = await api.upload(`/payments/manual/report`, fd);
       setPaymentReport(r.data || r);
       toast("Pago reportado. Lo revisaremos en máximo 1 hora.", "success");
       load();

@@ -1325,7 +1325,7 @@ function AdminTratoDetailModal({ detail, loading, onClose, onRefresh, onLiberar,
               </div>
 
               {[
-                ["Pagos registrados", data.pagos, p => [p.tipo, fmt(p.monto), p.pasarela, p.estado, p.referencia_externa || "—", fmtTime(p.createdAt)]],
+                ["Pagos registrados", data.pagos, p => [p.tipo, fmt(p.monto), p.pasarela, p.estado, p.referencia_externa || "—", p.metadata?.receipt_url ? <a href={p.metadata.receipt_url} target="_blank" rel="noreferrer">Comprobante</a> : "—", fmtTime(p.createdAt)]],
                 ["Intenciones de pago", data.payment_intents, p => [p.provider, p.reference, fmt(p.amount_cop), p.status, p.wompi_transaction_id || p.raw_response?.ref_payco || p.raw_response?.transaction_id || "—", fmtTime(p.updatedAt || p.createdAt || p.updated_at || p.created_at)]],
                 ["Eventos pasarela", data.payment_events, e => [e.provider, e.event_type, e.reference, e.status, e.is_valid_signature ? "Firma OK" : "Sin firma/pendiente", fmtTime(e.received_at)]],
                 ["Ledger", data.ledger, l => [l.type, fmt((l.amount_cents || 0) / 100), l.description || "—", fmtTime(l.created_at)]],
@@ -1457,7 +1457,7 @@ function TratosAdmin({ toast }) {
             {loading
               ? <tr><td colSpan={9} style={{ textAlign: "center", padding: 32 }}><div className="spin" style={{ margin: "0 auto", color: "var(--s400)" }} /></td></tr>
               : tratos.map(t => (
-                <tr key={t.id}>
+                <tr key={t.id} onClick={() => { window.location.href = `${ADMIN_ENTRY_PATH}?trato=${encodeURIComponent(t.id)}`; }} style={{ cursor: "pointer" }}>
                   <td style={{ fontFamily: "Syne", fontWeight: 700, fontSize: 11, color: "var(--g2)" }}>{t.codigo}</td>
                   <td style={{ fontWeight: 600, fontSize: 12.5, maxWidth: 180 }}>{t.titulo}</td>
                   <td style={{ fontSize: 12 }}>{t.vendedor?.nombre} {t.vendedor?.apellido}<div className="mono" style={{ fontSize: 10, color: "var(--s400)" }}>{t.vendedor?.usuario_unico || "—"}</div></td>
@@ -1468,9 +1468,9 @@ function TratosAdmin({ toast }) {
                   <td style={{ fontSize: 11, color: "var(--s400)" }}>{fmtDate(t.createdAt)}</td>
                   <td>
                     <div style={{ display: "flex", gap: 4 }}>
-                      <a className="btn bg_ bsm" href={`${ADMIN_ENTRY_PATH}?trato=${encodeURIComponent(t.id)}`} target="_blank" rel="noreferrer">👁 Detalle</a>
-                      {["pago_retenido","en_entrega","confirmado"].includes(t.estado) && <button className="btn bp bsm" onClick={() => forzarLiberar(t.id)}>💰 Liberar</button>}
-                      {!["completado","cancelado","expirado"].includes(t.estado) && <button className="btn brd bsm" onClick={() => forzarCancelar(t.id)}>✕</button>}
+                      <a className="btn bg_ bsm" href={`${ADMIN_ENTRY_PATH}?trato=${encodeURIComponent(t.id)}`} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()}>👁 Detalle</a>
+                      {["pago_retenido","en_entrega","confirmado"].includes(t.estado) && <button className="btn bp bsm" onClick={(e) => { e.stopPropagation(); forzarLiberar(t.id); }}>💰 Liberar</button>}
+                      {!["completado","cancelado","expirado"].includes(t.estado) && <button className="btn brd bsm" onClick={(e) => { e.stopPropagation(); forzarCancelar(t.id); }}>✕</button>}
                     </div>
                   </td>
                 </tr>
@@ -1560,6 +1560,10 @@ function PagosAdmin({ toast }) {
   };
 
   const estadoCls = (estado) => estado === "aprobado" ? "gn" : ["pendiente", "procesando"].includes(estado) ? "or" : "rd";
+  const porConsignar = pagos.filter((p) => p.tipo === "retencion" && p.estado === "aprobado" && ["pago_retenido","en_entrega","confirmado","pendiente_confirmacion"].includes(p.Trato?.estado));
+  const sellerAmount = (p) => Number(p.neto_desembolso || p.Trato?.monto_neto || p.Trato?.monto || 0);
+  const freeGain = (p) => Math.round(Number(p.Trato?.monto || 0) * 0.045);
+  const coveredCosts = (p) => Math.max(0, Number(p.monto || 0) - sellerAmount(p) - freeGain(p));
 
   return (
     <div className="page fi">
@@ -1598,12 +1602,36 @@ function PagosAdmin({ toast }) {
             <span>1. Busca en Nequi/Bre-B la referencia {selected.pasarela_ref || selected.metadata?.transaction_ref || "reportada"}.</span>
             <span>2. Confirma que llegó exactamente {fmt(selected.monto)} para {selected.Trato?.codigo || "el trato"}.</span>
             <span>3. Al confirmar, el vendedor recibe notificación para entregar. Al liberar, ambos ven que se refleja máximo en 1 hora.</span>
+            {selected.metadata?.transfer_concept && <span>Concepto enviado: {selected.metadata.transfer_concept}</span>}
+            {selected.metadata?.receipt_url && <a href={selected.metadata.receipt_url} target="_blank" rel="noreferrer">Abrir comprobante adjunto</a>}
             {selected.metadata?.notes && <span>Nota comprador: {selected.metadata.notes}</span>}
           </div>
           <div style={{ display: "flex", gap: 8, marginTop: 12, flexWrap: "wrap" }}>
             {selected.tipo === "retencion" && selected.estado !== "aprobado" && <button className="btn bp" disabled={busy} onClick={() => confirmar(selected)}>Confirmar recibido</button>}
             {["pago_retenido","en_entrega","confirmado","pendiente_confirmacion"].includes(selected.Trato?.estado) && <button className="btn bp" disabled={busy} onClick={() => liberar(selected)}>LIBERAR</button>}
             <a className="btn bg_" href={`${ADMIN_ENTRY_PATH}?trato=${encodeURIComponent(selected.trato_id)}`} target="_blank" rel="noreferrer">Ver trato completo</a>
+          </div>
+        </div>
+      )}
+      {porConsignar.length > 0 && (
+        <div className="card admin-payment-detail">
+          <h2 style={{ fontSize: 16, marginBottom: 10 }}>Transferencias pendientes por consignar al vendedor</h2>
+          <div className="tw" style={{ boxShadow: "none" }}>
+            <table>
+              <thead><tr><th>Trato</th><th>Vendedor</th><th>Valor exacto a transferir</th><th>Ganancia libre 4.5%</th><th>Costos cubiertos</th><th>Acción</th></tr></thead>
+              <tbody>
+                {porConsignar.map((p) => (
+                  <tr key={`release-${p.id}`} onClick={() => setSelected(p)} style={{ cursor: "pointer" }}>
+                    <td><b className="mono">{p.Trato?.codigo}</b><div style={{ fontSize: 11, color: "var(--s500)" }}>{p.Trato?.titulo}</div></td>
+                    <td>{p.Trato?.vendedor?.nombre} {p.Trato?.vendedor?.apellido}<div className="mono" style={{ fontSize: 10, color: "var(--s400)" }}>{p.Trato?.vendedor?.usuario_unico || p.Trato?.vendedor?.email}</div></td>
+                    <td style={{ fontFamily: "Syne", fontWeight: 800, color: "var(--g2)" }}>{fmt(sellerAmount(p))}</td>
+                    <td style={{ fontWeight: 800 }}>{fmt(freeGain(p))}</td>
+                    <td>{fmt(coveredCosts(p))}</td>
+                    <td><button className="btn bp bsm" disabled={busy} onClick={(e) => { e.stopPropagation(); liberar(p); }}>LIBERAR</button></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
       )}
@@ -1614,7 +1642,7 @@ function PagosAdmin({ toast }) {
             {loading
               ? <tr><td colSpan={9} style={{ textAlign: "center", padding: 32 }}><div className="spin" style={{ margin: "0 auto", color: "var(--s400)" }} /></td></tr>
               : pagos.map((p, i) => (
-                <tr key={p.id}>
+                <tr key={p.id} onClick={() => setSelected(p)} style={{ cursor: "pointer" }}>
                   <td style={{ fontFamily: "Syne", fontWeight: 700, fontSize: 11, color: "var(--g2)" }}>{p.Trato?.codigo || "—"}</td>
                   <td style={{ fontSize: 12 }}>{p.User?.nombre} {p.User?.apellido}</td>
                   <td style={{ fontSize: 12 }}>{p.tipo}</td>
@@ -1625,9 +1653,9 @@ function PagosAdmin({ toast }) {
                   <td style={{ fontSize: 11, color: "var(--s400)" }}>{fmtDate(p.createdAt)}</td>
                   <td>
                     <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
-                      <button className="btn bg_ bsm" onClick={() => setSelected(p)}>Ver flujo</button>
-                      {p.tipo === "retencion" && p.estado !== "aprobado" && <button className="btn bp bsm" disabled={busy} onClick={() => confirmar(p)}>Confirmar</button>}
-                      {["pago_retenido","en_entrega","confirmado","pendiente_confirmacion"].includes(p.Trato?.estado) && <button className="btn bp bsm" disabled={busy} onClick={() => liberar(p)}>LIBERAR</button>}
+                      <button className="btn bg_ bsm" onClick={(e) => { e.stopPropagation(); setSelected(p); }}>Ver flujo</button>
+                      {p.tipo === "retencion" && p.estado !== "aprobado" && <button className="btn bp bsm" disabled={busy} onClick={(e) => { e.stopPropagation(); confirmar(p); }}>Confirmar</button>}
+                      {["pago_retenido","en_entrega","confirmado","pendiente_confirmacion"].includes(p.Trato?.estado) && <button className="btn bp bsm" disabled={busy} onClick={(e) => { e.stopPropagation(); liberar(p); }}>LIBERAR</button>}
                     </div>
                   </td>
                 </tr>
@@ -2476,6 +2504,12 @@ export default function TratoYaAdmin() {
       api.get("/admin/stats").then(r => { const s = r.data || r; setDisputasPendientes(s.disputas_abiertas || 0); }).catch(() => {});
     }
   }, [admin]);
+
+  useEffect(() => {
+    document.title = tratoDetailId
+      ? "Detalle de trato · Admin TratoYA"
+      : `${NAV.find(n => n.id === page)?.l || "Dashboard"} · Admin TratoYA`;
+  }, [page, tratoDetailId]);
 
   const logout = () => {
     localStorage.removeItem("ty_admin_token_v2");

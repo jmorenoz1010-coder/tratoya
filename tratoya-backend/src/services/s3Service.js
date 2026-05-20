@@ -5,11 +5,11 @@ const logger = require('../utils/logger');
  * TODO: Conectar con AWS SDK en producción
  */
 async function s3Upload(key, buffer, mimetype) {
-  logger.info(`[S3] Upload simulado: ${key} (${mimetype})`);
-  // En producción:
-  // const AWS = require('aws-sdk');
-  // const s3 = new AWS.S3();
-  // await s3.putObject({ Bucket: process.env.AWS_BUCKET_NAME, Key: key, Body: buffer, ContentType: mimetype }).promise();
+  logger.info(`[S3] Upload: ${key} (${mimetype})`);
+  if (!process.env.AWS_BUCKET_NAME && !process.env.R2_BUCKET_NAME) {
+    return `data:${mimetype || 'application/octet-stream'};base64,${buffer.toString('base64')}`;
+  }
+  // Produccion recomendada: conectar Cloudflare R2/S3 y retornar URL firmada o publica.
   return `https://cdn.tratoya.co/${key}`;
 }
 

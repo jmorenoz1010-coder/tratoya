@@ -167,6 +167,7 @@ const paymentsRouter = express.Router();
 const {
   Pago, Trato, PaymentIntent, PaymentEvent, LedgerEntry, AuditLog
 } = require('../config/database');
+const paymentUpload = require('multer')({ storage: require('multer').memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
 
 const normalizeEpaycoStatus = (response, stateCode) => {
   const normalized = String(response || '').toLowerCase();
@@ -490,9 +491,9 @@ paymentsRouter.get('/status', async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
-paymentsRouter.post('/manual/report', async (req, res, next) => {
+paymentsRouter.post('/manual/report', paymentUpload.single('receipt'), async (req, res, next) => {
   try {
-    const { dealId, transactionRef, method = 'breb', notes = '' } = req.body || {};
+    const { dealId, transactionRef, transferConcept = '', method = 'breb', notes = '' } = req.body || {};
     if (!dealId) return res.status(400).json({ success: false, message: 'dealId requerido' });
     if (!transactionRef || String(transactionRef).trim().length < 4) {
       return res.status(400).json({ success: false, message: 'Ingresa el número o referencia de la transferencia' });
@@ -512,14 +513,28 @@ paymentsRouter.post('/manual/report', async (req, res, next) => {
     const commission = calcularComision(montoBase, trato.quien_paga_comision || 'comprador');
     const amountCop = commission.total_a_pagar;
     const cleanRef = String(transactionRef).trim().slice(0, 80);
+    const cleanConcept = String(transferConcept || '').trim().slice(0, 180);
+    if (!cleanConcept.toUpperCase().includes(String(trato.codigo || '').toUpperCase())) {
+      return res.status(400).json({ success: false, message: `El mensaje o concepto de la transferencia debe incluir ${trato.codigo}` });
+    }
+    if (!req.file) {
+      return res.status(400).json({ success: false, message: 'Debes adjuntar el comprobante de pago' });
+    }
+    const { s3Upload } = require('../services/s3Service');
+    const receiptKey = `payments/${trato.codigo || trato.id}/${Date.now()}-${String(req.file.originalname || 'comprobante').replace(/[^a-zA-Z0-9_.-]/g, '_')}`;
+    const receiptUrl = await s3Upload(receiptKey, req.file.buffer, req.file.mimetype);
     const reference = `MANUAL-${String(trato.codigo || trato.id).replace(/[^a-zA-Z0-9-]/g, '').slice(0, 18)}-${Date.now()}`;
     const paymentMetadata = {
       reference,
       trato_codigo: trato.codigo,
       payment_reference_required: trato.codigo,
       transaction_ref: cleanRef,
+      transfer_concept: cleanConcept,
       method,
       notes,
+      receipt_url: receiptUrl,
+      receipt_name: req.file.originalname,
+      receipt_mimetype: req.file.mimetype,
       amount_expected: amountCop,
       seller_receives: commission.monto_neto,
       commission_visible: commission.monto_comision,
@@ -576,7 +591,7 @@ paymentsRouter.post('/manual/report', async (req, res, next) => {
     res.json({
       success: true,
       ok: true,
-      message: 'Pago reportado. Lo revisaremos en máximo 2 horas.',
+      message: 'Pago reportado. Lo revisaremos en máximo 1 hora.',
       data: {
         reference,
         amountCop,

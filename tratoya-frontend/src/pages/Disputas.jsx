@@ -35,7 +35,7 @@ export default function Disputas({ toast, initialTratoId, clearInitialTratoId, s
     }
     setSaving(true);
     try {
-      await api.post(`/disputes/${f.trato_id}`, { tipo: f.tipo, motivo: f.motivo, descripcion: f.descripcion });
+      await api.post(`/disputes`, { trato_id: f.trato_id, tipo: f.tipo, motivo: f.motivo, descripcion: f.descripcion });
       toast("Disputa abierta. Un mediador revisará en 72h.", "success");
       setF({ trato_id: "", tipo: "no_recibido", motivo: "", descripcion: "" });
       const res = await api.get("/disputes").catch(() => ({ data: [] }));

@@ -122,6 +122,10 @@ export default function AppShell({ session, setSession, toast }) {
     setTimeout(() => setFloatingNote((n) => (n === note ? null : n)), 9000);
   }, []);
 
+  useEffect(() => {
+    document.title = `${PAGE_TITLES[page] || "TratoYA"} · TratoYA`;
+  }, [page]);
+
   const estadoLabel = useCallback(
     (estado) => (ESTADO[estado]?.l || estado || "Actualizado").replace(/[^\p{L}\p{N}\s]/gu, "").trim(),
     []

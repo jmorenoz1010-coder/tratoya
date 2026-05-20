@@ -21,10 +21,17 @@ export default function PublicTratoPage({ link, session, goAuth, toast }) {
 
   useEffect(() => { load(); }, [link]);
 
-  const reportarPago = async ({ method, transactionRef, notes }, target = trato) => {
+  const reportarPago = async ({ method, transactionRef, transferConcept, receipt, notes }, target = trato) => {
     setBusy(true);
     try {
-      const r = await api.post(`/payments/manual/report`, { dealId: target.id, method, transactionRef, notes });
+      const fd = new FormData();
+      fd.append("dealId", target.id);
+      fd.append("method", method);
+      fd.append("transactionRef", transactionRef);
+      fd.append("transferConcept", transferConcept || "");
+      fd.append("notes", notes || "");
+      if (receipt) fd.append("receipt", receipt);
+      const r = await api.upload(`/payments/manual/report`, fd);
       setPaymentReport(r.data || r);
       setTrato((prev) => prev ? { ...prev, estado: "pago_pendiente" } : prev);
       toast("Pago reportado. Lo revisaremos en máximo 1 hora.", "success");

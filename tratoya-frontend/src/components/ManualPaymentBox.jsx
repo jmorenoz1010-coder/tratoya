@@ -9,12 +9,18 @@ export default function ManualPaymentBox({ amount, reference, busy, onReport }) 
   const [open, setOpen] = useState(false);
   const [method, setMethod] = useState("breb");
   const [transactionRef, setTransactionRef] = useState("");
+  const [transferConcept, setTransferConcept] = useState("");
+  const [receipt, setReceipt] = useState(null);
   const [notes, setNotes] = useState("");
 
   const submit = () => {
     if (!transactionRef.trim()) return;
-    onReport({ method, transactionRef: transactionRef.trim(), notes });
+    if (!transferConcept.trim().toUpperCase().includes(String(reference || "").toUpperCase())) return;
+    if (!receipt) return;
+    onReport({ method, transactionRef: transactionRef.trim(), transferConcept: transferConcept.trim(), receipt, notes });
   };
+
+  const ready = transactionRef.trim() && transferConcept.trim().toUpperCase().includes(String(reference || "").toUpperCase()) && receipt;
 
   if (!open) {
     return (
@@ -32,6 +38,7 @@ export default function ManualPaymentBox({ amount, reference, busy, onReport }) 
   }
 
   return (
+    <div className="manual-pay-pop">
     <div className="manual-pay-card">
       <div className="manual-pay-head">
         <div>
@@ -79,13 +86,22 @@ export default function ManualPaymentBox({ amount, reference, busy, onReport }) 
         </div>
       </div>
       <div className="fg">
+        <label className="fl">Mensaje o concepto enviado en Nequi/Bre-B <span>Obligatorio: {reference}</span></label>
+        <input className="inp" placeholder={`Ej: Pago trato ${reference}`} value={transferConcept} onChange={(e) => setTransferConcept(e.target.value)} />
+      </div>
+      <div className="fg">
+        <label className="fl">Comprobante de pago <span>Obligatorio</span></label>
+        <input className="inp" type="file" accept="image/*,.pdf" onChange={(e) => setReceipt(e.target.files?.[0] || null)} />
+      </div>
+      <div className="fg">
         <label className="fl">Nota opcional</label>
         <input className="inp" placeholder="Banco, hora o detalle útil para verificar" value={notes} onChange={(e) => setNotes(e.target.value)} />
       </div>
-      <button className="btn bp blg" style={{ width: "100%" }} onClick={submit} disabled={busy || !transactionRef.trim()}>
+      <button className="btn bp blg" style={{ width: "100%" }} onClick={submit} disabled={busy || !ready}>
         {busy ? <div className="spin" /> : "Ya realicé el pago"}
       </button>
       <div className="manual-pay-foot">Pago en revisión. Te avisamos en máximo 1 hora.</div>
+    </div>
     </div>
   );
 }

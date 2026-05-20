@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import TratoYaAdmin from "./Admin";
 import { clearLegacySession, getSavedUser, saveSession, clearSession } from "./lib/api";
 import { useToast, Toast } from "./components/Toast";
@@ -24,6 +24,14 @@ export default function TratoYaApp() {
   const isAdminRoute = window.location.pathname === ADMIN_ENTRY_PATH || window.location.pathname.startsWith(`${ADMIN_ENTRY_PATH}/`);
   const publicMatch  = window.location.pathname.match(/^\/t\/([^/]+)/);
   const isPayResult  = ["/pagos/respuesta", "/pago/resultado"].includes(window.location.pathname);
+
+  useEffect(() => {
+    if (isAdminRoute) document.title = "Panel Admin · TratoYA";
+    else if (publicMatch) document.title = "Trato público · TratoYA";
+    else if (isPayResult) document.title = "Resultado de pago · TratoYA";
+    else if (!session && authMode) document.title = "Acceso · TratoYA";
+    else if (!session) document.title = "TratoYA";
+  }, [isAdminRoute, publicMatch, isPayResult, session, authMode]);
 
   const Toasts = () => toasts.map((t) => <Toast key={t.id} message={t.message} type={t.type} onClose={() => remove(t.id)} />);
 
