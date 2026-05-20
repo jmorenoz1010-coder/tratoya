@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { fmt } from "../lib/utils";
 
-const QR_URL = import.meta.env.VITE_MANUAL_PAYMENT_QR_URL || "";
 const PAYMENT_KEY = import.meta.env.VITE_MANUAL_PAYMENT_KEY || "soporte@tratoya.com";
+const QR_URL = import.meta.env.VITE_MANUAL_PAYMENT_QR_URL || `https://api.qrserver.com/v1/create-qr-code/?size=280x280&data=${encodeURIComponent(PAYMENT_KEY)}`;
 const PAYMENT_NAME = import.meta.env.VITE_MANUAL_PAYMENT_NAME || "TratoYa";
 
 export default function ManualPaymentBox({ amount, reference, busy, onReport }) {
