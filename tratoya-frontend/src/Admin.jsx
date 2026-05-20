@@ -1532,6 +1532,7 @@ function PagosAdmin({ toast }) {
   const [selected, setSelected] = useState(null);
   const [busy, setBusy] = useState(false);
   const [lastSync, setLastSync] = useState(null);
+  const [statusFilter, setStatusFilter] = useState("todos");
 
   const load = useCallback((silent = false) => {
     if (!silent) setLoading(true);
@@ -1586,6 +1587,30 @@ function PagosAdmin({ toast }) {
   const sellerAmount = (p) => Number(p.neto_desembolso || p.Trato?.monto_neto || p.Trato?.monto || 0);
   const freeGain = (p) => Math.round(Number(p.Trato?.monto || 0) * 0.045);
   const coveredCosts = (p) => Math.max(0, Number(p.monto || 0) - sellerAmount(p) - freeGain(p));
+  const recentIncoming = pagos
+    .filter((p) => p.tipo === "retencion" && ["pendiente","procesando"].includes(p.estado))
+    .slice(0, 6);
+  const releasedHistory = pagos
+    .filter((p) => p.tipo === "liberacion" || p.estado === "liberado")
+    .slice(0, 12);
+  const totalPorConsignar = porConsignar.reduce((sum, p) => sum + sellerAmount(p), 0);
+  const totalLiberado = releasedHistory.reduce((sum, p) => sum + Number(p.monto || 0), 0);
+  const filterItems = [
+    ["todos", "Todos", pagos.length],
+    ["recientes", "Recién recibidos", recentIncoming.length],
+    ["consignar", "Por consignar", porConsignar.length],
+    ["aprobados", "Confirmados", pagos.filter((p) => p.estado === "aprobado").length],
+    ["fallidos", "Fallidos", pagos.filter((p) => p.estado === "rechazado").length],
+    ["historial", "Historial", releasedHistory.length],
+  ];
+  const filteredPagos = pagos.filter((p) => {
+    if (statusFilter === "recientes") return p.tipo === "retencion" && ["pendiente","procesando"].includes(p.estado);
+    if (statusFilter === "consignar") return porConsignar.some((x) => x.id === p.id);
+    if (statusFilter === "aprobados") return p.estado === "aprobado";
+    if (statusFilter === "fallidos") return p.estado === "rechazado";
+    if (statusFilter === "historial") return p.tipo === "liberacion" || p.estado === "liberado";
+    return true;
+  });
 
   return (
     <div className="page fi">
@@ -1599,6 +1624,41 @@ function PagosAdmin({ toast }) {
           <button className="btn bg_" onClick={() => load()}>↻</button>
           {lastSync && <span style={{ fontSize: 11, color: "var(--s400)" }}>Sync {lastSync.toLocaleTimeString("es-CO", { hour: "2-digit", minute: "2-digit" })}</span>}
         </div>
+      </div>
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 12 }}>
+        {filterItems.map(([key, label, count]) => (
+          <button key={key} className={`btn bsm ${statusFilter === key ? "bp" : "bg_"}`} onClick={() => setStatusFilter(key)}>
+            {label} <span className="mono" style={{ opacity: .72 }}>{count}</span>
+          </button>
+        ))}
+      </div>
+      <div className="card live-payments">
+        <div className="live-payments-head">
+          <div>
+            <h2>Pagos recién recibidos</h2>
+            <p>Se actualiza automáticamente cada 15 segundos para validar rápido lo que acaba de entrar.</p>
+          </div>
+          <span className="live-pill"><i /> En vivo</span>
+        </div>
+        {recentIncoming.length === 0 ? (
+          <div className="empty-mini">No hay pagos nuevos por revisar en este momento.</div>
+        ) : (
+          <div className="live-payments-list">
+            {recentIncoming.map((p) => (
+              <div className="live-payment-row" key={`live-${p.id}`} onClick={() => setSelected(p)}>
+                <div>
+                  <b>{p.Trato?.codigo || "Trato"}</b>
+                  <span>{p.Trato?.titulo || "Pago manual"} · {timeAgo(p.createdAt)}</span>
+                </div>
+                <strong>{fmt(p.monto)}</strong>
+                <div className="live-actions">
+                  <button className="btn bp bsm" disabled={busy} onClick={(e) => { e.stopPropagation(); confirmar(p); }}>Confirmar</button>
+                  <button className="btn brd bsm" disabled={busy} onClick={(e) => { e.stopPropagation(); rechazar(p); }}>Fallido</button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
       {selected && (
         <div className="card admin-payment-detail">
@@ -1649,7 +1709,13 @@ function PagosAdmin({ toast }) {
       )}
       {porConsignar.length > 0 && (
         <div className="card admin-payment-detail">
-          <h2 style={{ fontSize: 16, marginBottom: 10 }}>Transferencias pendientes por consignar al vendedor</h2>
+          <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "flex-start", flexWrap: "wrap", marginBottom: 10 }}>
+            <div>
+              <h2 style={{ fontSize: 16 }}>Transferencias pendientes por consignar al vendedor</h2>
+              <p style={{ fontSize: 12, color: "var(--s500)", marginTop: 3 }}>Total exacto pendiente: <b>{fmt(totalPorConsignar)}</b></p>
+            </div>
+            <span className="bdg or">{porConsignar.length} pendientes</span>
+          </div>
           <div className="tw" style={{ boxShadow: "none" }}>
             <table>
               <thead><tr><th>Trato</th><th>Vendedor</th><th>Valor exacto a transferir</th><th>Ganancia libre 4.5%</th><th>Costos cubiertos</th><th>Acción</th></tr></thead>
@@ -1669,13 +1735,44 @@ function PagosAdmin({ toast }) {
           </div>
         </div>
       )}
+      <div className="card admin-payment-detail">
+        <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "flex-start", flexWrap: "wrap", marginBottom: 10 }}>
+          <div>
+            <h2 style={{ fontSize: 16 }}>Historial de liberaciones</h2>
+            <p style={{ fontSize: 12, color: "var(--s500)", marginTop: 3 }}>Pagos al vendedor ya marcados como completados. Total registrado: <b>{fmt(totalLiberado)}</b></p>
+          </div>
+          <button className="btn bg_ bsm" onClick={() => setStatusFilter("historial")}>Ver historial</button>
+        </div>
+        {releasedHistory.length === 0 ? (
+          <div className="empty-mini">Todavía no hay liberaciones registradas.</div>
+        ) : (
+          <div className="tw" style={{ boxShadow: "none" }}>
+            <table>
+              <thead><tr><th>Trato</th><th>Vendedor</th><th>Monto liberado</th><th>Referencia</th><th>Fecha</th></tr></thead>
+              <tbody>
+                {releasedHistory.map((p) => (
+                  <tr key={`history-${p.id}`} onClick={() => setSelected(p)} style={{ cursor: "pointer" }}>
+                    <td><b className="mono">{p.Trato?.codigo || "—"}</b><div style={{ fontSize: 11, color: "var(--s500)" }}>{p.Trato?.titulo || "—"}</div></td>
+                    <td>{p.Trato?.vendedor?.nombre} {p.Trato?.vendedor?.apellido}</td>
+                    <td style={{ fontFamily: "Syne", fontWeight: 800, color: "var(--g2)" }}>{fmt(p.monto)}</td>
+                    <td><span className="mono" style={{ fontSize: 11 }}>{p.referencia_externa || p.pasarela_ref || "—"}</span></td>
+                    <td style={{ fontSize: 11, color: "var(--s400)" }}>{fmtTime(p.createdAt)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
       <div className="tw">
         <table>
           <thead><tr><th>Trato</th><th>Usuario</th><th>Tipo</th><th>Monto</th><th>Método</th><th>Ref. externa</th><th>Estado</th><th>Fecha</th><th>Acciones</th></tr></thead>
           <tbody>
             {loading
               ? <tr><td colSpan={9} style={{ textAlign: "center", padding: 32 }}><div className="spin" style={{ margin: "0 auto", color: "var(--s400)" }} /></td></tr>
-              : pagos.map((p, i) => (
+              : filteredPagos.length === 0
+                ? <tr><td colSpan={9} style={{ textAlign: "center", padding: 28, color: "var(--s500)", fontSize: 12.5 }}>No hay pagos para este filtro.</td></tr>
+              : filteredPagos.map((p) => (
                 <tr key={p.id} onClick={() => setSelected(p)} style={{ cursor: "pointer" }}>
                   <td style={{ fontFamily: "Syne", fontWeight: 700, fontSize: 11, color: "var(--g2)" }}>{p.Trato?.codigo || "—"}</td>
                   <td style={{ fontSize: 12 }}>{p.User?.nombre} {p.User?.apellido}</td>

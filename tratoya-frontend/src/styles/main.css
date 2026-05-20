@@ -210,6 +210,9 @@ tbody tr:hover td{background:var(--s50)}
 .manual-pay-row{background:var(--s50);border-radius:10px;padding:8px 10px}
 .manual-pay-row span{display:block;font-size:10.5px;color:var(--s500);margin-bottom:2px}
 .manual-pay-row strong{font-family:'Manrope';font-size:14px;color:var(--n)}
+.manual-pay-key{background:linear-gradient(135deg,var(--g),#dfff36);border:1px solid rgba(81,163,0,.18);box-shadow:0 10px 22px rgba(181,228,0,.22)}
+.manual-pay-key span{color:var(--n);font-weight:900;text-transform:uppercase;letter-spacing:.5px}
+.manual-pay-key strong{font-size:16px;color:var(--n)}
 .manual-pay-note{background:var(--cr);border-radius:11px;padding:10px 12px;font-size:12.5px;color:var(--s800);margin:12px 0}
 .manual-pay-form{gap:9px}
 .manual-pay-foot{text-align:center;color:var(--s600);font-size:11.5px;margin-top:9px}
@@ -217,6 +220,21 @@ tbody tr:hover td{background:var(--s50)}
 .admin-flow-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
 .admin-flow-box{background:var(--cr);border:1px solid rgba(181,228,0,.35);border-radius:11px;padding:10px 12px;font-size:12px;color:var(--s700);display:flex;flex-direction:column;gap:4px}
 .admin-flow-box b{color:var(--n);font-size:12.5px}
+.live-payments{padding:14px;margin-bottom:14px;border-left:4px solid var(--g);background:linear-gradient(180deg,#fff 0%,#fbfff0 100%)}
+.live-payments-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:11px}
+.live-payments-head h2{font-size:16px;margin-bottom:3px}
+.live-payments-head p{font-size:12px;color:var(--s500)}
+.live-pill{display:inline-flex;align-items:center;gap:6px;border-radius:999px;background:rgba(181,228,0,.18);color:var(--g2);font-weight:900;font-size:11px;padding:7px 10px;white-space:nowrap}
+.live-pill i{width:8px;height:8px;border-radius:50%;background:var(--g);box-shadow:0 0 0 5px rgba(181,228,0,.2);animation:pulseLive 1.25s ease-in-out infinite}
+.live-payments-list{display:flex;flex-direction:column;gap:8px}
+.live-payment-row{display:grid;grid-template-columns:1fr auto auto;align-items:center;gap:10px;background:#fff;border:1px solid var(--s100);border-radius:11px;padding:10px 12px;cursor:pointer;transition:transform .16s,box-shadow .16s}
+.live-payment-row:hover{transform:translateY(-1px);box-shadow:0 8px 22px rgba(7,25,47,.1)}
+.live-payment-row b{display:block;font-family:'Syne';font-size:12px;color:var(--g2)}
+.live-payment-row span{display:block;font-size:11.5px;color:var(--s500);margin-top:2px}
+.live-payment-row strong{font-family:'Syne';font-size:16px;color:var(--n);white-space:nowrap}
+.live-actions{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.empty-mini{border:1px dashed var(--s200);border-radius:11px;padding:14px;text-align:center;font-size:12.5px;color:var(--s500);background:rgba(255,255,255,.62)}
+@keyframes pulseLive{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(.72);opacity:.65}}
 
 /* ── KPI cards ──────────────────────────────────────── */
 .kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:11px;margin-bottom:18px}
@@ -395,4 +413,9 @@ tbody tr:hover td{background:var(--s50)}
   .manual-pay-grid{grid-template-columns:1fr}
   .manual-qr{min-height:220px}
   .admin-flow-grid{grid-template-columns:1fr}
+  .live-payments-head{flex-direction:column}
+  .live-payment-row{grid-template-columns:1fr}
+  .live-payment-row strong{font-size:18px}
+  .live-actions{justify-content:stretch}
+  .live-actions .btn{flex:1}
 }

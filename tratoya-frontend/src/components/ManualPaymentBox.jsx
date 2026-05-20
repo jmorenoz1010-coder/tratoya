@@ -14,12 +14,11 @@ export default function ManualPaymentBox({ amount, reference, busy, onReport }) 
   const [notes, setNotes] = useState("");
 
   const submit = () => {
-    if (!transferConcept.trim().toUpperCase().includes(String(reference || "").toUpperCase())) return;
     if (!receipt) return;
     onReport({ method, transactionRef: transactionRef.trim(), transferConcept: transferConcept.trim(), receipt, notes });
   };
 
-  const ready = transferConcept.trim().toUpperCase().includes(String(reference || "").toUpperCase()) && receipt;
+  const ready = Boolean(receipt);
 
   if (!open) {
     return (
@@ -61,7 +60,7 @@ export default function ManualPaymentBox({ amount, reference, busy, onReport }) 
         <div className="manual-pay-data">
           <div className="manual-pay-row"><span>Monto exacto</span><strong>{fmt(amount)}</strong></div>
           <div className="manual-pay-row"><span>Referencia</span><strong>{reference}</strong></div>
-          <div className="manual-pay-row"><span>Llave</span><strong className="wrap-any">{PAYMENT_KEY}</strong></div>
+          <div className="manual-pay-row manual-pay-key"><span>Transfiere a esta llave</span><strong className="wrap-any">{PAYMENT_KEY}</strong></div>
           <div className="manual-pay-row"><span>Recibe</span><strong>{PAYMENT_NAME}</strong></div>
         </div>
       </div>
@@ -85,9 +84,9 @@ export default function ManualPaymentBox({ amount, reference, busy, onReport }) 
         </div>
       </div>
       <div className="fg">
-        <label className="fl">Mensaje o concepto enviado en Nequi/Bre-B <span>Obligatorio: {reference}</span></label>
+        <label className="fl">Mensaje o concepto enviado en Nequi/Bre-B <span>Recomendado</span></label>
         <input className="inp" placeholder={`Ej: Pago trato ${reference}`} value={transferConcept} onChange={(e) => setTransferConcept(e.target.value)} />
-        <div className="fh">Aviso: escribe el número generado por TratoYa ({reference}) en el mensaje de Nequi o de la transferencia.</div>
+        <div className="fh">Aviso: si tu app lo permite, escribe el número generado por TratoYa ({reference}) en el mensaje de Nequi o de la transferencia para verificar más rápido.</div>
       </div>
       <div className="fg">
         <label className="fl">Comprobante de pago <span>Obligatorio</span></label>

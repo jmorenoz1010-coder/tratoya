@@ -525,9 +525,6 @@ paymentsRouter.post('/manual/report', paymentUpload.single('receipt'), async (re
     const amountCop = commission.total_a_pagar;
     const cleanRef = String(transactionRef || '').trim().slice(0, 80);
     const cleanConcept = String(transferConcept || '').trim().slice(0, 180);
-    if (!cleanConcept.toUpperCase().includes(String(trato.codigo || '').toUpperCase())) {
-      return res.status(400).json({ success: false, message: `El mensaje o concepto de la transferencia debe incluir ${trato.codigo}` });
-    }
     if (!req.file) {
       return res.status(400).json({ success: false, message: 'Debes adjuntar el comprobante de pago' });
     }
@@ -540,7 +537,8 @@ paymentsRouter.post('/manual/report', paymentUpload.single('receipt'), async (re
       trato_codigo: trato.codigo,
       payment_reference_required: trato.codigo,
       transaction_ref: cleanRef || null,
-      transfer_concept: cleanConcept,
+      transfer_concept: cleanConcept || null,
+      reference_in_concept: cleanConcept ? cleanConcept.toUpperCase().includes(String(trato.codigo || '').toUpperCase()) : false,
       method,
       notes,
       receipt_url: receiptUrl,
