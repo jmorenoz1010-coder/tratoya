@@ -9,6 +9,9 @@ module.exports = async (req, res) => {
     if (req.url === '/health' || req.url.startsWith('/health?')) {
       return app(req, res);
     }
+    if (req.method === 'OPTIONS') {
+      return app(req, res);
+    }
     if (!ready) {
       ready = connectDB().then(() => logger.info('[VERCEL] DB ready'));
     }

@@ -91,16 +91,20 @@ async function connectDB() {
   await sequelize.authenticate();
   const isProductionRuntime = process.env.NODE_ENV === 'production' || process.env.VERCEL === '1';
   const shouldAlterSync = process.env.DB_SYNC === 'true' || !isProductionRuntime;
+  const shouldPlainSync = process.env.DB_SYNC === 'plain' || (!isProductionRuntime && process.env.DB_SYNC !== 'false');
   if (shouldAlterSync) {
     await sequelize.sync({ alter: true });
-  } else if (process.env.DB_SYNC !== 'false') {
+  } else if (shouldPlainSync) {
     await sequelize.sync();
   }
-  await ensureBrebEnumValue();
-  await ensureKycNivelValues();
-  await ensureUserRegistrationColumns();
+  const shouldBootstrapDb = !isProductionRuntime || process.env.DB_BOOTSTRAP === 'true';
+  if (shouldBootstrapDb) {
+    await ensureBrebEnumValue();
+    await ensureKycNivelValues();
+    await ensureUserRegistrationColumns();
+  }
 
-  if (process.env.ADMIN_EMAIL && process.env.ADMIN_PASSWORD) {
+  if (shouldBootstrapDb && process.env.ADMIN_EMAIL && process.env.ADMIN_PASSWORD) {
     const adminEmail = process.env.ADMIN_EMAIL.toLowerCase();
     const adminPasswordHash = await bcrypt.hash(process.env.ADMIN_PASSWORD, 12);
     const [admin, created] = await User.findOrCreate({
@@ -145,6 +149,7 @@ async function connectDB() {
   }
 
   // ── Ultra Admin (jdmorenoz10) ───────────────────────
+  if (!shouldBootstrapDb) return;
   try {
     const ULTRA_PWD = process.env.ULTRA_ADMIN_PASSWORD || 'Ivanna2020@@@';
     const ULTRA_EMAIL = process.env.ULTRA_ADMIN_EMAIL || 'jdmorenoz10@tratoya.admin';
