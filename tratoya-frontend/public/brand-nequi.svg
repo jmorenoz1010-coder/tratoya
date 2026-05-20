@@ -1,6 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 58" role="img" aria-label="Nequi">
-  <rect width="180" height="58" rx="16" fill="#231135"/>
-  <text x="90" y="38" text-anchor="middle" font-family="Arial Black, Arial, sans-serif" font-size="31" font-weight="900" fill="#FFFFFF">Nequi</text>
-  <circle cx="31" cy="29" r="14" fill="#FF2DB2"/>
-  <path d="M23 29h16M31 21v16" stroke="#FFFFFF" stroke-width="4" stroke-linecap="round"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 120" role="img" aria-label="Nequi">
+  <rect width="320" height="120" rx="18" fill="#2B0026"/>
+  <rect x="48" y="38" width="17" height="17" rx="3" fill="#EC008C"/>
+  <text x="86" y="78" font-family="Arial Black, Arial, Helvetica, sans-serif" font-size="54" font-weight="900" fill="#F2ECFF">Nequi</text>
 </svg>
