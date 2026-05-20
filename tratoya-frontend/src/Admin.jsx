@@ -368,7 +368,7 @@ function AdminDashboard({ toast, setPage }) {
 
   useEffect(() => {
     load();
-    const t = setInterval(() => load(true), 15000);
+    const t = setInterval(() => load(true), 60000);
     return () => clearInterval(t);
   }, [load]);
 
@@ -421,7 +421,7 @@ function AdminDashboard({ toast, setPage }) {
 
         {/* Actividad reciente */}
         <div className="card" style={{ padding: "16px 18px" }}>
-          <h3 style={{ fontSize: 14, marginBottom: 12 }}>⚡ Actividad reciente · actualiza cada 15s</h3>
+          <h3 style={{ fontSize: 14, marginBottom: 12 }}>⚡ Actividad reciente · actualiza cada 60s</h3>
           {actividad.length === 0
             ? <div style={{ textAlign: "center", padding: 20, color: "var(--s400)", fontSize: 13 }}>Sin actividad registrada</div>
             : actividad.slice(0, 6).map((a, i) => (
@@ -1547,7 +1547,7 @@ function PagosAdmin({ toast }) {
 
   useEffect(() => {
     load();
-    const t = setInterval(() => load(true), 15000);
+    const t = setInterval(() => load(true), 60000);
     return () => clearInterval(t);
   }, [load]);
 
@@ -1633,7 +1633,7 @@ function PagosAdmin({ toast }) {
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, marginBottom: 14, flexWrap: "wrap" }}>
         <div>
           <h1 style={{ fontSize: 20 }}>Pagos y Retiros</h1>
-          <p style={{ fontSize: 12, color: "var(--s500)", marginTop: 3 }}>Cola en vivo de pagos reportados. Actualiza cada 15s.</p>
+          <p style={{ fontSize: 12, color: "var(--s500)", marginTop: 3 }}>Cola en vivo de pagos reportados. Actualiza cada 60s.</p>
         </div>
         <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
           <div className="search" style={{ width: 240 }}>🔍 <input placeholder="Número del trato…" value={q} onChange={e => setQ(e.target.value)} onKeyDown={e => e.key === "Enter" && load()} /></div>
@@ -1663,7 +1663,7 @@ function PagosAdmin({ toast }) {
         <div className="live-payments-head">
           <div>
             <h2>Pagos recién recibidos</h2>
-            <p>Se actualiza automáticamente cada 15 segundos para validar rápido lo que acaba de entrar.</p>
+            <p>Se actualiza automáticamente cada 60 segundos para validar lo que acaba de entrar sin saturar la base.</p>
           </div>
           <span className="live-pill"><i /> En vivo</span>
         </div>
@@ -2135,7 +2135,7 @@ function ActividadEnVivo({ toast }) {
 
   useEffect(() => {
     load();
-    const t = setInterval(() => load(true), 15000);
+    const t = setInterval(() => load(true), 60000);
     return () => clearInterval(t);
   }, [load]);
 
@@ -2155,7 +2155,7 @@ function ActividadEnVivo({ toast }) {
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <h1 style={{ fontSize: 20 }}>⚡ Actividad en vivo</h1>
           <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "4px 10px", background: "var(--cr)", borderRadius: 20, fontSize: 11.5, fontWeight: 600, color: "var(--g2)" }}>
-            <div className="live" /> Actualiza cada 15s
+            <div className="live" /> Actualiza cada 60s
           </div>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
