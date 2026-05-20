@@ -18,6 +18,19 @@ logs/
 JWT SECRET.txt
 *.pem
 *.key
+*.p12
+*.pfx
+*.crt
+*.cert
+id_rsa*
+service-account*.json
+credentials*.json
+*secret*.json
+*token*.json
+*.sqlite
+*.sqlite3
+*.dump
+*.backup
 
 # OS / editors
 .DS_Store
@@ -30,6 +43,5 @@ backend.log
 frontend.log
 .claude/
 tratoya/
-tratoya-backend/{src/
 
 .vercel
