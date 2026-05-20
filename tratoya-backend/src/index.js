@@ -41,7 +41,6 @@ app.use(cors({
       process.env.FRONTEND_URL || 'https://tratoya.com',
       'https://tratoya.com',
       'https://www.tratoya.com',
-      'https://tratoya-frontend.vercel.app',
       ...envOrigins,
       'http://localhost:5173',
       'http://localhost:3000',

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { api } from "../lib/api";
-import { fmt, normalizeHandle, calcularComisionUI, MONTO_MINIMO_TRATO } from "../lib/utils";
+import { fmt, normalizeHandle, calcularComisionUI, MONTO_MINIMO_TRATO, publicTratoUrl } from "../lib/utils";
 import CommissionBreakdown from "../components/CommissionBreakdown";
 
 const TIPOS = [
@@ -60,8 +60,9 @@ export default function CrearTrato({ setPage, toast, user }) {
   };
 
   const qrUrl = done
-    ? `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(done.link_publico || `${window.location.origin}/t/${done.link_compartir}`)}&format=png&bgcolor=ffffff&color=07192F&qzone=2`
+    ? `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(publicTratoUrl(done.link_compartir))}&format=png&bgcolor=ffffff&color=07192F&qzone=2`
     : null;
+  const createdLink = done ? publicTratoUrl(done.link_compartir) : "";
 
   if (done) return (
     <div className="page" style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: 480 }}>
@@ -76,9 +77,9 @@ export default function CrearTrato({ setPage, toast, user }) {
         </div>
         <div style={{ background: "var(--s50)", borderRadius: 9, padding: "9px 13px", display: "flex", alignItems: "center", gap: 8, marginBottom: 14, border: "1.5px dashed var(--s200)" }}>
           <span style={{ fontSize: 11.5, color: "var(--s600)", flex: 1, wordBreak: "break-all", fontFamily: "monospace" }}>
-            {done.link_publico}
+            {createdLink}
           </span>
-          <button className="btn bo bsm" onClick={() => { navigator.clipboard.writeText(done.link_publico); toast("Link copiado ✓", "success"); }}>
+          <button className="btn bo bsm" onClick={() => { navigator.clipboard.writeText(createdLink); toast("Link copiado ✓", "success"); }}>
             Copiar
           </button>
         </div>
@@ -88,12 +89,12 @@ export default function CrearTrato({ setPage, toast, user }) {
         </div>
         <div className="share-actions">
           <button className="btn bp share-wa" onClick={() => {
-            const waMsj = `Hola, te comparto el link de nuestro trato seguro en TratoYa:%0A%0A🔒 *${done.titulo || done.codigo}*%0A💰 Monto: ${done.monto_fmt || ""}%0A%0A👉 ${encodeURIComponent(done.link_publico || `${window.location.origin}/t/${done.link_compartir}`)}`;
+            const waMsj = `Hola, te comparto el link de nuestro trato seguro en TratoYa:%0A%0A🔒 *${done.titulo || done.codigo}*%0A💰 Monto: ${done.monto_fmt || ""}%0A%0A👉 ${encodeURIComponent(createdLink)}`;
             window.open(`https://wa.me/?text=${waMsj}`, "_blank");
           }}>
             <span>📲</span><span>Compartir por WhatsApp</span>
           </button>
-          <button className="btn bo share-copy" onClick={() => { navigator.clipboard.writeText(done.link_publico); toast("Link copiado ✓", "success"); }}>
+          <button className="btn bo share-copy" onClick={() => { navigator.clipboard.writeText(createdLink); toast("Link copiado ✓", "success"); }}>
             <span>🔗</span><span>Copiar</span>
           </button>
         </div>

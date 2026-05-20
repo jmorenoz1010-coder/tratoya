@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { api } from "../lib/api";
-import { fmt, fmtDate, ESTADO, TIPO_ICO } from "../lib/utils";
+import { fmt, fmtDate, ESTADO, TIPO_ICO, publicTratoUrl } from "../lib/utils";
 import { SkeletonList } from "../components/SkeletonCard";
 
 export default function MisTratos({ setPage, setTratoId, user, toast, alertTratoIds = new Set() }) {
@@ -117,7 +117,7 @@ export default function MisTratos({ setPage, setTratoId, user, toast, alertTrato
                           className="btn bo bsm"
                           onClick={(e) => {
                             e.stopPropagation();
-                            navigator.clipboard.writeText(`${window.location.origin}/t/${t.link_compartir}`);
+                            navigator.clipboard.writeText(publicTratoUrl(t.link_compartir));
                             toast("Link copiado ✓", "success");
                           }}
                         >

@@ -493,11 +493,8 @@ paymentsRouter.get('/status', async (req, res, next) => {
 
 paymentsRouter.post('/manual/report', paymentUpload.single('receipt'), async (req, res, next) => {
   try {
-    const { dealId, transactionRef, transferConcept = '', method = 'breb', notes = '' } = req.body || {};
+    const { dealId, transactionRef = '', transferConcept = '', method = 'breb', notes = '' } = req.body || {};
     if (!dealId) return res.status(400).json({ success: false, message: 'dealId requerido' });
-    if (!transactionRef || String(transactionRef).trim().length < 4) {
-      return res.status(400).json({ success: false, message: 'Ingresa el número o referencia de la transferencia' });
-    }
 
     const trato = await Trato.findByPk(dealId);
     if (!trato) return res.status(404).json({ success: false, message: 'Trato no encontrado' });
@@ -507,12 +504,26 @@ paymentsRouter.post('/manual/report', paymentUpload.single('receipt'), async (re
     if (!['activo', 'pago_pendiente'].includes(trato.estado)) {
       return res.status(400).json({ success: false, message: `No se puede reportar pago en estado ${trato.estado}` });
     }
+    const existingPayment = await Pago.findOne({
+      where: { trato_id: trato.id, tipo: 'retencion' },
+      order: [['createdAt', 'DESC']],
+    });
+    if (existingPayment && ['procesando', 'aprobado'].includes(existingPayment.estado)) {
+      return res.status(409).json({ success: false, message: 'Este pago ya fue reportado. No puedes pagar dos veces el mismo trato.' });
+    }
+    if (existingPayment?.estado === 'rechazado') {
+      const retryAt = new Date(new Date(existingPayment.updatedAt || existingPayment.createdAt).getTime() + 10 * 60 * 1000);
+      if (Date.now() < retryAt.getTime()) {
+        const mins = Math.ceil((retryAt.getTime() - Date.now()) / 60000);
+        return res.status(429).json({ success: false, message: `Pago fallido. Espera ${mins} minuto(s) para volver a intentarlo.` });
+      }
+    }
 
     const { calcularComision } = require('../services/comisionService');
     const montoBase = Math.round(Number(trato.monto || 0));
     const commission = calcularComision(montoBase, trato.quien_paga_comision || 'comprador');
     const amountCop = commission.total_a_pagar;
-    const cleanRef = String(transactionRef).trim().slice(0, 80);
+    const cleanRef = String(transactionRef || '').trim().slice(0, 80);
     const cleanConcept = String(transferConcept || '').trim().slice(0, 180);
     if (!cleanConcept.toUpperCase().includes(String(trato.codigo || '').toUpperCase())) {
       return res.status(400).json({ success: false, message: `El mensaje o concepto de la transferencia debe incluir ${trato.codigo}` });
@@ -528,7 +539,7 @@ paymentsRouter.post('/manual/report', paymentUpload.single('receipt'), async (re
       reference,
       trato_codigo: trato.codigo,
       payment_reference_required: trato.codigo,
-      transaction_ref: cleanRef,
+      transaction_ref: cleanRef || null,
       transfer_concept: cleanConcept,
       method,
       notes,
@@ -562,7 +573,7 @@ paymentsRouter.post('/manual/report', paymentUpload.single('receipt'), async (re
       tipo: 'retencion',
       monto: amountCop,
       pasarela: 'transferencia',
-      pasarela_ref: cleanRef,
+      pasarela_ref: cleanRef || trato.codigo,
       pasarela_estado: 'REPORTED',
       metodo_pago: method === 'nequi' ? 'nequi' : 'transferencia',
       estado: 'procesando',
@@ -1410,6 +1421,41 @@ adminRouter.post('/pagos/:id/confirmar', async (req, res, next) => {
       }
     ).catch(() => {});
     res.json({ success: true, data: { pago, trato }, message: 'Pago confirmado y retenido' });
+  } catch (err) { next(err); }
+});
+
+adminRouter.post('/pagos/:id/rechazar', async (req, res, next) => {
+  try {
+    const { Pago, Trato, PaymentIntent, AuditLog } = require('../config/database');
+    const pago = await Pago.findByPk(req.params.id);
+    if (!pago) return res.status(404).json({ success: false, message: 'Pago no encontrado' });
+    const trato = await Trato.findByPk(pago.trato_id);
+    if (!trato) return res.status(404).json({ success: false, message: 'Trato no encontrado' });
+    const metadata = pago.metadata || {};
+    await pago.update({
+      estado: 'rechazado',
+      pasarela_estado: 'RECHAZADO',
+      metadata: { ...metadata, rejected_by_admin_id: req.user.id, rejected_at: new Date().toISOString(), retry_after_minutes: 10 },
+    });
+    if (metadata.reference) await PaymentIntent.update({ status: 'PAYMENT_DECLINED' }, { where: { reference: metadata.reference } }).catch(() => {});
+    await trato.update({
+      estado: 'activo',
+      metadata: { ...(trato.metadata || {}), payment_status: 'PAGO_RECHAZADO', retry_payment_after: new Date(Date.now() + 10 * 60 * 1000).toISOString() },
+    });
+    await AuditLog.create({
+      user_id: req.user.id,
+      action: 'MANUAL_PAYMENT_REJECTED',
+      entity_type: 'deal',
+      entity_id: trato.id,
+      metadata: { pago_id: pago.id, transaction_ref: pago.pasarela_ref, retry_after_minutes: 10 },
+    }).catch(() => {});
+    const { notificar } = require('../services/notificacionService');
+    await notificar(trato.comprador_id, 'pago_rechazado', {
+      titulo: 'Pago no verificado',
+      cuerpo: `No pudimos verificar el pago del trato ${trato.codigo}. Podrás intentarlo de nuevo en 10 minutos.`,
+      metadata: { trato_id: trato.id, pago_id: pago.id },
+    }).catch(() => {});
+    res.json({ success: true, data: { pago, trato }, message: 'Pago rechazado. Reintento en 10 minutos.' });
   } catch (err) { next(err); }
 });
 

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { api } from "../lib/api";
-import { fmt, fmtDate, timeAgo, ESTADO, TIPO_ICO, calcularComisionUI, parseCopAmount } from "../lib/utils";
+import { fmt, fmtDate, timeAgo, ESTADO, TIPO_ICO, calcularComisionUI, parseCopAmount, publicTratoUrl } from "../lib/utils";
 import CommissionBreakdown from "../components/CommissionBreakdown";
 import DealProgress from "../components/DealProgress";
 import StarRating from "../components/StarRating";
@@ -291,9 +291,9 @@ export default function TratoDetalle({ tratoId, setPage, setDisputeTratoId, user
               <div style={{ marginTop: 11, background: "var(--cr)", padding: 13, borderRadius: 10, fontSize: 13, color: "var(--s600)" }}>
                 <div style={{ fontWeight: 700, color: "var(--n)", marginBottom: 4 }}>Comparte este link con tu contraparte para que acepte y pague.</div>
                 <div style={{ display: "flex", gap: 9, marginTop: 10, flexWrap: "wrap" }}>
-                  <button className="btn bo bsm" onClick={() => { navigator.clipboard.writeText(`${window.location.origin}/t/${trato.link_compartir}`); toast("Link copiado ✓", "success"); }}>🔗 Copiar link del trato</button>
+                  <button className="btn bo bsm" onClick={() => { navigator.clipboard.writeText(publicTratoUrl(trato.link_compartir)); toast("Link copiado ✓", "success"); }}>🔗 Copiar link del trato</button>
                   <button className="btn bo bsm" onClick={() => {
-                    const txt = `Hola, te comparto el link de nuestro trato seguro en TratoYa:%0A%0A🔒 *${trato.titulo || trato.codigo}*%0A%0A👉 ${encodeURIComponent(`${window.location.origin}/t/${trato.link_compartir}`)}`;
+                    const txt = `Hola, te comparto el link de nuestro trato seguro en TratoYa:%0A%0A🔒 *${trato.titulo || trato.codigo}*%0A%0A👉 ${encodeURIComponent(publicTratoUrl(trato.link_compartir))}`;
                     window.open(`https://wa.me/?text=${txt}`, "_blank");
                   }}>📲 WhatsApp</button>
                 </div>
@@ -382,7 +382,7 @@ export default function TratoDetalle({ tratoId, setPage, setDisputeTratoId, user
           <div className="card" style={{ padding: 13 }}>
             <div style={{ fontSize: 10.5, fontWeight: 700, color: "var(--s600)", textTransform: "uppercase", letterSpacing: ".5px", marginBottom: 9 }}>Acciones</div>
             <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-              <button className="btn bo bsm" style={{ justifyContent: "flex-start" }} onClick={() => { navigator.clipboard.writeText(`${window.location.origin}/t/${trato.link_compartir}`); toast("Link copiado ✓", "success"); }}>
+              <button className="btn bo bsm" style={{ justifyContent: "flex-start" }} onClick={() => { navigator.clipboard.writeText(publicTratoUrl(trato.link_compartir)); toast("Link copiado ✓", "success"); }}>
                 🔗 Copiar link del trato
               </button>
               {!["disputado","completado","cancelado"].includes(trato.estado) && (

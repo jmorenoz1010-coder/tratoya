@@ -96,7 +96,7 @@ function calcularComision(monto, quienPaga = 'comprador') {
     vendedor_paga_comision,
     descripcion: tramo.fijo !== null
       ? `Tarifa fija $${tramo.fijo.toLocaleString('es-CO')} COP`
-      : `Comisión ${tramo.label}`,
+      : `Comisión ${tramo.label} + IMP`,
   };
 }
 

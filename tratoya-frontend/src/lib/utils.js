@@ -54,6 +54,8 @@ export const normalizeHandle = (value) =>
     .slice(0, 24);
 
 export const MONTO_MINIMO_TRATO = 50000;
+export const PUBLIC_BASE_URL = "https://www.tratoya.com";
+export const publicTratoUrl = (link) => `${PUBLIC_BASE_URL}/t/${link}`;
 
 export const DOC_TYPES = [
   ["CC", "Cédula de ciudadanía"],
@@ -122,7 +124,7 @@ export const calcularCostoGmfUI = (totalCobrado, montoDesembolso) =>
 export const calcularComisionUI = (monto, quien = "comprador") => {
   let comisionTratoYa = 0;
   let label = "";
-  if (monto > 0 && monto <= 50000000) { comisionTratoYa = Math.round(monto * 0.045); label = "4.5%"; }
+  if (monto > 0 && monto <= 50000000) { comisionTratoYa = Math.round(monto * 0.045); label = "4.5% + IMP"; }
   else { comisionTratoYa = 0; label = "Negociable"; }
 
   let comision = comisionTratoYa;

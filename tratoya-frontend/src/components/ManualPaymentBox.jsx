@@ -14,13 +14,12 @@ export default function ManualPaymentBox({ amount, reference, busy, onReport }) 
   const [notes, setNotes] = useState("");
 
   const submit = () => {
-    if (!transactionRef.trim()) return;
     if (!transferConcept.trim().toUpperCase().includes(String(reference || "").toUpperCase())) return;
     if (!receipt) return;
     onReport({ method, transactionRef: transactionRef.trim(), transferConcept: transferConcept.trim(), receipt, notes });
   };
 
-  const ready = transactionRef.trim() && transferConcept.trim().toUpperCase().includes(String(reference || "").toUpperCase()) && receipt;
+  const ready = transferConcept.trim().toUpperCase().includes(String(reference || "").toUpperCase()) && receipt;
 
   if (!open) {
     return (
@@ -81,13 +80,14 @@ export default function ManualPaymentBox({ amount, reference, busy, onReport }) 
           </select>
         </div>
         <div className="fg">
-          <label className="fl">Número de transacción</label>
-          <input className="inp" placeholder="Ej: 94857231" value={transactionRef} onChange={(e) => setTransactionRef(e.target.value)} />
+          <label className="fl">Número de transferencia <span>Opcional</span></label>
+          <input className="inp" placeholder="Si tu banco lo muestra" value={transactionRef} onChange={(e) => setTransactionRef(e.target.value)} />
         </div>
       </div>
       <div className="fg">
         <label className="fl">Mensaje o concepto enviado en Nequi/Bre-B <span>Obligatorio: {reference}</span></label>
         <input className="inp" placeholder={`Ej: Pago trato ${reference}`} value={transferConcept} onChange={(e) => setTransferConcept(e.target.value)} />
+        <div className="fh">Aviso: escribe el número generado por TratoYa ({reference}) en el mensaje de Nequi o de la transferencia.</div>
       </div>
       <div className="fg">
         <label className="fl">Comprobante de pago <span>Obligatorio</span></label>

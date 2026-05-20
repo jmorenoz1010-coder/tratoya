@@ -12,6 +12,7 @@ const { calcularComision, MONTO_MINIMO_TRATO } = require('../services/comisionSe
 const { notificar } = require('../services/notificacionService');
 const { generarCodigo } = require('../utils/helpers');
 const logger = require('../utils/logger');
+const PUBLIC_FRONTEND_URL = 'https://www.tratoya.com';
 
 // ── GET /api/tratos/public/:link ─────────────
 router.get('/public/:link', async (req, res, next) => {
@@ -162,7 +163,7 @@ router.post('/', kycRequired, [
     res.status(201).json({
       success: true,
       message: contraparte ? 'Trato creado y enviado a tu contraparte' : 'Trato creado exitosamente',
-      data: { ...trato.toJSON(), link_publico: `${process.env.FRONTEND_URL}/t/${trato.link_compartir}` },
+      data: { ...trato.toJSON(), link_publico: `${PUBLIC_FRONTEND_URL}/t/${trato.link_compartir}` },
     });
   } catch (err) { next(err); }
 });

@@ -1,5 +1,6 @@
 import { Fragment, useState, useEffect, useCallback, useRef } from "react";
 import { ADMIN_ENTRY_PATH } from "./lib/routes";
+import { publicTratoUrl, calcularComisionUI, parseCopAmount } from "./lib/utils";
 
 /* ═══════════════════════════════════════════════════════════
    TRATOYA · PANEL DE ADMINISTRACIÓN
@@ -1204,9 +1205,10 @@ function AdminTratoDetailModal({ detail, loading, onClose, onRefresh, onLiberar,
   const [sending, setSending] = useState(false);
   const data = detail || {};
   const t = data.trato || {};
-  const publicUrl = t.link_compartir ? `${window.location.origin}/t/${t.link_compartir}` : null;
+  const publicUrl = t.link_compartir ? publicTratoUrl(t.link_compartir) : null;
   const bankAccounts = data.cuentas_bancarias || [];
   const manualPayment = t.metadata?.manual_payment || data.pagos?.find?.((p) => p.tipo === "retencion")?.metadata || null;
+  const adminCalc = t.monto ? calcularComisionUI(parseCopAmount(t.monto), t.quien_paga_comision || "comprador") : null;
 
   const sendMessage = async () => {
     if (!mensaje.trim()) return toast("Escribe un mensaje", "warn");
@@ -1245,7 +1247,7 @@ function AdminTratoDetailModal({ detail, loading, onClose, onRefresh, onLiberar,
                   <h3 style={{ fontSize: 14, marginBottom: 10 }}>Resumen operativo</h3>
                   <div className="g2" style={{ gap: 8 }}>
                     <MiniField label="Monto del trato" value={fmt(t.monto)} />
-                    <MiniField label="Comisión TratoYA" value={fmt(t.comision_monto)} />
+                    <MiniField label="Comisión TratoYA" value={`${fmt(t.comision_monto)} · 4.5% + IMP`} />
                     <MiniField label="Vendedor recibe" value={fmt(t.monto_neto || t.monto)} />
                     <MiniField label="Quién paga comisión" value={t.quien_paga_comision || "—"} />
                     <MiniField label="Tipo" value={t.tipo || "—"} />
@@ -1258,6 +1260,15 @@ function AdminTratoDetailModal({ detail, loading, onClose, onRefresh, onLiberar,
                     <div style={{ fontSize: 10, color: "var(--s400)", fontWeight: 800, textTransform: "uppercase" }}>Descripción</div>
                     <p style={{ fontSize: 12.5, color: "var(--s800)", marginTop: 4, whiteSpace: "pre-wrap" }}>{t.descripcion || "Sin descripción"}</p>
                   </div>
+                  {t.quien_paga_comision === "compartida" && adminCalc && (
+                    <div className="admin-flow-box" style={{ marginTop: 10 }}>
+                      <b>Comisión 50/50 explicada</b>
+                      <span>Comprador debe pagar a TratoYA: {fmt(adminCalc.totalPagar)}.</span>
+                      <span>Vendedor debe asumir/descontar: {fmt(adminCalc.vendedorComision)}.</span>
+                      <span>Valor exacto a transferir al vendedor al liberar: {fmt(adminCalc.vendedorRecibe)}.</span>
+                      <span>TratoYA conserva libre el 4.5% base: {fmt(adminCalc.comisionTratoYa)}; el IMP/4x1000 queda cubierto dentro de la comisión total.</span>
+                    </div>
+                  )}
                 </div>
                 <div className="card" style={{ padding: 14 }}>
                   <h3 style={{ fontSize: 14, marginBottom: 10 }}>Control admin</h3>
@@ -1547,6 +1558,17 @@ function PagosAdmin({ toast }) {
     finally { setBusy(false); }
   };
 
+  const rechazar = async (p) => {
+    if (!confirm(`¿Marcar como fallido el pago del trato ${p.Trato?.codigo || ""}? El comprador deberá esperar 10 minutos.`)) return;
+    setBusy(true);
+    try {
+      await api.post(`/admin/pagos/${p.id}/rechazar`);
+      toast("Pago rechazado. Reintento bloqueado por 10 minutos.", "warn");
+      await load(true);
+    } catch (e) { toast(e.message, "error"); }
+    finally { setBusy(false); }
+  };
+
   const liberar = async (p) => {
     const ref = prompt(`Referencia de la transferencia al vendedor para ${p.Trato?.codigo || "este trato"}:`);
     if (ref === null) return;
@@ -1606,8 +1628,20 @@ function PagosAdmin({ toast }) {
             {selected.metadata?.receipt_url && <a href={selected.metadata.receipt_url} target="_blank" rel="noreferrer">Abrir comprobante adjunto</a>}
             {selected.metadata?.notes && <span>Nota comprador: {selected.metadata.notes}</span>}
           </div>
+          {selected.Trato?.metadata || selected.Trato ? (
+            selected.Trato?.estado && selected.Trato?.monto && selected.Trato?.monto_neto && (
+              <div className="admin-flow-box" style={{ marginTop: 10 }}>
+                <b>Valores de liberación</b>
+                <span>Valor exacto al vendedor: {fmt(sellerAmount(selected))}.</span>
+                <span>Ganancia libre TratoYA 4.5%: {fmt(freeGain(selected))}.</span>
+                <span>IMP/4x1000 cubierto dentro de comisión: {fmt(coveredCosts(selected))}.</span>
+                {selected.Trato?.metadata?.manual_payment?.commission_visible && <span>Comisión total cobrada: {fmt(selected.Trato.metadata.manual_payment.commission_visible)}.</span>}
+              </div>
+            )
+          ) : null}
           <div style={{ display: "flex", gap: 8, marginTop: 12, flexWrap: "wrap" }}>
             {selected.tipo === "retencion" && selected.estado !== "aprobado" && <button className="btn bp" disabled={busy} onClick={() => confirmar(selected)}>Confirmar recibido</button>}
+            {selected.tipo === "retencion" && ["pendiente","procesando"].includes(selected.estado) && <button className="btn brd" disabled={busy} onClick={() => rechazar(selected)}>Marcar fallido</button>}
             {["pago_retenido","en_entrega","confirmado","pendiente_confirmacion"].includes(selected.Trato?.estado) && <button className="btn bp" disabled={busy} onClick={() => liberar(selected)}>LIBERAR</button>}
             <a className="btn bg_" href={`${ADMIN_ENTRY_PATH}?trato=${encodeURIComponent(selected.trato_id)}`} target="_blank" rel="noreferrer">Ver trato completo</a>
           </div>
@@ -1655,6 +1689,7 @@ function PagosAdmin({ toast }) {
                     <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
                       <button className="btn bg_ bsm" onClick={(e) => { e.stopPropagation(); setSelected(p); }}>Ver flujo</button>
                       {p.tipo === "retencion" && p.estado !== "aprobado" && <button className="btn bp bsm" disabled={busy} onClick={(e) => { e.stopPropagation(); confirmar(p); }}>Confirmar</button>}
+                      {p.tipo === "retencion" && ["pendiente","procesando"].includes(p.estado) && <button className="btn brd bsm" disabled={busy} onClick={(e) => { e.stopPropagation(); rechazar(p); }}>Fallido</button>}
                       {["pago_retenido","en_entrega","confirmado","pendiente_confirmacion"].includes(p.Trato?.estado) && <button className="btn bp bsm" disabled={busy} onClick={(e) => { e.stopPropagation(); liberar(p); }}>LIBERAR</button>}
                     </div>
                   </td>
