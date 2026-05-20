@@ -2,7 +2,7 @@ import { useState } from "react";
 import { fmt } from "../lib/utils";
 
 const QR_URL = import.meta.env.VITE_MANUAL_PAYMENT_QR_URL || "";
-const PAYMENT_KEY = import.meta.env.VITE_MANUAL_PAYMENT_KEY || "Llave Bre-B pendiente de configurar";
+const PAYMENT_KEY = import.meta.env.VITE_MANUAL_PAYMENT_KEY || "soporte@tratoya.com";
 const PAYMENT_NAME = import.meta.env.VITE_MANUAL_PAYMENT_NAME || "TratoYa";
 
 export default function ManualPaymentBox({ amount, reference, busy, onReport }) {
@@ -22,7 +22,10 @@ export default function ManualPaymentBox({ amount, reference, busy, onReport }) 
         <span className="secure-pay-ico">🔒</span>
         <span>
           <strong>Pago seguro TratoYa</strong>
-          <small>Paga por Bre-B o Nequi con verificación manual</small>
+          <small>
+            <img src="/brand-nequi.svg" alt="Nequi" />
+            <img src="/brand-breb.svg" alt="Bre-B" />
+          </small>
         </span>
       </button>
     );
@@ -82,7 +85,7 @@ export default function ManualPaymentBox({ amount, reference, busy, onReport }) 
       <button className="btn bp blg" style={{ width: "100%" }} onClick={submit} disabled={busy || !transactionRef.trim()}>
         {busy ? <div className="spin" /> : "Ya realicé el pago"}
       </button>
-      <div className="manual-pay-foot">Pago en revisión. Te avisamos en máximo 2 horas.</div>
+      <div className="manual-pay-foot">Pago en revisión. Te avisamos en máximo 1 hora.</div>
     </div>
   );
 }

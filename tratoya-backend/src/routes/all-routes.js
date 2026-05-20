@@ -526,7 +526,7 @@ paymentsRouter.post('/manual/report', async (req, res, next) => {
       commission_base: commission.comision_tratoya,
       costo_gmf: commission.costo_gmf,
       reported_at: new Date().toISOString(),
-      review_sla_hours: 2,
+      review_sla_hours: 1,
     };
 
     const intent = await PaymentIntent.create({
@@ -581,7 +581,7 @@ paymentsRouter.post('/manual/report', async (req, res, next) => {
         reference,
         amountCop,
         transactionRef: cleanRef,
-        reviewSlaHours: 2,
+        reviewSlaHours: 1,
         status: 'PAYMENT_REPORTED',
       },
     });
@@ -743,7 +743,7 @@ paymentsRouter.get('/history', async (req, res, next) => {
         // Mapear status de ePayco al estado mostrado en UI
         const statusMap = {
           PAID: 'aprobado', PAYMENT_PENDING: 'pendiente', CREATED: 'creado',
-          PAYMENT_DECLINED: 'rechazado', PAYMENT_ERROR: 'error', PAYMENT_VOIDED: 'anulado',
+          PAYMENT_REPORTED: 'procesando', PAYMENT_DECLINED: 'rechazado', PAYMENT_ERROR: 'error', PAYMENT_VOIDED: 'anulado',
         };
         return {
           id: item.id,
@@ -1279,7 +1279,19 @@ adminRouter.post('/tratos/:id/liberar', async (req, res, next) => {
     const { Trato, Pago, User } = require('../config/database');
     const trato = await Trato.findByPk(req.params.id);
     if (!trato) return res.status(404).json({ success: false, message: 'Trato no encontrado' });
-    await trato.update({ estado: 'completado', fecha_liberacion: new Date(), notas_internas: `Liberado por admin ${req.user.email}` });
+    const referenciaLiberacion = String(req.body?.referencia_liberacion || req.body?.referencia || '').trim().slice(0, 120);
+    await trato.update({
+      estado: 'completado',
+      fecha_liberacion: new Date(),
+      notas_internas: `Liberado por admin ${req.user.email}${referenciaLiberacion ? ` · Ref: ${referenciaLiberacion}` : ''}`,
+      metadata: {
+        ...(trato.metadata || {}),
+        release_reference: referenciaLiberacion || undefined,
+        release_status: 'LIBERADO',
+        released_by_admin_id: req.user.id,
+        released_at: new Date().toISOString(),
+      },
+    });
     if (trato.vendedor_id) {
       await Pago.create({
         trato_id: trato.id,
@@ -1287,13 +1299,102 @@ adminRouter.post('/tratos/:id/liberar', async (req, res, next) => {
         tipo: 'liberacion',
         monto: trato.monto_neto || trato.monto,
         pasarela: 'transferencia',
+        pasarela_ref: referenciaLiberacion || null,
+        pasarela_estado: 'LIBERADO',
         estado: 'aprobado',
         fecha_aprobacion: new Date(),
-        metadata: { admin_id: req.user.id },
+        fecha_desembolso: new Date(),
+        metadata: { admin_id: req.user.id, referencia_liberacion: referenciaLiberacion || null },
       });
     }
+    const { notificarAmbos } = require('../services/notificacionService');
+    await notificarAmbos(
+      trato.comprador_id,
+      trato.vendedor_id,
+      'pago_liberado',
+      {
+        titulo: 'Pago liberado',
+        cuerpo: `El pago del trato ${trato.codigo} fue liberado. Se verá reflejado máximo en 1 hora.`,
+        metadata: { trato_id: trato.id, referencia_liberacion: referenciaLiberacion || null },
+      },
+      {
+        titulo: 'Pago liberado a tu favor',
+        cuerpo: `Liberamos los fondos del trato ${trato.codigo}. Se verá reflejado máximo en 1 hora.`,
+        metadata: { trato_id: trato.id, referencia_liberacion: referenciaLiberacion || null },
+      }
+    ).catch(() => {});
     await actualizarReputacionUsuarios(trato, User).catch(() => {});
     res.json({ success: true, data: trato, message: 'Pago liberado' });
+  } catch (err) { next(err); }
+});
+
+adminRouter.post('/pagos/:id/confirmar', async (req, res, next) => {
+  try {
+    const { Pago, Trato, PaymentIntent, LedgerEntry, AuditLog } = require('../config/database');
+    const pago = await Pago.findByPk(req.params.id);
+    if (!pago) return res.status(404).json({ success: false, message: 'Pago no encontrado' });
+    const trato = await Trato.findByPk(pago.trato_id);
+    if (!trato) return res.status(404).json({ success: false, message: 'Trato no encontrado' });
+    const metadata = pago.metadata || {};
+    const reference = metadata.reference;
+
+    await pago.update({
+      estado: 'aprobado',
+      pasarela_estado: 'CONFIRMADO',
+      fecha_aprobacion: new Date(),
+      metadata: {
+        ...metadata,
+        confirmed_by_admin_id: req.user.id,
+        confirmed_at: new Date().toISOString(),
+      },
+    });
+    if (reference) {
+      await PaymentIntent.update(
+        { status: 'PAID', raw_response: { ...(metadata || {}), confirmed_by_admin_id: req.user.id, confirmed_at: new Date().toISOString() } },
+        { where: { reference } }
+      ).catch(() => {});
+    }
+    await trato.update({
+      estado: 'pago_retenido',
+      fecha_pago: new Date(),
+      metadata: {
+        ...(trato.metadata || {}),
+        payment_status: 'PAGO_CONFIRMADO',
+        manual_payment_confirmed_at: new Date().toISOString(),
+        manual_payment_confirmed_by: req.user.id,
+      },
+    });
+    await LedgerEntry.create({
+      deal_id: trato.id,
+      payment_intent_id: metadata.payment_intent_id || null,
+      type: 'escrow_manual_received',
+      amount_cents: Math.round(Number(pago.monto || 0) * 100),
+      description: `Pago manual confirmado por admin para ${trato.codigo}`,
+    }).catch(() => {});
+    await AuditLog.create({
+      user_id: req.user.id,
+      action: 'MANUAL_PAYMENT_CONFIRMED',
+      entity_type: 'deal',
+      entity_id: trato.id,
+      metadata: { pago_id: pago.id, reference, transaction_ref: pago.pasarela_ref },
+    }).catch(() => {});
+    const { notificarAmbos } = require('../services/notificacionService');
+    await notificarAmbos(
+      trato.comprador_id,
+      trato.vendedor_id,
+      'pago_retenido',
+      {
+        titulo: 'Pago confirmado',
+        cuerpo: `Tu pago del trato ${trato.codigo} quedó confirmado y en custodia TratoYA.`,
+        metadata: { trato_id: trato.id, pago_id: pago.id },
+      },
+      {
+        titulo: 'Pago confirmado, puedes entregar',
+        cuerpo: `El pago del trato ${trato.codigo} está en custodia TratoYA. Puedes entregar con seguridad.`,
+        metadata: { trato_id: trato.id, pago_id: pago.id },
+      }
+    ).catch(() => {});
+    res.json({ success: true, data: { pago, trato }, message: 'Pago confirmado y retenido' });
   } catch (err) { next(err); }
 });
 
@@ -1348,10 +1449,26 @@ adminRouter.post('/tratos/:id/contactar', async (req, res, next) => {
 adminRouter.get('/pagos', async (req, res, next) => {
   try {
     const { Pago, Trato, User } = require('../config/database');
+    const { q } = req.query;
+    const tratoWhere = q ? {
+      [Op.or]: [
+        { codigo: { [Op.iLike]: `%${q}%` } },
+        { titulo: { [Op.iLike]: `%${q}%` } },
+      ],
+    } : undefined;
+    const tratoInclude = {
+      model: Trato,
+      attributes: ['id', 'codigo', 'titulo', 'estado', 'monto', 'monto_neto', 'vendedor_id', 'comprador_id', 'metadata'],
+      include: [
+        { model: User, as: 'vendedor', attributes: ['id', 'nombre', 'apellido', 'email', 'telefono', 'usuario_unico'] },
+        { model: User, as: 'comprador', attributes: ['id', 'nombre', 'apellido', 'email', 'telefono', 'usuario_unico'] },
+      ],
+    };
+    if (tratoWhere) tratoInclude.where = tratoWhere;
     const pagos = await Pago.findAll({
       include: [
-        { model: Trato, attributes: ['id', 'codigo', 'titulo'] },
-        { model: User, attributes: ['id', 'nombre', 'apellido', 'email'] },
+        tratoInclude,
+        { model: User, attributes: ['id', 'nombre', 'apellido', 'email', 'telefono', 'usuario_unico'] },
       ],
       order: [['createdAt', 'DESC']],
       limit: 250,

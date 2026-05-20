@@ -27,7 +27,8 @@ export default function PublicTratoPage({ link, session, goAuth, toast }) {
       const r = await api.post(`/payments/manual/report`, { dealId: target.id, method, transactionRef, notes });
       setPaymentReport(r.data || r);
       setTrato((prev) => prev ? { ...prev, estado: "pago_pendiente" } : prev);
-      toast("Pago reportado. Lo revisaremos en máximo 2 horas.", "success");
+      toast("Pago reportado. Lo revisaremos en máximo 1 hora.", "success");
+      setTimeout(() => { window.location.href = "/?page=pagos"; }, 650);
     } catch (e) { toast(e.message, "error"); }
     setBusy(false);
   };

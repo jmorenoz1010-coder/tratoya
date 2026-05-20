@@ -102,7 +102,10 @@ const PAGE_TITLES = {
 };
 
 export default function AppShell({ session, setSession, toast }) {
-  const [page, setPage] = useState("dashboard");
+  const [page, setPage] = useState(() => {
+    const requested = new URLSearchParams(window.location.search).get("page");
+    return PAGE_TITLES[requested] ? requested : "dashboard";
+  });
   const [tratoId, setTratoId] = useState(null);
   const [disputeTratoId, setDisputeTratoId] = useState(null);
   const [floatingNote, setFloatingNote] = useState(null);

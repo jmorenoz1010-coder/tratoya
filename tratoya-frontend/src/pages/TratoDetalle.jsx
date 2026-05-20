@@ -118,8 +118,9 @@ export default function TratoDetalle({ tratoId, setPage, setDisputeTratoId, user
     try {
       const r = await api.post(`/payments/manual/report`, { dealId: tratoId, method, transactionRef, notes });
       setPaymentReport(r.data || r);
-      toast("Pago reportado. Lo revisaremos en máximo 2 horas.", "success");
+      toast("Pago reportado. Lo revisaremos en máximo 1 hora.", "success");
       load();
+      setTimeout(() => setPage("pagos"), 650);
     } catch (e) { toast(e.message, "error"); }
     setBusy(false);
   };

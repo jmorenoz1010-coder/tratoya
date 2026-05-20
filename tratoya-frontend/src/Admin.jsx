@@ -1206,6 +1206,7 @@ function AdminTratoDetailModal({ detail, loading, onClose, onRefresh, onLiberar,
   const t = data.trato || {};
   const publicUrl = t.link_compartir ? `${window.location.origin}/t/${t.link_compartir}` : null;
   const bankAccounts = data.cuentas_bancarias || [];
+  const manualPayment = t.metadata?.manual_payment || data.pagos?.find?.((p) => p.tipo === "retencion")?.metadata || null;
 
   const sendMessage = async () => {
     if (!mensaje.trim()) return toast("Escribe un mensaje", "warn");
@@ -1266,6 +1267,14 @@ function AdminTratoDetailModal({ detail, loading, onClose, onRefresh, onLiberar,
                     {!["completado","cancelado","expirado"].includes(t.estado) && <button className="btn brd bsm" onClick={() => onCancelar(t.id)}>Cancelar trato</button>}
                     <button className="btn bg_ bsm" onClick={onRefresh}>Actualizar</button>
                   </div>
+                  {manualPayment && (
+                    <div className="admin-flow-box" style={{ marginBottom: 12 }}>
+                      <b>Pago reportado por comprador</b>
+                      <span>Referencia requerida: {manualPayment.payment_reference_required || t.codigo || "—"}</span>
+                      <span>Transacción: {manualPayment.transaction_ref || "—"}</span>
+                      <span>Método: {manualPayment.method || "—"} · Esperado: {fmt(manualPayment.amount_expected)}</span>
+                    </div>
+                  )}
                   <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
                     {["comprador","vendedor","ambos"].map(x => <button key={x} className={`btn bsm ${destino === x ? "bp" : "bg_"}`} onClick={() => setDestino(x)}>{x}</button>)}
                   </div>
@@ -1291,7 +1300,7 @@ function AdminTratoDetailModal({ detail, loading, onClose, onRefresh, onLiberar,
                           <td>{owner}</td>
                           <td>{a.banco}</td>
                           <td>{a.tipo}</td>
-                          <td className="mono">{String(a.numero || "").replace(/\d(?=\d{4})/g, "*")}</td>
+                          <td className="mono">{a.numero || "—"}</td>
                           <td>{a.titular || "—"}</td>
                           <td><span className={`bdg ${a.verificada ? "gn" : "bg"}`}>{a.verificada ? "verificada" : "sin verificar"}</span></td>
                         </tr>;
@@ -1508,28 +1517,119 @@ function TratoAdminFullPage({ tratoId, toast }) {
 function PagosAdmin({ toast }) {
   const [pagos, setPagos] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [q, setQ] = useState("");
+  const [selected, setSelected] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const [lastSync, setLastSync] = useState(null);
+
+  const load = useCallback((silent = false) => {
+    if (!silent) setLoading(true);
+    api.get(`/admin/pagos${q ? `?q=${encodeURIComponent(q)}` : ""}`)
+      .then(r => { setPagos(r.data || []); setLastSync(new Date()); })
+      .catch(() => toast("Error cargando pagos", "error"))
+      .finally(() => setLoading(false));
+  }, [q, toast]);
+
   useEffect(() => {
-    api.get("/admin/pagos").then(r => setPagos(r.data || [])).catch(() => toast("Error", "error")).finally(() => setLoading(false));
-  }, []);
+    load();
+    const t = setInterval(() => load(true), 15000);
+    return () => clearInterval(t);
+  }, [load]);
+
+  const confirmar = async (p) => {
+    if (!confirm(`¿Confirmar que llegó el pago del trato ${p.Trato?.codigo || ""}?`)) return;
+    setBusy(true);
+    try {
+      await api.post(`/admin/pagos/${p.id}/confirmar`);
+      toast("Pago confirmado. Vendedor notificado para entregar.", "success");
+      await load(true);
+    } catch (e) { toast(e.message, "error"); }
+    finally { setBusy(false); }
+  };
+
+  const liberar = async (p) => {
+    const ref = prompt(`Referencia de la transferencia al vendedor para ${p.Trato?.codigo || "este trato"}:`);
+    if (ref === null) return;
+    setBusy(true);
+    try {
+      await api.post(`/admin/tratos/${p.trato_id}/liberar`, { referencia_liberacion: ref.trim() });
+      toast("Pago liberado. Se notificó reflejo máximo en 1 hora.", "success");
+      await load(true);
+    } catch (e) { toast(e.message, "error"); }
+    finally { setBusy(false); }
+  };
+
+  const estadoCls = (estado) => estado === "aprobado" ? "gn" : ["pendiente", "procesando"].includes(estado) ? "or" : "rd";
+
   return (
     <div className="page fi">
-      <h1 style={{ fontSize: 20, marginBottom: 14 }}>Pagos y Retiros</h1>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, marginBottom: 14, flexWrap: "wrap" }}>
+        <div>
+          <h1 style={{ fontSize: 20 }}>Pagos y Retiros</h1>
+          <p style={{ fontSize: 12, color: "var(--s500)", marginTop: 3 }}>Cola en vivo de pagos reportados. Actualiza cada 15s.</p>
+        </div>
+        <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+          <div className="search" style={{ width: 240 }}>🔍 <input placeholder="Número del trato…" value={q} onChange={e => setQ(e.target.value)} onKeyDown={e => e.key === "Enter" && load()} /></div>
+          <button className="btn bg_" onClick={() => load()}>↻</button>
+          {lastSync && <span style={{ fontSize: 11, color: "var(--s400)" }}>Sync {lastSync.toLocaleTimeString("es-CO", { hour: "2-digit", minute: "2-digit" })}</span>}
+        </div>
+      </div>
+      {selected && (
+        <div className="card admin-payment-detail">
+          <div className="modal-hd" style={{ padding: 0, border: 0, marginBottom: 10 }}>
+            <div>
+              <h2 style={{ fontSize: 17 }}>{selected.Trato?.codigo || "Trato"} · Flujo de pago</h2>
+              <p style={{ fontSize: 12, color: "var(--s500)" }}>{selected.Trato?.titulo || "Sin título"}</p>
+            </div>
+            <button className="btn bg_ bsm" onClick={() => setSelected(null)}>×</button>
+          </div>
+          <div className="admin-flow-grid">
+            <MiniField label="Monto recibido esperado" value={fmt(selected.monto)} />
+            <MiniField label="Referencia transferencia" value={selected.pasarela_ref || "—"} mono />
+            <MiniField label="Método" value={selected.metadata?.method || selected.metodo_pago || selected.pasarela || "—"} />
+            <MiniField label="Estado del pago" value={selected.estado} />
+            <MiniField label="Comprador" value={`${selected.Trato?.comprador?.nombre || selected.User?.nombre || ""} ${selected.Trato?.comprador?.apellido || selected.User?.apellido || ""}`.trim() || "—"} />
+            <MiniField label="Vendedor" value={`${selected.Trato?.vendedor?.nombre || ""} ${selected.Trato?.vendedor?.apellido || ""}`.trim() || "—"} />
+            <MiniField label="Vendedor recibe" value={fmt(selected.neto_desembolso || selected.Trato?.monto_neto || selected.Trato?.monto)} />
+            <MiniField label="Llave reportada" value={selected.metadata?.transaction_ref || selected.pasarela_ref || "—"} mono />
+          </div>
+          <div className="admin-flow-box">
+            <b>Verificación manual</b>
+            <span>1. Busca en Nequi/Bre-B la referencia {selected.pasarela_ref || selected.metadata?.transaction_ref || "reportada"}.</span>
+            <span>2. Confirma que llegó exactamente {fmt(selected.monto)} para {selected.Trato?.codigo || "el trato"}.</span>
+            <span>3. Al confirmar, el vendedor recibe notificación para entregar. Al liberar, ambos ven que se refleja máximo en 1 hora.</span>
+            {selected.metadata?.notes && <span>Nota comprador: {selected.metadata.notes}</span>}
+          </div>
+          <div style={{ display: "flex", gap: 8, marginTop: 12, flexWrap: "wrap" }}>
+            {selected.tipo === "retencion" && selected.estado !== "aprobado" && <button className="btn bp" disabled={busy} onClick={() => confirmar(selected)}>Confirmar recibido</button>}
+            {["pago_retenido","en_entrega","confirmado","pendiente_confirmacion"].includes(selected.Trato?.estado) && <button className="btn bp" disabled={busy} onClick={() => liberar(selected)}>LIBERAR</button>}
+            <a className="btn bg_" href={`${ADMIN_ENTRY_PATH}?trato=${encodeURIComponent(selected.trato_id)}`} target="_blank" rel="noreferrer">Ver trato completo</a>
+          </div>
+        </div>
+      )}
       <div className="tw">
         <table>
-          <thead><tr><th>Trato</th><th>Usuario</th><th>Tipo</th><th>Monto</th><th>Pasarela</th><th>Ref. externa</th><th>Estado</th><th>Fecha</th></tr></thead>
+          <thead><tr><th>Trato</th><th>Usuario</th><th>Tipo</th><th>Monto</th><th>Método</th><th>Ref. externa</th><th>Estado</th><th>Fecha</th><th>Acciones</th></tr></thead>
           <tbody>
             {loading
-              ? <tr><td colSpan={8} style={{ textAlign: "center", padding: 32 }}><div className="spin" style={{ margin: "0 auto", color: "var(--s400)" }} /></td></tr>
+              ? <tr><td colSpan={9} style={{ textAlign: "center", padding: 32 }}><div className="spin" style={{ margin: "0 auto", color: "var(--s400)" }} /></td></tr>
               : pagos.map((p, i) => (
                 <tr key={p.id}>
                   <td style={{ fontFamily: "Syne", fontWeight: 700, fontSize: 11, color: "var(--g2)" }}>{p.Trato?.codigo || "—"}</td>
                   <td style={{ fontSize: 12 }}>{p.User?.nombre} {p.User?.apellido}</td>
                   <td style={{ fontSize: 12 }}>{p.tipo}</td>
                   <td style={{ fontFamily: "Syne", fontWeight: 700, fontSize: 12.5 }}>{fmt(p.monto)}</td>
-                  <td style={{ fontSize: 12 }}>{p.pasarela}</td>
+                  <td style={{ fontSize: 12 }}>{p.metadata?.method || p.metodo_pago || p.pasarela}</td>
                   <td><span className="mono" style={{ fontSize: 11, color: "var(--s400)" }}>{p.referencia_externa?.slice?.(0, 16) || "—"}</span></td>
-                  <td><span className={`bdg ${p.estado === "aprobado" ? "gn" : p.estado === "pendiente" ? "or" : "rd"}`}>{p.estado}</span></td>
+                  <td><span className={`bdg ${estadoCls(p.estado)}`}>{p.estado}</span></td>
                   <td style={{ fontSize: 11, color: "var(--s400)" }}>{fmtDate(p.createdAt)}</td>
+                  <td>
+                    <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
+                      <button className="btn bg_ bsm" onClick={() => setSelected(p)}>Ver flujo</button>
+                      {p.tipo === "retencion" && p.estado !== "aprobado" && <button className="btn bp bsm" disabled={busy} onClick={() => confirmar(p)}>Confirmar</button>}
+                      {["pago_retenido","en_entrega","confirmado","pendiente_confirmacion"].includes(p.Trato?.estado) && <button className="btn bp bsm" disabled={busy} onClick={() => liberar(p)}>LIBERAR</button>}
+                    </div>
+                  </td>
                 </tr>
               ))
             }
