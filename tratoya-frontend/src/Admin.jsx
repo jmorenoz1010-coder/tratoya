@@ -1533,6 +1533,9 @@ function PagosAdmin({ toast }) {
   const [busy, setBusy] = useState(false);
   const [lastSync, setLastSync] = useState(null);
   const [statusFilter, setStatusFilter] = useState("todos");
+  const [payPanel, setPayPanel] = useState("recientes");
+  const [historyFrom, setHistoryFrom] = useState("");
+  const [historyTo, setHistoryTo] = useState("");
 
   const load = useCallback((silent = false) => {
     if (!silent) setLoading(true);
@@ -1590,25 +1593,38 @@ function PagosAdmin({ toast }) {
   const recentIncoming = pagos
     .filter((p) => p.tipo === "retencion" && ["pendiente","procesando"].includes(p.estado))
     .slice(0, 6);
-  const releasedHistory = pagos
-    .filter((p) => p.tipo === "liberacion" || p.estado === "liberado")
-    .slice(0, 12);
+  const allReleasedHistory = pagos
+    .filter((p) => p.tipo === "liberacion" || p.estado === "liberado");
+  const releasedHistory = allReleasedHistory
+    .filter((p) => {
+      const d = new Date(p.createdAt);
+      if (historyFrom && d < new Date(`${historyFrom}T00:00:00`)) return false;
+      if (historyTo && d > new Date(`${historyTo}T23:59:59`)) return false;
+      return true;
+    })
+    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
   const totalPorConsignar = porConsignar.reduce((sum, p) => sum + sellerAmount(p), 0);
   const totalLiberado = releasedHistory.reduce((sum, p) => sum + Number(p.monto || 0), 0);
+  const panelItems = [
+    ["recientes", "Pagos recién recibidos", recentIncoming.length, "Validación inmediata"],
+    ["consignar", "Por consignar", porConsignar.length, fmt(totalPorConsignar)],
+    ["historial", "Historial de consignaciones", allReleasedHistory.length, "Filtrado por fechas"],
+    ["todos", "Todos los movimientos", pagos.length, "Tabla completa"],
+  ];
   const filterItems = [
     ["todos", "Todos", pagos.length],
     ["recientes", "Recién recibidos", recentIncoming.length],
     ["consignar", "Por consignar", porConsignar.length],
     ["aprobados", "Confirmados", pagos.filter((p) => p.estado === "aprobado").length],
     ["fallidos", "Fallidos", pagos.filter((p) => p.estado === "rechazado").length],
-    ["historial", "Historial", releasedHistory.length],
+    ["historial", "Historial", allReleasedHistory.length],
   ];
   const filteredPagos = pagos.filter((p) => {
     if (statusFilter === "recientes") return p.tipo === "retencion" && ["pendiente","procesando"].includes(p.estado);
     if (statusFilter === "consignar") return porConsignar.some((x) => x.id === p.id);
     if (statusFilter === "aprobados") return p.estado === "aprobado";
     if (statusFilter === "fallidos") return p.estado === "rechazado";
-    if (statusFilter === "historial") return p.tipo === "liberacion" || p.estado === "liberado";
+    if (statusFilter === "historial") return allReleasedHistory.some((x) => x.id === p.id);
     return true;
   });
 
@@ -1625,14 +1641,25 @@ function PagosAdmin({ toast }) {
           {lastSync && <span style={{ fontSize: 11, color: "var(--s400)" }}>Sync {lastSync.toLocaleTimeString("es-CO", { hour: "2-digit", minute: "2-digit" })}</span>}
         </div>
       </div>
-      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 12 }}>
-        {filterItems.map(([key, label, count]) => (
-          <button key={key} className={`btn bsm ${statusFilter === key ? "bp" : "bg_"}`} onClick={() => setStatusFilter(key)}>
-            {label} <span className="mono" style={{ opacity: .72 }}>{count}</span>
+      <div className="pay-admin-menu">
+        {panelItems.map(([key, label, count, sub]) => (
+          <button key={key} className={`pay-admin-tab ${payPanel === key ? "active" : ""}`} onClick={() => setPayPanel(key)}>
+            <span>{label}</span>
+            <strong>{count}</strong>
+            <em>{sub}</em>
           </button>
         ))}
       </div>
-      <div className="card live-payments">
+      {payPanel === "todos" && (
+        <div className="pay-admin-filters">
+          {filterItems.map(([key, label, count]) => (
+            <button key={key} className={`btn bsm ${statusFilter === key ? "bp" : "bg_"}`} onClick={() => setStatusFilter(key)}>
+              {label} <span className="mono" style={{ opacity: .72 }}>{count}</span>
+            </button>
+          ))}
+        </div>
+      )}
+      {payPanel === "recientes" && <div className="card live-payments">
         <div className="live-payments-head">
           <div>
             <h2>Pagos recién recibidos</h2>
@@ -1659,7 +1686,7 @@ function PagosAdmin({ toast }) {
             ))}
           </div>
         )}
-      </div>
+      </div>}
       {selected && (
         <div className="card admin-payment-detail">
           <div className="modal-hd" style={{ padding: 0, border: 0, marginBottom: 10 }}>
@@ -1707,7 +1734,7 @@ function PagosAdmin({ toast }) {
           </div>
         </div>
       )}
-      {porConsignar.length > 0 && (
+      {payPanel === "consignar" && (
         <div className="card admin-payment-detail">
           <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "flex-start", flexWrap: "wrap", marginBottom: 10 }}>
             <div>
@@ -1716,32 +1743,38 @@ function PagosAdmin({ toast }) {
             </div>
             <span className="bdg or">{porConsignar.length} pendientes</span>
           </div>
-          <div className="tw" style={{ boxShadow: "none" }}>
-            <table>
-              <thead><tr><th>Trato</th><th>Vendedor</th><th>Valor exacto a transferir</th><th>Ganancia libre 4.5%</th><th>Costos cubiertos</th><th>Acción</th></tr></thead>
-              <tbody>
-                {porConsignar.map((p) => (
-                  <tr key={`release-${p.id}`} onClick={() => setSelected(p)} style={{ cursor: "pointer" }}>
-                    <td><b className="mono">{p.Trato?.codigo}</b><div style={{ fontSize: 11, color: "var(--s500)" }}>{p.Trato?.titulo}</div></td>
-                    <td>{p.Trato?.vendedor?.nombre} {p.Trato?.vendedor?.apellido}<div className="mono" style={{ fontSize: 10, color: "var(--s400)" }}>{p.Trato?.vendedor?.usuario_unico || p.Trato?.vendedor?.email}</div></td>
-                    <td style={{ fontFamily: "Syne", fontWeight: 800, color: "var(--g2)" }}>{fmt(sellerAmount(p))}</td>
-                    <td style={{ fontWeight: 800 }}>{fmt(freeGain(p))}</td>
-                    <td>{fmt(coveredCosts(p))}</td>
-                    <td><button className="btn bp bsm" disabled={busy} onClick={(e) => { e.stopPropagation(); liberar(p); }}>LIBERAR</button></td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          {porConsignar.length === 0 ? <div className="empty-mini">No hay consignaciones pendientes.</div> : (
+            <div className="tw" style={{ boxShadow: "none" }}>
+              <table>
+                <thead><tr><th>Trato</th><th>Vendedor</th><th>Valor exacto a transferir</th><th>Ganancia libre 4.5%</th><th>Costos cubiertos</th><th>Acción</th></tr></thead>
+                <tbody>
+                  {porConsignar.map((p) => (
+                    <tr key={`release-${p.id}`} onClick={() => setSelected(p)} style={{ cursor: "pointer" }}>
+                      <td><b className="mono">{p.Trato?.codigo}</b><div style={{ fontSize: 11, color: "var(--s500)" }}>{p.Trato?.titulo}</div></td>
+                      <td>{p.Trato?.vendedor?.nombre} {p.Trato?.vendedor?.apellido}<div className="mono" style={{ fontSize: 10, color: "var(--s400)" }}>{p.Trato?.vendedor?.usuario_unico || p.Trato?.vendedor?.email}</div></td>
+                      <td style={{ fontFamily: "Syne", fontWeight: 800, color: "var(--g2)" }}>{fmt(sellerAmount(p))}</td>
+                      <td style={{ fontWeight: 800 }}>{fmt(freeGain(p))}</td>
+                      <td>{fmt(coveredCosts(p))}</td>
+                      <td><button className="btn bp bsm" disabled={busy} onClick={(e) => { e.stopPropagation(); liberar(p); }}>LIBERAR</button></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       )}
-      <div className="card admin-payment-detail">
+      {payPanel === "historial" && <div className="card admin-payment-detail admin-history-card">
         <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "flex-start", flexWrap: "wrap", marginBottom: 10 }}>
           <div>
             <h2 style={{ fontSize: 16 }}>Historial de liberaciones</h2>
             <p style={{ fontSize: 12, color: "var(--s500)", marginTop: 3 }}>Pagos al vendedor ya marcados como completados. Total registrado: <b>{fmt(totalLiberado)}</b></p>
           </div>
-          <button className="btn bg_ bsm" onClick={() => setStatusFilter("historial")}>Ver historial</button>
+          <div className="history-date-filters">
+            <input className="inp" type="date" value={historyFrom} onChange={(e) => setHistoryFrom(e.target.value)} />
+            <input className="inp" type="date" value={historyTo} onChange={(e) => setHistoryTo(e.target.value)} />
+            <button className="btn bg_ bsm" onClick={() => { setHistoryFrom(""); setHistoryTo(""); }}>Limpiar</button>
+          </div>
         </div>
         {releasedHistory.length === 0 ? (
           <div className="empty-mini">Todavía no hay liberaciones registradas.</div>
@@ -1763,8 +1796,8 @@ function PagosAdmin({ toast }) {
             </table>
           </div>
         )}
-      </div>
-      <div className="tw">
+      </div>}
+      {payPanel === "todos" && <div className="tw">
         <table>
           <thead><tr><th>Trato</th><th>Usuario</th><th>Tipo</th><th>Monto</th><th>Método</th><th>Ref. externa</th><th>Estado</th><th>Fecha</th><th>Acciones</th></tr></thead>
           <tbody>
@@ -1795,7 +1828,7 @@ function PagosAdmin({ toast }) {
             }
           </tbody>
         </table>
-      </div>
+      </div>}
     </div>
   );
 }

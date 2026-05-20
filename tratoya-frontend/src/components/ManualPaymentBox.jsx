@@ -60,7 +60,13 @@ export default function ManualPaymentBox({ amount, reference, busy, onReport }) 
         <div className="manual-pay-data">
           <div className="manual-pay-row"><span>Monto exacto</span><strong>{fmt(amount)}</strong></div>
           <div className="manual-pay-row"><span>Referencia</span><strong>{reference}</strong></div>
-          <div className="manual-pay-row manual-pay-key"><span>Transfiere a esta llave</span><strong className="wrap-any">{PAYMENT_KEY}</strong></div>
+          <div className="manual-pay-row manual-pay-key">
+            <span>Transfiere a esta llave</span>
+            <div className="manual-pay-key-main">
+              <strong className="wrap-any">{PAYMENT_KEY}</strong>
+              <em>Copiar y pegar en Nequi / Bre-B</em>
+            </div>
+          </div>
           <div className="manual-pay-row"><span>Recibe</span><strong>{PAYMENT_NAME}</strong></div>
         </div>
       </div>
