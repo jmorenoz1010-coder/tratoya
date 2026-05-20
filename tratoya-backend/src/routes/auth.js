@@ -34,7 +34,7 @@ const makeUniqueHandle = async (base, currentId = null) => {
 
 const isStrongPassword = (password) =>
   typeof password === 'string'
-  && password.length >= 12
+  && password.length >= 6
   && /[a-z]/.test(password)
   && /[A-Z]/.test(password)
   && /\d/.test(password)
@@ -46,7 +46,7 @@ router.post('/register', [
   body('nombre').notEmpty().trim().withMessage('Nombre requerido'),
   body('apellido').notEmpty().trim().withMessage('Apellido requerido'),
   body('email').isEmail().normalizeEmail().withMessage('Email inválido'),
-  body('password').custom(isStrongPassword).withMessage('La contraseña debe tener mínimo 12 caracteres, mayúscula, minúscula, número, símbolo y no tener espacios'),
+  body('password').custom(isStrongPassword).withMessage('La contraseña debe tener mínimo 6 caracteres, mayúscula, minúscula, número, símbolo y no tener espacios'),
   body('tipo_identificacion').optional().isIn(['CC','CE','TI','PA','PEP','NIT','OTRO']).withMessage('Tipo de identificación inválido'),
   body('cedula').notEmpty().trim().withMessage('Número de identificación requerido'),
 ], async (req, res, next) => {

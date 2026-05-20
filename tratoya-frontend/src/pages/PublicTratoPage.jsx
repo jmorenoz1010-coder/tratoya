@@ -124,7 +124,7 @@ export default function PublicTratoPage({ link, session, goAuth, toast }) {
               <div style={{ fontWeight: 700, color: "var(--n)", marginBottom: 4 }}>Este link es para que tu contraparte acepte y pague.</div>
               <div style={{ marginBottom: 12 }}>Comparte este link con tu comprador para que lo acepte y pague de forma protegida.</div>
               <div style={{ display: "flex", gap: 9, flexWrap: "wrap" }}>
-                <button className="btn bo" onClick={() => { window.location.href = "/"; }}>Ir a mi dashboard</button>
+                <button className="btn bo" onClick={() => { window.location.href = "/"; }}>Ir a mi inicio</button>
               </div>
             </div>
           ) : canAccept ? (

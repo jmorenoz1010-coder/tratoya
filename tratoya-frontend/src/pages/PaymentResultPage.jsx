@@ -52,7 +52,7 @@ export default function PaymentResultPage({ session, goAuth, toast }) {
           </div>
         )}
         {!session && <button className="btn bp" style={{ marginTop: 16 }} onClick={() => goAuth("login")}>Iniciar sesión</button>}
-        {session && <button className="btn bp" style={{ marginTop: 16 }} onClick={() => { window.location.href = "/"; }}>Volver al dashboard</button>}
+        {session && <button className="btn bp" style={{ marginTop: 16 }} onClick={() => { window.location.href = "/"; }}>Volver al inicio</button>}
       </div>
     </div>
   );

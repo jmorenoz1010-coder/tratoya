@@ -63,6 +63,7 @@ const api = {
   },
   get:  (p)    => api.req("GET",    p),
   post: (p, b) => api.req("POST",   p, b),
+  upload: (p, f) => api.req("POST", p, f, true),
   put:  (p, b) => api.req("PUT",    p, b),
   patch:(p, b) => api.req("PATCH",  p, b),
   del:  (p)    => api.req("DELETE", p),
@@ -79,6 +80,20 @@ const DISP_EST = { abierta:"rd", en_revision:"or", resuelta:"gn", cancelada:"bg"
 const ROLE_BADGE = { superadmin:"pu", admin:"gn", moderador:"or", soporte:"nb", invitado:"bg", user:"bg" };
 const ROLE_LABEL = { superadmin:"Superadmin", admin:"Administrador", moderador:"Moderador", soporte:"Soporte", invitado:"Invitado", user:"Usuario" };
 const rolLabel = (rol = "user") => ROLE_LABEL[rol] || rol;
+const TRATO_LABEL = {
+  borrador: "Borrador",
+  activo: "Listo para pago",
+  pago_pendiente: "Revisar comprobante",
+  pago_retenido: "Pago confirmado · entregar",
+  en_entrega: "Entrega en curso",
+  pendiente_confirmacion: "Comprador debe confirmar",
+  confirmado: "Listo para liberar",
+  completado: "Completado",
+  disputado: "En disputa",
+  cancelado: "Cancelado",
+  expirado: "Expirado",
+};
+const tratoLabel = (estado) => TRATO_LABEL[estado] || estado || "—";
 
 const ROLE_OPTIONS = [
   { id: "invitado", label: "Invitado", desc: "Acceso temporal o de prueba, sin permisos operativos." },
@@ -286,8 +301,8 @@ function useToast() {
 // ─── Sidebar nav ──────────────────────────────────────
 const NAV = [
   { sec: "General" },
-  { id: "dashboard",    ico: "📊", l: "Dashboard" },
-  { id: "actividad",    ico: "⚡", l: "Actividad en vivo" },
+  { id: "dashboard",    ico: "📊", l: "Inicio" },
+  { id: "actividad",    ico: "⚡", l: "Transacciones en tiempo real" },
   { sec: "Usuarios" },
   { id: "usuarios",     ico: "👥", l: "Todos los usuarios" },
   { id: "roles",        ico: "🛡️", l: "Roles y accesos" },
@@ -465,7 +480,7 @@ function Usuarios({ toast }) {
 
   const resetPassword = async () => {
     if (!pwForm.password || pwForm.password !== pwForm.confirmar) { toast("Las contraseñas no coinciden", "error"); return; }
-    if (pwForm.password.length < 8) { toast("Mínimo 8 caracteres", "error"); return; }
+    if (pwForm.password.length < 6) { toast("Mínimo 6 caracteres", "error"); return; }
     setBusy(true);
     try {
       await api.post(`/admin/users/${selected.id}/reset-password`, { password: pwForm.password });
@@ -649,7 +664,7 @@ function Usuarios({ toast }) {
                 <h4 style={{ fontSize: 13, marginBottom: 8 }}>Historial de tratos</h4>
                 {(selectedDetail?.tratos || []).length ? (
                   <div className="tw"><table><thead><tr><th>Código</th><th>Rol</th><th>Título</th><th>Monto</th><th>Estado</th><th>Fecha</th></tr></thead><tbody>
-                    {selectedDetail.tratos.map(t => <tr key={t.id}><td className="mono">{t.codigo}</td><td>{t.comprador_id === selected.id ? "Comprador" : "Vendedor"}</td><td>{t.titulo}</td><td>{fmt(t.monto)}</td><td><span className={`bdg ${TRATO_EST[t.estado] || "bg"}`}>{t.estado}</span></td><td>{fmtDate(t.createdAt)}</td></tr>)}
+                    {selectedDetail.tratos.map(t => <tr key={t.id}><td className="mono">{t.codigo}</td><td>{t.comprador_id === selected.id ? "Comprador" : "Vendedor"}</td><td>{t.titulo}</td><td>{fmt(t.monto)}</td><td><span className={`bdg ${TRATO_EST[t.estado] || "bg"}`}>{tratoLabel(t.estado)}</span></td><td>{fmtDate(t.createdAt)}</td></tr>)}
                   </tbody></table></div>
                 ) : <div style={{ color: "var(--s400)", fontSize: 12.5 }}>Sin tratos registrados.</div>}
               </div>
@@ -682,7 +697,7 @@ function Usuarios({ toast }) {
               <div style={{ background: "var(--orb)", border: "1px solid rgba(224,123,0,.2)", borderRadius: 8, padding: "10px 13px", marginBottom: 14, fontSize: 12.5, color: "var(--or)" }}>
                 ⚠️ Vas a cambiar la contraseña de <strong>{selected.nombre} {selected.apellido}</strong> ({selected.email})
               </div>
-              <div className="fg"><label className="fl">Nueva contraseña</label><input className="inp" type="password" placeholder="Mínimo 8 caracteres" value={pwForm.password} onChange={e => setPwForm(p => ({ ...p, password: e.target.value }))} /></div>
+              <div className="fg"><label className="fl">Nueva contraseña</label><input className="inp" type="password" placeholder="Mínimo 6 caracteres" value={pwForm.password} onChange={e => setPwForm(p => ({ ...p, password: e.target.value }))} /></div>
               <div className="fg"><label className="fl">Confirmar contraseña</label><input className="inp" type="password" placeholder="Repite la contraseña" value={pwForm.confirmar} onChange={e => setPwForm(p => ({ ...p, confirmar: e.target.value }))} /></div>
             </div>
             <div className="modal-ft">
@@ -1235,7 +1250,7 @@ function AdminTratoDetailModal({ detail, loading, onClose, onRefresh, onLiberar,
             {!loading && <p style={{ fontSize: 12, color: "var(--s400)", marginTop: 3 }}>{t.id}</p>}
           </div>
           <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-            {!loading && <span className={`bdg ${TRATO_EST[t.estado] || "bg"}`}>{t.estado}</span>}
+            {!loading && <span className={`bdg ${TRATO_EST[t.estado] || "bg"}`}>{tratoLabel(t.estado)}</span>}
             {fullPage ? <a className="btn bg_ bsm" href={ADMIN_ENTRY_PATH}>Volver al admin</a> : <button className="btn bg_ bsm" onClick={onClose}>×</button>}
           </div>
         </div>
@@ -1251,7 +1266,6 @@ function AdminTratoDetailModal({ detail, loading, onClose, onRefresh, onLiberar,
                     <MiniField label="Vendedor recibe" value={fmt(t.monto_neto || t.monto)} />
                     <MiniField label="Quién paga comisión" value={t.quien_paga_comision || "—"} />
                     <MiniField label="Tipo" value={t.tipo || "—"} />
-                    <MiniField label="Días inspección" value={t.dias_inspeccion ?? "—"} />
                     <MiniField label="Invitación directa" value={t.metadata?.invitacion_directa ? `Sí · ${t.metadata?.contraparte_usuario_unico || "—"}` : "No"} />
                     <MiniField label="Creado" value={fmtTime(t.createdAt)} />
                     <MiniField label="Expira" value={fmtTime(t.fecha_expiracion)} />
@@ -1475,7 +1489,7 @@ function TratosAdmin({ toast }) {
                   <td style={{ fontSize: 12 }}>{t.comprador?.nombre} {t.comprador?.apellido || <span style={{ color: "var(--s400)", fontStyle: "italic" }}>—</span>}<div className="mono" style={{ fontSize: 10, color: "var(--s400)" }}>{t.comprador?.usuario_unico || "—"}</div></td>
                   <td style={{ fontFamily: "Syne", fontWeight: 700, fontSize: 12.5 }}>{fmt(t.monto)}</td>
                   <td><span className={`bdg ${t.metadata?.invitacion_directa ? "gn" : "bg"}`}>{t.metadata?.invitacion_directa ? "Directo por ID" : "Link / QR"}</span></td>
-                  <td><span className={`bdg ${TRATO_EST[t.estado] || "bg"}`}>{t.estado}</span></td>
+                  <td><span className={`bdg ${TRATO_EST[t.estado] || "bg"}`}>{tratoLabel(t.estado)}</span></td>
                   <td style={{ fontSize: 11, color: "var(--s400)" }}>{fmtDate(t.createdAt)}</td>
                   <td>
                     <div style={{ display: "flex", gap: 4 }}>
@@ -1536,6 +1550,10 @@ function PagosAdmin({ toast }) {
   const [payPanel, setPayPanel] = useState("recientes");
   const [historyFrom, setHistoryFrom] = useState("");
   const [historyTo, setHistoryTo] = useState("");
+  const [confirmTarget, setConfirmTarget] = useState(null);
+  const [releaseTarget, setReleaseTarget] = useState(null);
+  const [releaseRef, setReleaseRef] = useState("");
+  const [releaseReceipt, setReleaseReceipt] = useState(null);
 
   const load = useCallback((silent = false) => {
     if (!silent) setLoading(true);
@@ -1552,11 +1570,17 @@ function PagosAdmin({ toast }) {
   }, [load]);
 
   const confirmar = async (p) => {
-    if (!confirm(`¿Confirmar que llegó el pago del trato ${p.Trato?.codigo || ""}?`)) return;
+    setConfirmTarget(p);
+  };
+
+  const confirmarPago = async () => {
+    const p = confirmTarget;
+    if (!p) return;
     setBusy(true);
     try {
       await api.post(`/admin/pagos/${p.id}/confirmar`);
       toast("Pago confirmado. Vendedor notificado para entregar.", "success");
+      setConfirmTarget(null);
       await load(true);
     } catch (e) { toast(e.message, "error"); }
     finally { setBusy(false); }
@@ -1574,12 +1598,22 @@ function PagosAdmin({ toast }) {
   };
 
   const liberar = async (p) => {
-    const ref = prompt(`Referencia de la transferencia al vendedor para ${p.Trato?.codigo || "este trato"}:`);
-    if (ref === null) return;
+    setReleaseTarget(p);
+    setReleaseRef("");
+    setReleaseReceipt(null);
+  };
+
+  const confirmarLiberacion = async () => {
+    const p = releaseTarget;
+    if (!p) return;
     setBusy(true);
     try {
-      await api.post(`/admin/tratos/${p.trato_id}/liberar`, { referencia_liberacion: ref.trim() });
+      const fd = new FormData();
+      fd.append("referencia_liberacion", releaseRef.trim());
+      if (releaseReceipt) fd.append("release_receipt", releaseReceipt);
+      await api.upload(`/admin/tratos/${p.trato_id}/liberar`, fd);
       toast("Pago liberado. Se notificó reflejo máximo en 1 hora.", "success");
+      setReleaseTarget(null);
       await load(true);
     } catch (e) { toast(e.message, "error"); }
     finally { setBusy(false); }
@@ -1630,6 +1664,51 @@ function PagosAdmin({ toast }) {
 
   return (
     <div className="page fi">
+      {confirmTarget && (
+        <div className="overlay">
+          <div className="modal trato-confirm-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-hd">
+              <div>
+                <h3>Confirmar pago recibido</h3>
+                <p>Verifica en Nequi/Bre-B antes de aprobar.</p>
+              </div>
+              <button className="btn bg_ bsm" onClick={() => setConfirmTarget(null)}>×</button>
+            </div>
+            <div className="confirm-pay-body">
+              <div className="confirm-pay-icon">✓</div>
+              <h2>{confirmTarget.Trato?.codigo || "Trato"}</h2>
+              <p>Confirma que recibiste exactamente <strong>{fmt(confirmTarget.monto)}</strong>.</p>
+              {confirmTarget.metadata?.receipt_url && <a className="btn bo" href={confirmTarget.metadata.receipt_url} target="_blank" rel="noreferrer">Abrir comprobante</a>}
+            </div>
+            <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", padding: 16 }}>
+              <button className="btn bg_" onClick={() => setConfirmTarget(null)}>Cancelar</button>
+              <button className="btn bp" disabled={busy} onClick={confirmarPago}>{busy ? <div className="spin" /> : "Sí, confirmar recibido"}</button>
+            </div>
+          </div>
+        </div>
+      )}
+      {releaseTarget && (
+        <div className="overlay">
+          <div className="modal" style={{ maxWidth: 520 }} onClick={(e) => e.stopPropagation()}>
+            <div className="modal-hd">
+              <div>
+                <h3>Liberar fondos al vendedor</h3>
+                <p style={{ fontSize: 12, color: "var(--s500)" }}>{releaseTarget.Trato?.codigo} · {fmt(sellerAmount(releaseTarget))}</p>
+              </div>
+              <button className="btn bg_ bsm" onClick={() => setReleaseTarget(null)}>×</button>
+            </div>
+            <div style={{ padding: 16 }}>
+              <div className="fg"><label className="fl">Referencia de transferencia</label><input className="inp" value={releaseRef} onChange={(e) => setReleaseRef(e.target.value)} placeholder="Referencia de Nequi/Bre-B" /></div>
+              <div className="fg"><label className="fl">Comprobante de consignación al vendedor</label><input className="inp" type="file" accept="image/*,.pdf" onChange={(e) => setReleaseReceipt(e.target.files?.[0] || null)} /></div>
+              <div className="admin-flow-box">TratoYA notificará al vendedor que el dinero fue consignado y adjuntará el comprobante si lo cargas.</div>
+            </div>
+            <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", padding: 16, borderTop: "1px solid var(--s100)" }}>
+              <button className="btn bg_" onClick={() => setReleaseTarget(null)}>Cancelar</button>
+              <button className="btn bp" disabled={busy} onClick={confirmarLiberacion}>{busy ? <div className="spin" /> : "Liberar y notificar"}</button>
+            </div>
+          </div>
+        </div>
+      )}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, marginBottom: 14, flexWrap: "wrap" }}>
         <div>
           <h1 style={{ fontSize: 20 }}>Pagos y Retiros</h1>
@@ -1713,6 +1792,7 @@ function PagosAdmin({ toast }) {
             <span>3. Al confirmar, el vendedor recibe notificación para entregar. Al liberar, ambos ven que se refleja máximo en 1 hora.</span>
             {selected.metadata?.transfer_concept && <span>Concepto enviado: {selected.metadata.transfer_concept}</span>}
             {selected.metadata?.receipt_url && <a href={selected.metadata.receipt_url} target="_blank" rel="noreferrer">Abrir comprobante adjunto</a>}
+            {selected.metadata?.release_receipt_url && <a href={selected.metadata.release_receipt_url} target="_blank" rel="noreferrer">Abrir comprobante de consignación al vendedor</a>}
             {selected.metadata?.notes && <span>Nota comprador: {selected.metadata.notes}</span>}
           </div>
           {selected.Trato?.metadata || selected.Trato ? (
@@ -1882,7 +1962,6 @@ function Configuracion({ toast }) {
           <h3 style={{ fontSize: 14, marginBottom: 14 }}>💰 Comisiones</h3>
           <div className="fg"><label className="fl">Comisión mínima (COP)</label><input className="inp" type="number" value={config.comision_min} onChange={e => sc("comision_min", e.target.value)} /></div>
           <div className="fg"><label className="fl">Límite diario por usuario (COP)</label><input className="inp" type="number" value={config.limite_diario} onChange={e => sc("limite_diario", e.target.value)} /></div>
-          <div className="fg"><label className="fl">Días de inspección por defecto</label><input className="inp" type="number" value={config.dias_inspeccion_default} onChange={e => sc("dias_inspeccion_default", e.target.value)} /></div>
         </div>
 
         <div className="card" style={{ padding: "18px 20px", marginBottom: 14 }}>
@@ -2285,7 +2364,7 @@ function RolesAdmin({ toast, currentAdmin }) {
   const crearUsuario = async () => {
     if (!canManage) { toast("Solo un superadmin puede crear usuarios desde esta vista", "error"); return; }
     if (!form.nombre || !form.email || !form.password) { toast("Completa nombre, email y contraseña", "error"); return; }
-    if (form.password.length < 8) { toast("La contraseña debe tener mínimo 8 caracteres", "error"); return; }
+    if (form.password.length < 6) { toast("La contraseña debe tener mínimo 6 caracteres", "error"); return; }
     setBusy(true);
     try {
       await api.post("/admin/users", form);
@@ -2355,7 +2434,7 @@ function RolesAdmin({ toast, currentAdmin }) {
     if (!credForm.nombre || !credForm.email) { toast("Nombre y email son requeridos", "error"); return; }
     if (credForm.password || credForm.confirmar) {
       if (credForm.password !== credForm.confirmar) { toast("Las contraseñas no coinciden", "error"); return; }
-      if (credForm.password.length < 8) { toast("Contraseña mínimo 8 caracteres", "error"); return; }
+      if (credForm.password.length < 6) { toast("Contraseña mínimo 6 caracteres", "error"); return; }
     }
     if (selected?.id === currentAdmin?.id && !["superadmin", "admin"].includes(credForm.rol)) {
       toast("No te bajes tus propios permisos críticos desde aquí", "warn"); return;
@@ -2500,7 +2579,7 @@ function RolesAdmin({ toast, currentAdmin }) {
               </div>
               <div className="fg"><label className="fl">Email</label><input className="inp" type="email" value={form.email} onChange={e => sf("email", e.target.value)} placeholder="usuario@tratoya.co" /></div>
               <div className="g2">
-                <div className="fg"><label className="fl">Contraseña inicial</label><input className="inp" type="password" value={form.password} onChange={e => sf("password", e.target.value)} placeholder="Mínimo 8 caracteres" /></div>
+                <div className="fg"><label className="fl">Contraseña inicial</label><input className="inp" type="password" value={form.password} onChange={e => sf("password", e.target.value)} placeholder="Mínimo 6 caracteres" /></div>
                 <div className="fg"><label className="fl">Rol</label><select className="inp" value={form.rol} onChange={e => sf("rol", e.target.value)}>{ROLE_OPTIONS.map(r => <option key={r.id} value={r.id}>{r.label}</option>)}</select></div>
               </div>
               <div style={{ background: "var(--s50)", borderRadius: 8, padding: "10px 12px", fontSize: 12, color: "var(--s600)" }}>
@@ -2673,7 +2752,7 @@ export default function TratoYaAdmin() {
   useEffect(() => {
     document.title = tratoDetailId
       ? "Detalle de trato · Admin TratoYA"
-      : `${NAV.find(n => n.id === page)?.l || "Dashboard"} · Admin TratoYA`;
+      : `${NAV.find(n => n.id === page)?.l || "Inicio"} · Admin TratoYA`;
   }, [page, tratoDetailId]);
 
   const logout = () => {
@@ -2730,7 +2809,7 @@ export default function TratoYaAdmin() {
           <div className="admin-main">
             <div className="topbar">
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <span style={{ fontFamily: "Syne", fontWeight: 700, fontSize: 14 }}>{NAV.find(n => n.id === page)?.l || "Dashboard"}</span>
+                <span style={{ fontFamily: "Syne", fontWeight: 700, fontSize: 14 }}>{NAV.find(n => n.id === page)?.l || "Inicio"}</span>
               </div>
               <div style={{ display: "flex", gap: 9, alignItems: "center" }}>
                 <a href="/" style={{ fontSize: 12.5, color: "var(--s600)", textDecoration: "none", display: "flex", alignItems: "center", gap: 5 }} target="_blank" rel="noreferrer">🌐 Ver plataforma</a>

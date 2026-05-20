@@ -145,7 +145,7 @@ export default function Auth({ setSession, toast }) {
                   <button className="btn bg_ bsm" style={{ marginBottom: 16 }} onClick={() => setStep(1)}>← Atrás</button>
                   <div className="fg">
                     <label className="fl">Contraseña *</label>
-                    <input className="inp" type="password" placeholder="Mínimo 12 caracteres" value={f.password} onChange={(e) => sf("password", e.target.value)} />
+                    <input className="inp" type="password" placeholder="Mínimo 6 caracteres" value={f.password} onChange={(e) => sf("password", e.target.value)} />
                     <div style={{ display: "flex", flexDirection: "column", gap: 4, marginTop: 8 }}>
                       {checks.map(([k, label, ok]) => (
                         <div key={k} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11.5 }}>

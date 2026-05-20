@@ -24,7 +24,7 @@ export default function Disputas({ toast, initialTratoId, clearInitialTratoId, s
       api.get("/tratos?limit=50").catch(() => ({ data: [] })),
     ]).then(([dis, tr]) => {
       setD(dis.data || []);
-      setTratos((tr.data || []).filter((t) => !["completado","cancelado","expirado","disputado"].includes(t.estado)));
+      setTratos((tr.data || []).filter((t) => !["cancelado","expirado","disputado"].includes(t.estado)));
     }).finally(() => setLoading(false));
   }, [initialTratoId]);
 

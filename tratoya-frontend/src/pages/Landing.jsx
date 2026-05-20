@@ -1,87 +1,83 @@
 export default function Landing({ goAuth }) {
   return (
-    <div className="land">
-      <nav className="lnav">
+    <div className="land escrow-land">
+      <nav className="escrow-nav">
         <div className="logo-row">
-          <div style={{ width: 28, height: 28, background: "var(--g)", borderRadius: 7, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "Manrope", fontWeight: 800, fontSize: 14, color: "var(--n)" }}>T</div>
-          <span style={{ fontFamily: "Manrope", fontSize: 18, fontWeight: 800, color: "#fff" }}>
-            Trato<span style={{ color: "var(--g)" }}>Ya</span>
-          </span>
-          <span style={{ fontSize: 9, fontWeight: 700, color: "var(--g)", background: "rgba(168,196,0,.15)", padding: "2px 6px", borderRadius: 5 }}>BETA</span>
+          <div className="brand-mark">T</div>
+          <span className="brand-word">Trato<span>Ya</span></span>
         </div>
-        <div style={{ display: "flex", gap: 9 }}>
-          <button className="btn bg_" style={{ color: "rgba(255,255,255,.72)" }} onClick={() => goAuth("login")}>Iniciar sesión</button>
-          <button className="btn bp" onClick={() => goAuth("register")}>Crear cuenta gratis</button>
+        <div className="escrow-menu">
+          <a href="#como-funciona">Cómo funciona</a>
+          <a href="#proteccion">Protección</a>
+          <a href="#tarifas">Tarifas</a>
+          <a href="#soporte">Soporte</a>
+        </div>
+        <div className="escrow-actions">
+          <button className="btn bg_" onClick={() => goAuth("login")}>Iniciar sesión</button>
+          <button className="btn bp" onClick={() => goAuth("register")}>Crear cuenta</button>
         </div>
       </nav>
 
-      <section className="hero">
-        <div className="hbdg fi">
-          <div style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--g)" }} />
-          Plataforma beta activa · Colombia 🇨🇴
+      <section className="escrow-hero">
+        <div className="escrow-copy">
+          <div className="hbdg">Pago seguro para Colombia</div>
+          <h1>Compra y vende con dinero protegido hasta el final.</h1>
+          <p>TratoYA retiene el pago, valida el comprobante y libera los fondos al vendedor cuando la operación se completa.</p>
+          <div className="escrow-cta">
+            <button className="btn bp blg create-glow-btn" onClick={() => goAuth("register")}>Crear trato seguro</button>
+            <button className="btn bo blg" onClick={() => goAuth("login")}>Entrar a mi cuenta</button>
+          </div>
+          <div className="escrow-trust">
+            {["Transferencias Nequi / Bre-B", "Comprobantes adjuntos", "Admin verifica pagos", "Liberación manual segura"].map((t) => <span key={t}>{t}</span>)}
+          </div>
         </div>
-        <h1 className="fi2">Tu pago seguro<br /><span>hasta el final.</span></h1>
-        <p className="fi3">Compra y vende sin miedo. TratoYa retiene el dinero hasta que ambas partes confirmen.</p>
-        <div style={{ display: "flex", gap: 11, flexWrap: "wrap" }} className="fi3">
-          <button className="btn bp blg" onClick={() => goAuth("register")}>🔒 Crear cuenta gratis</button>
-          <button className="btn bo blg" onClick={() => goAuth("login")}>Iniciar sesión</button>
-        </div>
-        <div className="htrust fi3">
-          {["PSE y Nequi", "Verificación de identidad", "Mediación en 72h", "Sin cobros ocultos"].map((t) => (
-            <div key={t} className="htrust-i">{t}</div>
-          ))}
-        </div>
-      </section>
-
-      <section className="sbar">
-        <div className="sgrid">
-          {[["$0", "Costo de registro"], ["4.5%", "Comisión promedio"], ["72h", "Resolución de disputas"], ["100%", "Garantía de devolución"]].map(([n, l]) => (
-            <div key={l} className="si">
-              <div className="snum">{n}</div>
-              <div className="slbl">{l}</div>
-            </div>
-          ))}
+        <div className="escrow-visual" aria-label="Flujo animado de TratoYA">
+          <div className="deal-phone">
+            <div className="deal-phone-top">Trato en progreso</div>
+            <img src="/nequi-breb-qr.png" alt="QR Nequi Bre-B TratoYA" />
+            <div className="deal-step active"><b>1</b><span>Comprador paga</span></div>
+            <div className="deal-arrow">↓</div>
+            <div className="deal-step"><b>2</b><span>TratoYA verifica</span></div>
+            <div className="deal-arrow">↓</div>
+            <div className="deal-step"><b>3</b><span>Fondos liberados</span></div>
+          </div>
         </div>
       </section>
 
-      <section className="sec">
-        <div className="stag">Proceso</div>
-        <h2 className="sh">5 pasos, <span>un trato seguro</span></h2>
-        <div className="sgrd">
+      <section className="escrow-stats" id="tarifas">
+        {[["$0", "Registro"], ["4.5% + IMP", "Comisión base"], ["1 hora", "Verificación objetivo"], ["100%", "Trazabilidad del trato"]].map(([n, l]) => (
+          <div key={l}><strong>{n}</strong><span>{l}</span></div>
+        ))}
+      </section>
+
+      <section className="escrow-section" id="como-funciona">
+        <div className="stag">Cómo funciona</div>
+        <h2>Un flujo simple para operaciones reales.</h2>
+        <div className="escrow-cards">
           {[
-            ["1", "🤝", "Crear trato",  "Define precio y condiciones"],
-            ["2", "💳", "Pagar",        "El dinero queda en TratoYa"],
-            ["3", "📦", "Entregar",     "Vendedor envía con guía"],
-            ["4", "✅", "Confirmar",    "Comprador verifica"],
-            ["5", "💰", "Liberar",      "Dinero al vendedor en 24h"],
-          ].map(([n, ic, t, d], i) => (
-            <div key={i} className="sti">
-              <div className="stn">{n}</div>
-              <div style={{ fontSize: 24, marginBottom: 11 }}>{ic}</div>
-              <div style={{ fontWeight: 700, fontSize: 13.5, marginBottom: 4 }}>{t}</div>
-              <div style={{ fontSize: 12.5, color: "var(--s600)", lineHeight: 1.5 }}>{d}</div>
+            ["Crear trato", "Define monto, contraparte y condiciones."],
+            ["Pagar seguro", "El comprador transfiere a la llave TratoYA y adjunta comprobante."],
+            ["Verificar", "El panel admin revisa el pago y activa la entrega."],
+            ["Liberar", "Cuando todo está correcto, se consigna al vendedor con comprobante."],
+          ].map(([t, d], i) => (
+            <div className="escrow-card" key={t}>
+              <b>{i + 1}</b>
+              <h3>{t}</h3>
+              <p>{d}</p>
             </div>
           ))}
         </div>
       </section>
 
-      <section style={{ background: "var(--n)", padding: "52px 44px", textAlign: "center" }}>
-        <h2 style={{ fontFamily: "Manrope", fontSize: 33, fontWeight: 800, color: "#fff", marginBottom: 11 }}>
-          ¿Listo para un trato seguro?
-        </h2>
-        <p style={{ fontSize: 15, color: "rgba(255,255,255,.5)", marginBottom: 26 }}>Regístrate gratis. Sin tarjeta requerida.</p>
-        <button className="btn bp blg" onClick={() => goAuth("register")}>🔒 Crear cuenta gratis</button>
+      <section className="escrow-protect" id="proteccion">
+        <h2>Diseñado para reducir riesgo, no para complicar el trato.</h2>
+        <p>TratoYA registra cada paso: reporte de pago, comprobante, aprobación, entrega, confirmación y liberación de fondos.</p>
+        <button className="btn bp blg" onClick={() => goAuth("register")}>Empezar ahora</button>
       </section>
 
-      <footer style={{ background: "#040F1E", padding: "22px 44px", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
-        <div style={{ color: "rgba(255,255,255,.3)", fontSize: 11.5 }}>
-          © 2026 TratoYa · NEXEN / Invention Technologies S.A.S. · Cartagena de Indias
-        </div>
-        <div className="footer-links" style={{ display: "flex", gap: 16 }}>
-          {["Términos", "Privacidad", "Soporte"].map((l) => (
-            <span key={l} style={{ color: "rgba(255,255,255,.3)", fontSize: 11.5, cursor: "pointer" }}>{l}</span>
-          ))}
-        </div>
+      <footer id="soporte">
+        <span>© 2026 TratoYA · Invention Technologies S.A.S.</span>
+        <span>soporte@tratoya.com</span>
       </footer>
     </div>
   );

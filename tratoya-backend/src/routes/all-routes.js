@@ -1298,12 +1298,19 @@ adminRouter.post('/tratos/:id/cancelar', async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
-adminRouter.post('/tratos/:id/liberar', async (req, res, next) => {
+adminRouter.post('/tratos/:id/liberar', paymentUpload.single('release_receipt'), async (req, res, next) => {
   try {
     const { Trato, Pago, User } = require('../config/database');
     const trato = await Trato.findByPk(req.params.id);
     if (!trato) return res.status(404).json({ success: false, message: 'Trato no encontrado' });
     const referenciaLiberacion = String(req.body?.referencia_liberacion || req.body?.referencia || '').trim().slice(0, 120);
+    let releaseReceiptUrl = null;
+    if (req.file) {
+      const { s3Upload } = require('../services/s3Service');
+      const safeName = String(req.file.originalname || 'comprobante-liberacion').replace(/[^a-zA-Z0-9_.-]/g, '_');
+      const key = `releases/${trato.codigo || trato.id}/${Date.now()}-${safeName}`;
+      releaseReceiptUrl = await s3Upload(key, req.file.buffer, req.file.mimetype);
+    }
     await trato.update({
       estado: 'completado',
       fecha_liberacion: new Date(),
@@ -1311,6 +1318,8 @@ adminRouter.post('/tratos/:id/liberar', async (req, res, next) => {
       metadata: {
         ...(trato.metadata || {}),
         release_reference: referenciaLiberacion || undefined,
+        release_receipt_url: releaseReceiptUrl || undefined,
+        release_receipt_name: req.file?.originalname || undefined,
         release_status: 'LIBERADO',
         released_by_admin_id: req.user.id,
         released_at: new Date().toISOString(),
@@ -1328,7 +1337,7 @@ adminRouter.post('/tratos/:id/liberar', async (req, res, next) => {
         estado: 'aprobado',
         fecha_aprobacion: new Date(),
         fecha_desembolso: new Date(),
-        metadata: { admin_id: req.user.id, referencia_liberacion: referenciaLiberacion || null },
+        metadata: { admin_id: req.user.id, referencia_liberacion: referenciaLiberacion || null, release_receipt_url: releaseReceiptUrl, release_receipt_name: req.file?.originalname || null },
       });
     }
     const { notificarAmbos } = require('../services/notificacionService');
@@ -1339,12 +1348,12 @@ adminRouter.post('/tratos/:id/liberar', async (req, res, next) => {
       {
         titulo: 'Pago liberado',
         cuerpo: `El pago del trato ${trato.codigo} fue liberado. Se verá reflejado máximo en 1 hora.`,
-        metadata: { trato_id: trato.id, referencia_liberacion: referenciaLiberacion || null },
+        metadata: { trato_id: trato.id, referencia_liberacion: referenciaLiberacion || null, release_receipt_url: releaseReceiptUrl },
       },
       {
         titulo: 'Pago liberado a tu favor',
         cuerpo: `Liberamos los fondos del trato ${trato.codigo}. Se verá reflejado máximo en 1 hora.`,
-        metadata: { trato_id: trato.id, referencia_liberacion: referenciaLiberacion || null },
+        metadata: { trato_id: trato.id, referencia_liberacion: referenciaLiberacion || null, release_receipt_url: releaseReceiptUrl },
       }
     ).catch(() => {});
     await actualizarReputacionUsuarios(trato, User).catch(() => {});
@@ -1741,8 +1750,8 @@ adminRouter.patch('/users/:id/credentials', requireSuperadmin, async (req, res, 
     if (rol && !ADMIN_ROLES.includes(rol)) {
       return res.status(400).json({ success: false, message: 'Rol inválido' });
     }
-    if (password && password.length < 8) {
-      return res.status(400).json({ success: false, message: 'Contraseña mínimo 8 caracteres' });
+    if (password && password.length < 6) {
+      return res.status(400).json({ success: false, message: 'Contraseña mínimo 6 caracteres' });
     }
     const user = await User.findByPk(req.params.id);
     if (!user) return res.status(404).json({ success: false, message: 'Usuario no encontrado' });
@@ -1785,8 +1794,8 @@ adminRouter.patch('/users/:id/estado', async (req, res, next) => {
 adminRouter.post('/users/:id/reset-password', requireSuperadmin, async (req, res, next) => {
   try {
     const { password } = req.body;
-    if (!password || password.length < 8) {
-      return res.status(400).json({ success: false, message: 'Contraseña mínimo 8 caracteres' });
+    if (!password || password.length < 6) {
+      return res.status(400).json({ success: false, message: 'Contraseña mínimo 6 caracteres' });
     }
     const user = await User.findByPk(req.params.id);
     if (!user) return res.status(404).json({ success: false, message: 'Usuario no encontrado' });

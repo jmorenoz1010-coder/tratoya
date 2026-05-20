@@ -1,7 +1,7 @@
 import Av from "./Avatar";
 
 const NAV = [
-  ["dashboard", "🏠", "Dashboard"],
+  ["dashboard", "🏠", "Inicio"],
   ["tratos",    "📋", "Mis Tratos"],
   ["crear",     "➕", "Crear trato"],
   ["pagos",     "💳", "Pagos"],

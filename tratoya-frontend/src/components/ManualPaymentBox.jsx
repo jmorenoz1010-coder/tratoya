@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { fmt } from "../lib/utils";
 
-const PAYMENT_KEY = import.meta.env.VITE_MANUAL_PAYMENT_KEY || "soporte@tratoya.com";
-const QR_URL = import.meta.env.VITE_MANUAL_PAYMENT_QR_URL || `https://api.qrserver.com/v1/create-qr-code/?size=280x280&data=${encodeURIComponent(PAYMENT_KEY)}`;
+const PAYMENT_KEY = import.meta.env.VITE_MANUAL_PAYMENT_KEY || "0092187758";
+const QR_URL = import.meta.env.VITE_MANUAL_PAYMENT_QR_URL || "/nequi-breb-qr.png";
 const PAYMENT_NAME = import.meta.env.VITE_MANUAL_PAYMENT_NAME || "TratoYa";
 
 export default function ManualPaymentBox({ amount, reference, busy, onReport }) {
@@ -19,6 +19,9 @@ export default function ManualPaymentBox({ amount, reference, busy, onReport }) 
   };
 
   const ready = Boolean(receipt);
+  const copyKey = async () => {
+    try { await navigator.clipboard.writeText(PAYMENT_KEY); } catch { /* silencioso */ }
+  };
 
   if (!open) {
     return (
@@ -66,6 +69,7 @@ export default function ManualPaymentBox({ amount, reference, busy, onReport }) 
               <strong className="wrap-any">{PAYMENT_KEY}</strong>
               <em>Copiar y pegar en Nequi / Bre-B</em>
             </div>
+            <button type="button" className="manual-key-copy" onClick={copyKey} aria-label="Copiar llave">⧉ Copiar</button>
           </div>
           <div className="manual-pay-row"><span>Recibe</span><strong>{PAYMENT_NAME}</strong></div>
         </div>

@@ -293,7 +293,7 @@ export default function TratoDetalle({ tratoId, setPage, setDisputeTratoId, user
                 <div style={{ display: "flex", gap: 9, marginTop: 10, flexWrap: "wrap" }}>
                   <button className="btn bo bsm" onClick={() => { navigator.clipboard.writeText(publicTratoUrl(trato.link_compartir)); toast("Link copiado ✓", "success"); }}>🔗 Copiar link del trato</button>
                   <button className="btn bo bsm" onClick={() => {
-                    const txt = `Hola, te comparto el link de nuestro trato seguro en TratoYa:%0A%0A🔒 *${trato.titulo || trato.codigo}*%0A%0A👉 ${encodeURIComponent(publicTratoUrl(trato.link_compartir))}`;
+                    const txt = `Hola, te comparto el link de nuestro trato seguro en TratoYa:%0A%0A🔒 *${trato.titulo || trato.codigo}*%0A💰 Monto del trato: ${encodeURIComponent(fmt(montoTrato))}%0A%0A👉 ${encodeURIComponent(publicTratoUrl(trato.link_compartir))}`;
                     window.open(`https://wa.me/?text=${txt}`, "_blank");
                   }}>📲 WhatsApp</button>
                 </div>

@@ -21,7 +21,7 @@ export default function Dashboard({ setPage, setTratoId, user, toast, setUser })
       setNotifs((n.data || []).slice(0, 5));
       if (me.data) { setUserStats(me.data); setUser?.(me.data); }
     } catch (e) {
-      if (!silent) toast(e?.message || "Error cargando dashboard", "error");
+      if (!silent) toast(e?.message || "Error cargando inicio", "error");
     } finally {
       if (!silent) setLoading(false);
     }

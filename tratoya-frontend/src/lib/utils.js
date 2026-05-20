@@ -96,7 +96,7 @@ export const FINANCIAL_ENTITIES = [
 ];
 
 export const passwordChecks = (password, f = {}) => [
-  ["length", "Mínimo 12 caracteres", String(password || "").length >= 12],
+  ["length", "Mínimo 6 caracteres", String(password || "").length >= 6],
   ["upper", "Una mayúscula", /[A-Z]/.test(password || "")],
   ["lower", "Una minúscula", /[a-z]/.test(password || "")],
   ["number", "Un número", /\d/.test(password || "")],
@@ -164,13 +164,13 @@ export const calcularComisionUI = (monto, quien = "comprador") => {
 
 export const ESTADO = {
   borrador:               { l: "Borrador",                       c: "bg" },
-  activo:                 { l: "Activo",                         c: "nb" },
-  pago_pendiente:         { l: "Pago pendiente",                 c: "or" },
-  pago_retenido:          { l: "🔒 Pago en custodia de TratoYA", c: "nb" },
-  en_entrega:             { l: "📦 En entrega",                  c: "or" },
-  pendiente_confirmacion: { l: "Por confirmar",                  c: "or" },
-  confirmado:             { l: "Por liberar",                    c: "gn" },
-  completado:             { l: "✅ Completado",                  c: "gn" },
+  activo:                 { l: "Listo para pago",                c: "nb" },
+  pago_pendiente:         { l: "Revisar comprobante",            c: "or" },
+  pago_retenido:          { l: "Pago confirmado · entregar",     c: "nb" },
+  en_entrega:             { l: "Entrega en curso",               c: "or" },
+  pendiente_confirmacion: { l: "Comprador debe confirmar",       c: "or" },
+  confirmado:             { l: "Listo para liberar",             c: "gn" },
+  completado:             { l: "Completado",                     c: "gn" },
   disputado:              { l: "⚖️ En disputa",                  c: "rd" },
   cancelado:              { l: "Cancelado",                      c: "bg" },
   expirado:               { l: "Expirado",                       c: "bg" },

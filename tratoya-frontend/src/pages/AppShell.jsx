@@ -91,7 +91,7 @@ function PageLoader() {
 }
 
 const PAGE_TITLES = {
-  dashboard:  "Dashboard",
+  dashboard:  "Inicio",
   tratos:     "Mis Tratos",
   crear:      "Crear trato",
   detalle:    "Detalle",
