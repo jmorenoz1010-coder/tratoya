@@ -54,7 +54,7 @@ export default function Pagos({ toast }) {
                     </td>
                     <td style={{ fontSize: 12 }}>{p.tipo || "cargo"}</td>
                     <td style={{ fontFamily: "Manrope", fontWeight: 700 }}>{fmt(p.monto)}</td>
-                    <td style={{ fontSize: 12 }}>{p.pasarela || "ePayco"}</td>
+                    <td style={{ fontSize: 12 }}>{p.pasarela || "Transferencia"}</td>
                     <td><span className={`bdg ${st.cls}`}>{st.label}</span></td>
                     <td style={{ fontSize: 10, color: "var(--s400)", maxWidth: 90, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.referencia || p.pasarela_ref || "—"}</td>
                     <td style={{ fontSize: 11.5, color: "var(--s400)" }}>{fmtDate(p.createdAt)}</td>

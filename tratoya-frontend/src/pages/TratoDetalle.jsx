@@ -1,11 +1,11 @@
 import { useState, useEffect, useRef } from "react";
 import { api } from "../lib/api";
-import { fmt, fmtDate, timeAgo, ESTADO, TIPO_ICO, calcularComisionUI, openEpaycoCheckout, parseCopAmount } from "../lib/utils";
+import { fmt, fmtDate, timeAgo, ESTADO, TIPO_ICO, calcularComisionUI, parseCopAmount } from "../lib/utils";
 import CommissionBreakdown from "../components/CommissionBreakdown";
 import DealProgress from "../components/DealProgress";
 import StarRating from "../components/StarRating";
 import Avatar from "../components/Avatar";
-import EpaycoMark from "../components/EpaycoMark";
+import ManualPaymentBox from "../components/ManualPaymentBox";
 
 function ReviewBox({ tratoId, reviews, user, toast, onSaved }) {
   const mine = reviews.find((r) => r.autor_id === user?.id);
@@ -64,7 +64,7 @@ export default function TratoDetalle({ tratoId, setPage, setDisputeTratoId, user
   const [guia, setGuia] = useState({ guia: "", transportadora: "", medio_envio: "servientrega", numero_contacto: "", punto_encuentro: "" });
   const [pruebaFotos, setPruebaFotos] = useState([]);
   const [busy, setBusy] = useState(false);
-  const [paymentOrder, setPaymentOrder] = useState(null);
+  const [paymentReport, setPaymentReport] = useState(null);
   const previousEstadoRef = useRef(null);
   const chatEndRef = useRef(null);
 
@@ -113,17 +113,13 @@ export default function TratoDetalle({ tratoId, setPage, setDisputeTratoId, user
     setBusy(false);
   };
 
-  const pagarEpayco = async () => {
-    const montoPago = parseCopAmount(trato?.monto);
-    const pago = calcularComisionUI(montoPago, trato?.quien_paga_comision || "comprador");
-    if (!window.confirm(`Vas a pagar ${fmt(pago.totalPagar)} COP por este acuerdo en TratoYa. Este pago se procesará por ePayco.`)) return;
+  const reportarPagoManual = async ({ method, transactionRef, notes }) => {
     setBusy(true);
     try {
-      const r = await api.post(`/payments/epayco/create`, { dealId: tratoId });
-      const order = r.data || r;
-      if (!order?.publicKey || !order?.checkoutData) throw new Error("No se pudo generar el checkout de ePayco");
-      setPaymentOrder(order);
-      await openEpaycoCheckout(order);
+      const r = await api.post(`/payments/manual/report`, { dealId: tratoId, method, transactionRef, notes });
+      setPaymentReport(r.data || r);
+      toast("Pago reportado. Lo revisaremos en máximo 2 horas.", "success");
+      load();
     } catch (e) { toast(e.message, "error"); }
     setBusy(false);
   };
@@ -299,11 +295,9 @@ export default function TratoDetalle({ tratoId, setPage, setDisputeTratoId, user
             {/* Acción del comprador: pagar */}
             {canPay && (
               <div style={{ marginTop: 11 }}>
-                <button className="btn bp blg" style={{ width: "100%" }} onClick={pagarEpayco} disabled={busy}>
-                  {busy ? <div className="spin" /> : <><span>Pagar con</span><EpaycoMark /></>}
-                </button>
-                {paymentOrder?.reference && (
-                  <div style={{ fontSize: 11, color: "var(--s600)", marginTop: 8 }}>Referencia: {paymentOrder.reference}</div>
+                <ManualPaymentBox amount={commissionCalc.totalPagar} reference={trato.codigo} busy={busy} onReport={reportarPagoManual} />
+                {paymentReport?.reference && (
+                  <div style={{ fontSize: 11, color: "var(--s600)", marginTop: 8 }}>Reporte: {paymentReport.reference}</div>
                 )}
               </div>
             )}

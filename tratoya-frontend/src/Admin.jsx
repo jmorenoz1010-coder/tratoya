@@ -1693,7 +1693,6 @@ function ComisionesPanel({ toast }) {
     daviplata:        { label: "Daviplata",  pct: 0.020, fijo: 0   },
     tarjeta_credito:  { label: "T. Crédito", pct: 0.030, fijo: 0   },
     tarjeta_debito:   { label: "T. Débito",  pct: 0.020, fijo: 0   },
-    epayco:           { label: "ePayco Davivienda", pct: 0.0264, fijo: 690 },
     transferencia:    { label: "Transferencia", pct: 0, fijo: 0 },
     efectivo:         { label: "Efectivo",   pct: 0, fijo: 0 },
   };
@@ -1721,7 +1720,7 @@ function ComisionesPanel({ toast }) {
     if (!byMetodo[metodo]) byMetodo[metodo] = { count: 0, volumen: 0, comision_pasarela: 0 };
     byMetodo[metodo].count++;
     byMetodo[metodo].volumen += parseFloat(p.monto || 0);
-    const tasa = TASAS_PASARELA[metodo] || TASAS_PASARELA.epayco;
+    const tasa = TASAS_PASARELA[metodo] || TASAS_PASARELA.transferencia;
     byMetodo[metodo].comision_pasarela += parseFloat(p.monto || 0) * tasa.pct + tasa.fijo;
   });
 
@@ -1755,7 +1754,7 @@ function ComisionesPanel({ toast }) {
             <div className="card" style={{ padding: "18px 20px", borderLeft: "4px solid var(--rd)" }}>
               <div style={{ fontSize: 11, color: "var(--s400)", fontWeight: 600, textTransform: "uppercase", letterSpacing: ".5px", marginBottom: 6 }}>Deducciones Pasarelas</div>
               <div style={{ fontFamily: "Syne", fontSize: 28, fontWeight: 800, color: "var(--rd)" }}>−{fmt(totalDeducciones)}</div>
-              <div style={{ fontSize: 12, color: "var(--s600)", marginTop: 4 }}>PSE, Nequi, ePayco, Daviplata</div>
+              <div style={{ fontSize: 12, color: "var(--s600)", marginTop: 4 }}>Bre-B, Nequi, Daviplata, transferencia</div>
             </div>
             <div className="card" style={{ padding: "18px 20px", borderLeft: "4px solid var(--n)" }}>
               <div style={{ fontSize: 11, color: "var(--s400)", fontWeight: 600, textTransform: "uppercase", letterSpacing: ".5px", marginBottom: 6 }}>💵 Ingreso Neto TratoYa</div>
@@ -1774,7 +1773,7 @@ function ComisionesPanel({ toast }) {
                   <thead><tr><th>Método</th><th>Transacciones</th><th>Volumen</th><th>% Pasarela</th><th>Costo Pasarela</th><th>Neto Estimado</th></tr></thead>
                   <tbody>
                     {Object.entries(byMetodo).map(([metodo, datos]) => {
-                      const tasa = TASAS_PASARELA[metodo] || TASAS_PASARELA.epayco;
+                      const tasa = TASAS_PASARELA[metodo] || TASAS_PASARELA.transferencia;
                       const costoStr = tasa.pct > 0 ? `${(tasa.pct * 100).toFixed(1)}%${tasa.fijo > 0 ? ` + $${tasa.fijo.toLocaleString("es-CO")}` : ""}` : "Sin costo";
                       const neto_ = datos.volumen - datos.comision_pasarela;
                       return (

@@ -112,10 +112,8 @@ export const passwordChecks = (password, f = {}) => [
 export const strongPasswordOk = (password, f) =>
   passwordChecks(password, f).every(([, , ok]) => ok);
 
-export const calcularCostoEpaycoUI = (totalCobrado) => {
-  const iva = 1.19;
-  if (totalCobrado <= 60000) return Math.ceil(2200 * iva);
-  return Math.ceil((totalCobrado * 0.0264 + 690) * iva);
+export const calcularCostoPasarelaManualUI = () => {
+  return 0;
 };
 
 export const calcularCostoGmfUI = (totalCobrado, montoDesembolso) =>
@@ -124,27 +122,23 @@ export const calcularCostoGmfUI = (totalCobrado, montoDesembolso) =>
 export const calcularComisionUI = (monto, quien = "comprador") => {
   let comisionTratoYa = 0;
   let label = "";
-  if (monto > 0 && monto <= 50000) { comisionTratoYa = 1500; label = "Incl. impuestos"; }
-  else if (monto <= 500000) { comisionTratoYa = Math.round(monto * 0.055); label = "5.5%"; }
-  else if (monto <= 2000000) { comisionTratoYa = Math.round(monto * 0.045); label = "4.5%"; }
-  else if (monto <= 10000000) { comisionTratoYa = Math.round(monto * 0.035); label = "3.5%"; }
-  else if (monto <= 50000000) { comisionTratoYa = Math.round(monto * 0.029); label = "2.9%"; }
+  if (monto > 0 && monto <= 50000000) { comisionTratoYa = Math.round(monto * 0.045); label = "4.5%"; }
   else { comisionTratoYa = 0; label = "Negociable"; }
 
   let comision = comisionTratoYa;
-  let costoEpayco = 0;
+  let costoPasarela = 0;
   let costoGmf = 0;
   for (let i = 0; i < 12; i += 1) {
     const buyerPart =
       quien === "comprador" ? comision : quien === "compartida" ? Math.ceil(comision / 2) : 0;
     const sellerPart =
       quien === "vendedor" ? comision : quien === "compartida" ? Math.floor(comision / 2) : 0;
-    const nextCostoEpayco = calcularCostoEpaycoUI(monto + buyerPart);
+    const nextCostoPasarela = calcularCostoPasarelaManualUI();
     const nextCostoGmf = calcularCostoGmfUI(monto + buyerPart, monto - sellerPart);
-    const nextComision = comisionTratoYa + nextCostoEpayco + nextCostoGmf;
-    if (nextComision === comision) { costoEpayco = nextCostoEpayco; costoGmf = nextCostoGmf; break; }
+    const nextComision = comisionTratoYa + nextCostoPasarela + nextCostoGmf;
+    if (nextComision === comision) { costoPasarela = nextCostoPasarela; costoGmf = nextCostoGmf; break; }
     comision = nextComision;
-    costoEpayco = nextCostoEpayco;
+    costoPasarela = nextCostoPasarela;
     costoGmf = nextCostoGmf;
   }
 
@@ -156,7 +150,7 @@ export const calcularComisionUI = (monto, quien = "comprador") => {
   return {
     comision,
     comisionTratoYa,
-    costoEpayco,
+    costoPasarela,
     costoGmf,
     label,
     totalPagar: monto + comprador,
@@ -164,53 +158,6 @@ export const calcularComisionUI = (monto, quien = "comprador") => {
     compradorComision: comprador,
     vendedorComision: vendedor,
   };
-};
-
-export const loadEpaycoCheckout = (version = "1") =>
-  new Promise((resolve, reject) => {
-    if (window.ePayco?.checkout) return resolve(window.ePayco);
-    const isV2 = String(version) === "2";
-    const existing = document.querySelector(`script[data-epayco-checkout="${isV2 ? "v2" : "v1"}"]`);
-    if (existing) {
-      existing.addEventListener("load", () => resolve(window.ePayco), { once: true });
-      existing.addEventListener(
-        "error",
-        () => reject(new Error("No se pudo cargar el checkout de ePayco")),
-        { once: true }
-      );
-      return;
-    }
-    const script = document.createElement("script");
-    script.src = isV2 ? "https://checkout.epayco.co/checkout-v2.js" : "https://checkout.epayco.co/checkout.js";
-    script.async = true;
-    script.dataset.epaycoCheckout = isV2 ? "v2" : "v1";
-    script.onload = () =>
-      window.ePayco?.checkout
-        ? resolve(window.ePayco)
-        : reject(new Error("Checkout de ePayco no disponible"));
-    script.onerror = () => reject(new Error("No se pudo cargar el checkout de ePayco"));
-    document.body.appendChild(script);
-  });
-
-export const openEpaycoCheckout = async (order) => {
-  const isV2 = String(order.checkoutVersion || order.checkout_version || "") === "2" || Boolean(order.sessionId);
-  const ePayco = await loadEpaycoCheckout(isV2 ? "2" : "1");
-  if (isV2) {
-    if (!order.sessionId) throw new Error("No se recibió la sesión de ePayco");
-    const checkout = ePayco.checkout.configure({
-      sessionId: order.sessionId,
-      type: order.checkoutType || "standard",
-      test: order.test === true || order.test === "true",
-    });
-    if (checkout.onErrors) checkout.onErrors((errors) => console.error("ePayco checkout error", errors));
-    checkout.open();
-    return;
-  }
-  const handler = ePayco.checkout.configure({
-    key: order.publicKey,
-    test: order.checkoutData?.test === true || order.checkoutData?.test === "true",
-  });
-  handler.open(order.checkoutData);
 };
 
 export const ESTADO = {

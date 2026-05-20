@@ -4,10 +4,10 @@ import { api } from "../lib/api";
 const STATUS_COPY = {
   PAID:             ["✅", "Pago recibido",      "Tus fondos quedaron registrados en TratoYA."],
   PAYMENT_PENDING:  ["⏳", "Pago pendiente",     "Tu pago está pendiente de confirmación."],
-  CREATED:          ["⏳", "Verificando pago",   "Estamos verificando tu pago con ePayco..."],
+  CREATED:          ["⏳", "Verificando pago",   "Estamos verificando tu pago manual."],
   PAYMENT_DECLINED: ["❌", "Pago rechazado",     "El pago fue rechazado. Puedes intentar nuevamente."],
   PAYMENT_ERROR:    ["⚠️", "Error en el pago",  "Hubo un error procesando el pago."],
-  PAYMENT_VOIDED:   ["↩️", "Pago anulado",      "El pago fue anulado por ePayco."],
+  PAYMENT_VOIDED:   ["↩️", "Pago anulado",      "El pago fue anulado."],
 };
 
 export default function PaymentResultPage({ session, goAuth, toast }) {
@@ -30,7 +30,7 @@ export default function PaymentResultPage({ session, goAuth, toast }) {
   }, [session, reference]);
 
   const status = result?.status;
-  const [icon, title, body] = STATUS_COPY[status] || ["💳", "Resultado del pago", "Estamos verificando tu pago con ePayco..."];
+  const [icon, title, body] = STATUS_COPY[status] || ["💳", "Resultado del pago", "Estamos verificando tu pago manual."];
 
   return (
     <div style={{ minHeight: "100vh", display: "grid", placeItems: "center", background: "var(--s50)", padding: 20 }}>
@@ -42,7 +42,7 @@ export default function PaymentResultPage({ session, goAuth, toast }) {
         ) : loading ? (
           <div className="spin" style={{ margin: "18px auto" }} />
         ) : !reference ? (
-          <p style={{ color: "var(--s600)" }}>ePayco no envió una referencia de pago.</p>
+          <p style={{ color: "var(--s600)" }}>No encontramos una referencia de pago.</p>
         ) : (
           <p style={{ color: "var(--s600)" }}>{body}</p>
         )}

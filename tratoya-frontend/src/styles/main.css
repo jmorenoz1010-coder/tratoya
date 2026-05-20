@@ -187,6 +187,30 @@ tbody tr:hover td{background:var(--s50)}
 .share-actions .share-wa{width:100%;padding-left:14px;padding-right:14px}
 .share-actions .share-copy{min-width:94px;padding-left:14px;padding-right:14px}
 
+/* ── Manual secure payment ───────────────────────────── */
+.secure-pay-btn{width:100%;border:0;border-radius:15px;background:linear-gradient(135deg,var(--n) 0%,#123861 100%);color:#fff;box-shadow:0 14px 34px rgba(7,25,47,.24);min-height:66px;padding:12px 16px;display:flex;align-items:center;gap:12px;cursor:pointer;text-align:left;transition:transform .18s,box-shadow .18s}
+.secure-pay-btn:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 18px 42px rgba(7,25,47,.28)}
+.secure-pay-btn:disabled{opacity:.55;cursor:not-allowed}
+.secure-pay-ico{width:42px;height:42px;border-radius:12px;background:var(--g);color:var(--n);display:flex;align-items:center;justify-content:center;font-size:21px;flex-shrink:0}
+.secure-pay-btn strong{display:block;font-family:'Manrope';font-size:15px;line-height:1.15}
+.secure-pay-btn small{display:block;color:rgba(255,255,255,.7);font-size:11.5px;line-height:1.35;margin-top:3px}
+.manual-pay-card{background:#fff;border:1px solid var(--s100);border-radius:15px;padding:15px;box-shadow:0 14px 36px rgba(7,25,47,.12)}
+.manual-pay-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:12px}
+.manual-pay-kicker{font-size:10px;font-weight:800;color:var(--g2);text-transform:uppercase;letter-spacing:.7px;margin-bottom:3px}
+.manual-pay-head h3{font-size:18px}
+.manual-pay-grid{display:grid;grid-template-columns:160px 1fr;gap:13px;align-items:stretch}
+.manual-qr{border:1.5px dashed var(--s200);border-radius:13px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px;background:var(--s50);min-height:160px;overflow:hidden;padding:10px}
+.manual-qr img{width:100%;max-height:190px;object-fit:contain;background:#fff;border-radius:10px}
+.manual-qr-empty{font-family:'Manrope';font-weight:800;color:var(--s400);font-size:14px}
+.manual-qr-link{font-size:12px;font-weight:800;color:var(--g2);text-decoration:none}
+.manual-pay-data{display:flex;flex-direction:column;gap:8px}
+.manual-pay-row{background:var(--s50);border-radius:10px;padding:8px 10px}
+.manual-pay-row span{display:block;font-size:10.5px;color:var(--s500);margin-bottom:2px}
+.manual-pay-row strong{font-family:'Manrope';font-size:14px;color:var(--n)}
+.manual-pay-note{background:var(--cr);border-radius:11px;padding:10px 12px;font-size:12.5px;color:var(--s800);margin:12px 0}
+.manual-pay-form{gap:9px}
+.manual-pay-foot{text-align:center;color:var(--s600);font-size:11.5px;margin-top:9px}
+
 /* ── KPI cards ──────────────────────────────────────── */
 .kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:11px;margin-bottom:18px}
 .kpi{background:#fff;border-radius:13px;padding:15px 17px;border:1px solid var(--s100);transition:transform .2s,box-shadow .2s}
@@ -361,4 +385,6 @@ tbody tr:hover td{background:var(--s50)}
   .footer-links{display:none}
   .share-actions{grid-template-columns:1fr}
   .share-actions .share-copy{width:100%;min-width:0}
+  .manual-pay-grid{grid-template-columns:1fr}
+  .manual-qr{min-height:220px}
 }

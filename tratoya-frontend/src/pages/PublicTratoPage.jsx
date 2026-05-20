@@ -1,14 +1,14 @@
 import { useState, useEffect } from "react";
 import { api } from "../lib/api";
-import { fmt, ESTADO, calcularComisionUI, openEpaycoCheckout, parseCopAmount } from "../lib/utils";
+import { ESTADO, calcularComisionUI, parseCopAmount } from "../lib/utils";
 import CommissionBreakdown from "../components/CommissionBreakdown";
-import EpaycoMark from "../components/EpaycoMark";
+import ManualPaymentBox from "../components/ManualPaymentBox";
 
 export default function PublicTratoPage({ link, session, goAuth, toast }) {
   const [trato, setTrato] = useState(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
-  const [order, setOrder] = useState(null);
+  const [paymentReport, setPaymentReport] = useState(null);
 
   const load = async () => {
     setLoading(true);
@@ -21,17 +21,13 @@ export default function PublicTratoPage({ link, session, goAuth, toast }) {
 
   useEffect(() => { load(); }, [link]);
 
-  const pagar = async (target = trato) => {
-    const montoPago = parseCopAmount(target?.monto);
-    const pago = calcularComisionUI(montoPago, target?.quien_paga_comision || "comprador");
-    if (!window.confirm(`Vas a pagar ${fmt(pago.totalPagar)} COP por este acuerdo en TratoYa. Este pago se procesará por ePayco.`)) return;
+  const reportarPago = async ({ method, transactionRef, notes }, target = trato) => {
     setBusy(true);
     try {
-      const r = await api.post(`/payments/epayco/create`, { dealId: target.id });
-      const paymentOrder = r.data || r;
-      setOrder(paymentOrder);
+      const r = await api.post(`/payments/manual/report`, { dealId: target.id, method, transactionRef, notes });
+      setPaymentReport(r.data || r);
       setTrato((prev) => prev ? { ...prev, estado: "pago_pendiente" } : prev);
-      await openEpaycoCheckout(paymentOrder);
+      toast("Pago reportado. Lo revisaremos en máximo 2 horas.", "success");
     } catch (e) { toast(e.message, "error"); }
     setBusy(false);
   };
@@ -43,9 +39,8 @@ export default function PublicTratoPage({ link, session, goAuth, toast }) {
       const r = await api.put(`/tratos/public/${link}/activar`);
       const accepted = r.data;
       setTrato(accepted);
-      toast("Trato aceptado. Continuemos con el pago.", "success");
+      toast("Trato aceptado. Continúa con el pago seguro.", "success");
       setBusy(false);
-      await pagar(accepted);
       return;
     } catch (e) { toast(e.message, "error"); }
     setBusy(false);
@@ -108,7 +103,7 @@ export default function PublicTratoPage({ link, session, goAuth, toast }) {
           )}
 
           <div style={{ marginBottom: 18 }}>
-            <CommissionBreakdown monto={montoTrato} quien={quienComision} note="Este es el valor real que se usará para el checkout de ePayco." />
+            <CommissionBreakdown monto={montoTrato} quien={quienComision} note="Este es el valor exacto que debes transferir para activar la custodia TratoYa." />
           </div>
 
           {!session ? (
@@ -119,7 +114,7 @@ export default function PublicTratoPage({ link, session, goAuth, toast }) {
           ) : isSeller ? (
             <div style={{ background: "var(--cr)", padding: 13, borderRadius: 10, fontSize: 13, color: "var(--s600)" }}>
               <div style={{ fontWeight: 700, color: "var(--n)", marginBottom: 4 }}>Este link es para que tu contraparte acepte y pague.</div>
-              <div style={{ marginBottom: 12 }}>Comparte este link con tu comprador para que lo acepte y pague con ePayco.</div>
+              <div style={{ marginBottom: 12 }}>Comparte este link con tu comprador para que lo acepte y pague de forma protegida.</div>
               <div style={{ display: "flex", gap: 9, flexWrap: "wrap" }}>
                 <button className="btn bo" onClick={() => { window.location.href = "/"; }}>Ir a mi dashboard</button>
               </div>
@@ -128,10 +123,8 @@ export default function PublicTratoPage({ link, session, goAuth, toast }) {
             <button className="btn bp blg" onClick={aceptar} disabled={busy}>{busy ? <div className="spin" /> : "Aceptar trato y continuar al pago"}</button>
           ) : canPay ? (
             <div>
-              <button className="btn bp blg" style={{ width: "100%" }} onClick={() => pagar()} disabled={busy}>
-                {busy ? <div className="spin" /> : <><span>Pagar con</span><EpaycoMark /></>}
-              </button>
-              {order?.reference && <div style={{ fontSize: 11, color: "var(--s600)", marginTop: 8 }}>Referencia: {order.reference}</div>}
+              <ManualPaymentBox amount={calcularComisionUI(montoTrato, quienComision).totalPagar} reference={trato.codigo} busy={busy} onReport={(payload) => reportarPago(payload)} />
+              {paymentReport?.reference && <div style={{ fontSize: 11, color: "var(--s600)", marginTop: 8 }}>Reporte: {paymentReport.reference}</div>}
             </div>
           ) : (
             <div style={{ background: "var(--cr)", padding: 13, borderRadius: 10, fontSize: 13, color: "var(--s600)" }}>

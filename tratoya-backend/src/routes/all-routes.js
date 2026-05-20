@@ -282,10 +282,14 @@ paymentsRouter.all('/epayco/response', (req, res) => {
 paymentsRouter.use(auth);
 
 paymentsRouter.post('/wompi/create', async (req, res, next) => {
-  return res.status(410).json({ success: false, message: 'Wompi fue desactivado. TratoYA ahora procesa pagos con ePayco.' });
+  return res.status(410).json({ success: false, message: 'Wompi fue desactivado. TratoYa ahora procesa pagos por transferencia manual verificada.' });
 });
 
 paymentsRouter.post('/epayco/create', async (req, res, next) => {
+  return res.status(410).json({
+    success: false,
+    message: 'ePayco fue desactivado. Usa /api/payments/manual/report para reportar transferencias manuales.',
+  });
   try {
     logger.info('EPAYCO_CREATE_PAYMENT_START');
     const { dealId } = req.body || {};
@@ -486,8 +490,106 @@ paymentsRouter.get('/status', async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
+paymentsRouter.post('/manual/report', async (req, res, next) => {
+  try {
+    const { dealId, transactionRef, method = 'breb', notes = '' } = req.body || {};
+    if (!dealId) return res.status(400).json({ success: false, message: 'dealId requerido' });
+    if (!transactionRef || String(transactionRef).trim().length < 4) {
+      return res.status(400).json({ success: false, message: 'Ingresa el número o referencia de la transferencia' });
+    }
+
+    const trato = await Trato.findByPk(dealId);
+    if (!trato) return res.status(404).json({ success: false, message: 'Trato no encontrado' });
+    if (trato.comprador_id !== req.user.id) {
+      return res.status(403).json({ success: false, message: 'Solo el comprador puede reportar el pago de este trato' });
+    }
+    if (!['activo', 'pago_pendiente'].includes(trato.estado)) {
+      return res.status(400).json({ success: false, message: `No se puede reportar pago en estado ${trato.estado}` });
+    }
+
+    const { calcularComision } = require('../services/comisionService');
+    const montoBase = Math.round(Number(trato.monto || 0));
+    const commission = calcularComision(montoBase, trato.quien_paga_comision || 'comprador');
+    const amountCop = commission.total_a_pagar;
+    const cleanRef = String(transactionRef).trim().slice(0, 80);
+    const reference = `MANUAL-${String(trato.codigo || trato.id).replace(/[^a-zA-Z0-9-]/g, '').slice(0, 18)}-${Date.now()}`;
+    const paymentMetadata = {
+      reference,
+      trato_codigo: trato.codigo,
+      payment_reference_required: trato.codigo,
+      transaction_ref: cleanRef,
+      method,
+      notes,
+      amount_expected: amountCop,
+      seller_receives: commission.monto_neto,
+      commission_visible: commission.monto_comision,
+      commission_base: commission.comision_tratoya,
+      costo_gmf: commission.costo_gmf,
+      reported_at: new Date().toISOString(),
+      review_sla_hours: 2,
+    };
+
+    const intent = await PaymentIntent.create({
+      provider: 'manual',
+      reference,
+      amount_cents: Math.round(amountCop * 100),
+      amount_cop: amountCop,
+      currency: 'COP',
+      status: 'PAYMENT_REPORTED',
+      deal_id: trato.id,
+      created_by_user_id: req.user.id,
+      raw_response: paymentMetadata,
+    });
+
+    await Pago.create({
+      trato_id: trato.id,
+      usuario_id: req.user.id,
+      tipo: 'retencion',
+      monto: amountCop,
+      pasarela: 'transferencia',
+      pasarela_ref: cleanRef,
+      pasarela_estado: 'REPORTED',
+      metodo_pago: method === 'nequi' ? 'nequi' : 'transferencia',
+      estado: 'procesando',
+      comision_pasarela: 0,
+      neto_desembolso: commission.monto_neto,
+      metadata: { ...paymentMetadata, payment_intent_id: intent.id },
+    });
+
+    await trato.update({
+      estado: 'pago_pendiente',
+      metadata: {
+        ...(trato.metadata || {}),
+        manual_payment: paymentMetadata,
+        payment_status: 'PAGO_REPORTADO',
+      },
+    });
+
+    await AuditLog.create({
+      user_id: req.user.id,
+      action: 'MANUAL_PAYMENT_REPORTED',
+      entity_type: 'payment_intent',
+      entity_id: intent.id,
+      metadata: { deal_id: trato.id, reference, transaction_ref: cleanRef, amount_cop: amountCop },
+    });
+
+    res.json({
+      success: true,
+      ok: true,
+      message: 'Pago reportado. Lo revisaremos en máximo 2 horas.',
+      data: {
+        reference,
+        amountCop,
+        transactionRef: cleanRef,
+        reviewSlaHours: 2,
+        status: 'PAYMENT_REPORTED',
+      },
+    });
+  } catch (err) { next(err); }
+});
+
 paymentsRouter.post('/create-order/:trato_id', async (req, res, next) => {
-  return res.status(410).json({ success: false, message: 'Este endpoint Wompi fue desactivado. Usa /api/payments/epayco/create.' });
+  return res.status(410).json({ success: false, message: 'Este endpoint fue desactivado. Usa /api/payments/manual/report.' });
 });
 
 paymentsRouter.post('/create-order-disabled/:trato_id', async (req, res, next) => {

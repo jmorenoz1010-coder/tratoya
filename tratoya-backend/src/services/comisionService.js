@@ -4,21 +4,12 @@
  */
 
 const TRAMOS = [
-  { max: 50000,    fijo: 1500,  pct: 0,     label: 'Tarifa fija' },
-  { max: 500000,   fijo: null,  pct: 0.055, label: '5.5%' },
-  { max: 2000000,  fijo: null,  pct: 0.045, label: '4.5%' },
-  { max: 10000000, fijo: null,  pct: 0.035, label: '3.5%' },
-  { max: 50000000, fijo: null,  pct: 0.029, label: '2.9%' },
+  { max: 50000000, fijo: null, pct: 0.045, label: '4.5%' },
 ];
 
 const MONTO_MINIMO_TRATO = 50000;
 const MONTO_MAXIMO_AUTOMATICO = 50000000;
-const IVA_COLOMBIA = 0.19;
 const GMF_RATE = 0.004;
-const EPAYCO_DAVIVIENDA_PCT = 0.0264;
-const EPAYCO_DAVIVIENDA_FIJO = 690;
-const EPAYCO_PSE_FIJO_HASTA = 60000;
-const EPAYCO_PSE_FIJO = 2200;
 
 function calcularComisionTratoYa(monto) {
   const tramo = TRAMOS.find(t => monto <= t.max) || TRAMOS[TRAMOS.length - 1];
@@ -29,10 +20,7 @@ function calcularComisionTratoYa(monto) {
 }
 
 function calcularCostoEpayco(totalCobrado) {
-  if (totalCobrado <= EPAYCO_PSE_FIJO_HASTA) {
-    return Math.ceil(EPAYCO_PSE_FIJO * (1 + IVA_COLOMBIA));
-  }
-  return Math.ceil((totalCobrado * EPAYCO_DAVIVIENDA_PCT + EPAYCO_DAVIVIENDA_FIJO) * (1 + IVA_COLOMBIA));
+  return 0;
 }
 
 function calcularCostoGmf(totalCobrado, montoDesembolso) {
