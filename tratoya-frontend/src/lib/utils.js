@@ -53,7 +53,7 @@ export const normalizeHandle = (value) =>
     .replace(/[^a-z0-9]/g, "")
     .slice(0, 24);
 
-export const MONTO_MINIMO_TRATO = 5000;
+export const MONTO_MINIMO_TRATO = 50000;
 
 export const DOC_TYPES = [
   ["CC", "Cédula de ciudadanía"],
@@ -118,6 +118,9 @@ export const calcularCostoEpaycoUI = (totalCobrado) => {
   return Math.ceil((totalCobrado * 0.0264 + 690) * iva);
 };
 
+export const calcularCostoGmfUI = (totalCobrado, montoDesembolso) =>
+  Math.ceil(totalCobrado * 0.004) + Math.ceil(Math.max(montoDesembolso, 0) * 0.004);
+
 export const calcularComisionUI = (monto, quien = "comprador") => {
   let comisionTratoYa = 0;
   let label = "";
@@ -130,14 +133,19 @@ export const calcularComisionUI = (monto, quien = "comprador") => {
 
   let comision = comisionTratoYa;
   let costoEpayco = 0;
-  for (let i = 0; i < 8; i += 1) {
+  let costoGmf = 0;
+  for (let i = 0; i < 12; i += 1) {
     const buyerPart =
       quien === "comprador" ? comision : quien === "compartida" ? Math.ceil(comision / 2) : 0;
+    const sellerPart =
+      quien === "vendedor" ? comision : quien === "compartida" ? Math.floor(comision / 2) : 0;
     const nextCostoEpayco = calcularCostoEpaycoUI(monto + buyerPart);
-    const nextComision = comisionTratoYa + nextCostoEpayco;
-    if (nextComision === comision) { costoEpayco = nextCostoEpayco; break; }
+    const nextCostoGmf = calcularCostoGmfUI(monto + buyerPart, monto - sellerPart);
+    const nextComision = comisionTratoYa + nextCostoEpayco + nextCostoGmf;
+    if (nextComision === comision) { costoEpayco = nextCostoEpayco; costoGmf = nextCostoGmf; break; }
     comision = nextComision;
     costoEpayco = nextCostoEpayco;
+    costoGmf = nextCostoGmf;
   }
 
   const comprador =
@@ -149,6 +157,7 @@ export const calcularComisionUI = (monto, quien = "comprador") => {
     comision,
     comisionTratoYa,
     costoEpayco,
+    costoGmf,
     label,
     totalPagar: monto + comprador,
     vendedorRecibe: monto - vendedor,

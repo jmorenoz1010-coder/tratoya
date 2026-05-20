@@ -11,9 +11,10 @@ const TRAMOS = [
   { max: 50000000, fijo: null,  pct: 0.029, label: '2.9%' },
 ];
 
-const MONTO_MINIMO_TRATO = 5000;
+const MONTO_MINIMO_TRATO = 50000;
 const MONTO_MAXIMO_AUTOMATICO = 50000000;
 const IVA_COLOMBIA = 0.19;
+const GMF_RATE = 0.004;
 const EPAYCO_DAVIVIENDA_PCT = 0.0264;
 const EPAYCO_DAVIVIENDA_FIJO = 690;
 const EPAYCO_PSE_FIJO_HASTA = 60000;
@@ -32,6 +33,10 @@ function calcularCostoEpayco(totalCobrado) {
     return Math.ceil(EPAYCO_PSE_FIJO * (1 + IVA_COLOMBIA));
   }
   return Math.ceil((totalCobrado * EPAYCO_DAVIVIENDA_PCT + EPAYCO_DAVIVIENDA_FIJO) * (1 + IVA_COLOMBIA));
+}
+
+function calcularCostoGmf(totalCobrado, montoDesembolso) {
+  return Math.ceil(totalCobrado * GMF_RATE) + Math.ceil(Math.max(montoDesembolso, 0) * GMF_RATE);
 }
 
 function calcularBuyerShare(monto, totalComision, quienPaga) {
@@ -56,17 +61,27 @@ function calcularComision(monto, quienPaga = 'comprador') {
   const { tramo, monto_comision: comision_tratoya } = calcularComisionTratoYa(monto);
   let total_comision = comision_tratoya;
   let costo_epayco = 0;
-  for (let i = 0; i < 8; i += 1) {
+  let costo_gmf = 0;
+  for (let i = 0; i < 12; i += 1) {
     const compradorShare = calcularBuyerShare(monto, total_comision, quienPaga);
+    const vendedorShare = quienPaga === 'vendedor'
+      ? total_comision
+      : quienPaga === 'compartida'
+        ? Math.floor(total_comision / 2)
+        : 0;
     const totalCobrado = monto + compradorShare;
+    const montoDesembolso = monto - vendedorShare;
     const nextCostoEpayco = calcularCostoEpayco(totalCobrado);
-    const nextTotalComision = comision_tratoya + nextCostoEpayco;
+    const nextCostoGmf = calcularCostoGmf(totalCobrado, montoDesembolso);
+    const nextTotalComision = comision_tratoya + nextCostoEpayco + nextCostoGmf;
     if (nextTotalComision === total_comision) {
       costo_epayco = nextCostoEpayco;
+      costo_gmf = nextCostoGmf;
       break;
     }
     total_comision = nextTotalComision;
     costo_epayco = nextCostoEpayco;
+    costo_gmf = nextCostoGmf;
   }
   const comprador_paga_comision = quienPaga === 'comprador'
     ? total_comision
@@ -86,6 +101,7 @@ function calcularComision(monto, quienPaga = 'comprador') {
     monto_comision: total_comision,
     comision_tratoya,
     costo_epayco,
+    costo_gmf,
     monto_neto,
     total_a_pagar,
     comprador_paga_comision,
@@ -99,6 +115,7 @@ function calcularComision(monto, quienPaga = 'comprador') {
 module.exports = {
   calcularComision,
   calcularCostoEpayco,
+  calcularCostoGmf,
   MONTO_MINIMO_TRATO,
   MONTO_MAXIMO_AUTOMATICO,
   TRAMOS,
