@@ -100,7 +100,11 @@ export default function ManualPaymentBox({ amount, reference, busy, onReport }) 
       </div>
       <div className="fg">
         <label className="fl">Comprobante de pago <span>Obligatorio</span></label>
-        <input className="inp" type="file" accept="image/*,.pdf" onChange={(e) => setReceipt(e.target.files?.[0] || null)} />
+        <label className="file-pick">
+          <input type="file" accept="image/*,.pdf" onChange={(e) => setReceipt(e.target.files?.[0] || null)} />
+          <span>Examinar...</span>
+          <strong>{receipt?.name || "No se ha seleccionado ningún archivo."}</strong>
+        </label>
       </div>
       <div className="fg">
         <label className="fl">Nota opcional</label>

@@ -12,15 +12,19 @@ const ESTADO_PAGO = {
   procesando:{ label: "Procesando",cls: "or" },
   reembolsado:{ label: "Reembolsado", cls: "nb" },
 };
+let pagosCache = [];
 
 export default function Pagos({ toast }) {
-  const [pagos, setPagos] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [pagos, setPagos] = useState(pagosCache);
+  const [loading, setLoading] = useState(pagosCache.length === 0);
   const [selected, setSelected] = useState(null);
 
   useEffect(() => {
     api.get("/payments/history")
-      .then((r) => setPagos(r.data || []))
+      .then((r) => {
+        pagosCache = r.data || [];
+        setPagos(pagosCache);
+      })
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
@@ -62,7 +66,7 @@ export default function Pagos({ toast }) {
           </div>
         </div>
       )}
-      {loading ? (
+      {loading && pagos.length === 0 ? (
         <div style={{ textAlign: "center", padding: 40 }}>
           <div className="spin" style={{ margin: "0 auto", color: "var(--s400)" }} />
         </div>

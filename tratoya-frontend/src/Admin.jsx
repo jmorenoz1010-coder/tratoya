@@ -302,7 +302,7 @@ function useToast() {
 const NAV = [
   { sec: "General" },
   { id: "dashboard",    ico: "📊", l: "Inicio" },
-  { id: "actividad",    ico: "⚡", l: "Transacciones en tiempo real" },
+  { id: "actividad",    ico: "⚡", l: "Transacciones en TR" },
   { sec: "Usuarios" },
   { id: "usuarios",     ico: "👥", l: "Todos los usuarios" },
   { id: "roles",        ico: "🛡️", l: "Roles y accesos" },
@@ -563,7 +563,7 @@ function Usuarios({ toast }) {
         <table>
           <thead><tr><th>#</th><th>Usuario</th><th>Email</th><th>Nombre de usuario</th><th>Identificación</th><th>Banco</th><th>KYC</th><th>Rol</th><th>Estado</th><th>Tratos</th><th>Registro</th><th>Acciones</th></tr></thead>
           <tbody>
-            {loading
+            {loading && pagos.length === 0
               ? <tr><td colSpan={12} style={{ textAlign: "center", padding: 32, color: "var(--s400)" }}><div className="spin" style={{ margin: "0 auto" }} /></td></tr>
               : filtered.length === 0
                 ? <tr><td colSpan={12} style={{ textAlign: "center", padding: 28, color: "var(--s400)", fontSize: 13 }}>Sin usuarios</td></tr>
@@ -1214,7 +1214,7 @@ function PersonCard({ title, user }) {
   );
 }
 
-function AdminTratoDetailModal({ detail, loading, onClose, onRefresh, onLiberar, onCancelar, toast, fullPage = false }) {
+function AdminTratoDetailModal({ detail, loading, onClose, onRefresh, onLiberar, onCancelar, toast, fullPage = false, backHref = ADMIN_ENTRY_PATH }) {
   const [destino, setDestino] = useState("ambos");
   const [mensaje, setMensaje] = useState("");
   const [sending, setSending] = useState(false);
@@ -1222,8 +1222,17 @@ function AdminTratoDetailModal({ detail, loading, onClose, onRefresh, onLiberar,
   const t = data.trato || {};
   const publicUrl = t.link_compartir ? publicTratoUrl(t.link_compartir) : null;
   const bankAccounts = data.cuentas_bancarias || [];
-  const manualPayment = t.metadata?.manual_payment || data.pagos?.find?.((p) => p.tipo === "retencion")?.metadata || null;
+  const retentionPayment = data.pagos?.find?.((p) => p.tipo === "retencion");
+  const manualPayment = t.metadata?.manual_payment || retentionPayment?.metadata || null;
   const adminCalc = t.monto ? calcularComisionUI(parseCopAmount(t.monto), t.quien_paga_comision || "comprador") : null;
+  const validateReceipt = async () => {
+    if (!retentionPayment?.id) return toast("No hay comprobante pendiente por validar.", "warn");
+    try {
+      await api.post(`/admin/pagos/${retentionPayment.id}/confirmar`);
+      toast("Comprobante validado. El flujo fue actualizado para comprador y vendedor.", "success");
+      onRefresh?.();
+    } catch (e) { toast(e.message, "error"); }
+  };
 
   const sendMessage = async () => {
     if (!mensaje.trim()) return toast("Escribe un mensaje", "warn");
@@ -1251,7 +1260,7 @@ function AdminTratoDetailModal({ detail, loading, onClose, onRefresh, onLiberar,
           </div>
           <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
             {!loading && <span className={`bdg ${TRATO_EST[t.estado] || "bg"}`}>{tratoLabel(t.estado)}</span>}
-            {fullPage ? <a className="btn bg_ bsm" href={ADMIN_ENTRY_PATH}>Volver al admin</a> : <button className="btn bg_ bsm" onClick={onClose}>×</button>}
+            {fullPage ? <a className="btn admin-back-btn" href={backHref}>← Volver</a> : <button className="btn bg_ bsm" onClick={onClose}>×</button>}
           </div>
         </div>
         <div className={fullPage ? "" : "modal-bd"} style={fullPage ? { paddingTop: 14 } : { overflowY: "auto", maxHeight: "calc(92vh - 128px)" }}>
@@ -1298,7 +1307,25 @@ function AdminTratoDetailModal({ detail, loading, onClose, onRefresh, onLiberar,
                       <span>Referencia requerida: {manualPayment.payment_reference_required || t.codigo || "—"}</span>
                       <span>Transacción: {manualPayment.transaction_ref || "—"}</span>
                       <span>Método: {manualPayment.method || "—"} · Esperado: {fmt(manualPayment.amount_expected)}</span>
+                      {manualPayment.receipt_url && <a href={manualPayment.receipt_url} target="_blank" rel="noreferrer">Abrir comprobante del comprador</a>}
                     </div>
+                  )}
+                  <div className="admin-unified-flow">
+                    {[
+                      ["Comprador paga", Boolean(manualPayment), manualPayment ? "Comprobante cargado" : "Pendiente"],
+                      ["TratoYA valida", ["pago_retenido","en_entrega","pendiente_confirmacion","confirmado","completado"].includes(t.estado), t.estado === "pago_pendiente" ? "Revisar comprobante" : "Validación"],
+                      ["Vendedor entrega", ["en_entrega","pendiente_confirmacion","confirmado","completado"].includes(t.estado), "Entrega"],
+                      ["Fondos liberados", t.estado === "completado", "Cierre"],
+                    ].map(([label, done, sub]) => (
+                      <div key={label} className={`admin-unified-step ${done ? "done" : ""}`}>
+                        <i>{done ? "✓" : "•"}</i><b>{label}</b><span>{sub}</span>
+                      </div>
+                    ))}
+                  </div>
+                  {t.estado === "pago_pendiente" && retentionPayment?.estado !== "aprobado" && (
+                    <button className="btn bp" style={{ width: "100%", marginBottom: 12 }} onClick={validateReceipt}>
+                      Validar comprobante y actualizar flujo
+                    </button>
                   )}
                   <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
                     {["comprador","vendedor","ambos"].map(x => <button key={x} className={`btn bsm ${destino === x ? "bp" : "bg_"}`} onClick={() => setDestino(x)}>{x}</button>)}
@@ -1482,7 +1509,7 @@ function TratosAdmin({ toast }) {
             {loading
               ? <tr><td colSpan={9} style={{ textAlign: "center", padding: 32 }}><div className="spin" style={{ margin: "0 auto", color: "var(--s400)" }} /></td></tr>
               : tratos.map(t => (
-                <tr key={t.id} onClick={() => { window.location.href = `${ADMIN_ENTRY_PATH}?trato=${encodeURIComponent(t.id)}`; }} style={{ cursor: "pointer" }}>
+                <tr key={t.id} onClick={() => { window.location.href = `${ADMIN_ENTRY_PATH}?trato=${encodeURIComponent(t.id)}&from=tratos`; }} style={{ cursor: "pointer" }}>
                   <td style={{ fontFamily: "Syne", fontWeight: 700, fontSize: 11, color: "var(--g2)" }}>{t.codigo}</td>
                   <td style={{ fontWeight: 600, fontSize: 12.5, maxWidth: 180 }}>{t.titulo}</td>
                   <td style={{ fontSize: 12 }}>{t.vendedor?.nombre} {t.vendedor?.apellido}<div className="mono" style={{ fontSize: 10, color: "var(--s400)" }}>{t.vendedor?.usuario_unico || "—"}</div></td>
@@ -1493,7 +1520,7 @@ function TratosAdmin({ toast }) {
                   <td style={{ fontSize: 11, color: "var(--s400)" }}>{fmtDate(t.createdAt)}</td>
                   <td>
                     <div style={{ display: "flex", gap: 4 }}>
-                      <a className="btn bg_ bsm" href={`${ADMIN_ENTRY_PATH}?trato=${encodeURIComponent(t.id)}`} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()}>👁 Detalle</a>
+                      <a className="btn bg_ bsm" href={`${ADMIN_ENTRY_PATH}?trato=${encodeURIComponent(t.id)}&from=tratos`} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()}>👁 Detalle</a>
                       {["pago_retenido","en_entrega","confirmado"].includes(t.estado) && <button className="btn bp bsm" onClick={(e) => { e.stopPropagation(); forzarLiberar(t.id); }}>💰 Liberar</button>}
                       {!["completado","cancelado","expirado"].includes(t.estado) && <button className="btn brd bsm" onClick={(e) => { e.stopPropagation(); forzarCancelar(t.id); }}>✕</button>}
                     </div>
@@ -1508,7 +1535,7 @@ function TratosAdmin({ toast }) {
   );
 }
 
-function TratoAdminFullPage({ tratoId, toast }) {
+function TratoAdminFullPage({ tratoId, toast, backHref }) {
   const [detail, setDetail] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -1535,13 +1562,15 @@ function TratoAdminFullPage({ tratoId, toast }) {
     catch (e) { toast(e.message, "error"); }
   };
 
-  return <AdminTratoDetailModal detail={detail} loading={loading} onRefresh={load} onLiberar={forzarLiberar} onCancelar={forzarCancelar} toast={toast} fullPage />;
+  return <AdminTratoDetailModal detail={detail} loading={loading} onRefresh={load} onLiberar={forzarLiberar} onCancelar={forzarCancelar} toast={toast} fullPage backHref={backHref} />;
 }
 
 // ─── PAGOS ADMIN ──────────────────────────────────────
+let adminPagosCache = [];
+
 function PagosAdmin({ toast }) {
-  const [pagos, setPagos] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [pagos, setPagos] = useState(adminPagosCache);
+  const [loading, setLoading] = useState(adminPagosCache.length === 0);
   const [q, setQ] = useState("");
   const [selected, setSelected] = useState(null);
   const [busy, setBusy] = useState(false);
@@ -1558,14 +1587,18 @@ function PagosAdmin({ toast }) {
   const load = useCallback((silent = false) => {
     if (!silent) setLoading(true);
     api.get(`/admin/pagos${q ? `?q=${encodeURIComponent(q)}` : ""}`)
-      .then(r => { setPagos(r.data || []); setLastSync(new Date()); })
+      .then(r => {
+        adminPagosCache = r.data || [];
+        setPagos(adminPagosCache);
+        setLastSync(new Date());
+      })
       .catch(() => toast("Error cargando pagos", "error"))
       .finally(() => setLoading(false));
   }, [q, toast]);
 
   useEffect(() => {
-    load();
-    const t = setInterval(() => load(true), 60000);
+    load(adminPagosCache.length > 0);
+    const t = setInterval(() => load(true), 15000);
     return () => clearInterval(t);
   }, [load]);
 
@@ -1699,7 +1732,14 @@ function PagosAdmin({ toast }) {
             </div>
             <div style={{ padding: 16 }}>
               <div className="fg"><label className="fl">Referencia de transferencia</label><input className="inp" value={releaseRef} onChange={(e) => setReleaseRef(e.target.value)} placeholder="Referencia de Nequi/Bre-B" /></div>
-              <div className="fg"><label className="fl">Comprobante de consignación al vendedor</label><input className="inp" type="file" accept="image/*,.pdf" onChange={(e) => setReleaseReceipt(e.target.files?.[0] || null)} /></div>
+              <div className="fg">
+                <label className="fl">Comprobante de consignación al vendedor</label>
+                <label className="file-pick">
+                  <input type="file" accept="image/*,.pdf" onChange={(e) => setReleaseReceipt(e.target.files?.[0] || null)} />
+                  <span>Examinar...</span>
+                  <strong>{releaseReceipt?.name || "No se ha seleccionado ningún archivo."}</strong>
+                </label>
+              </div>
               <div className="admin-flow-box">TratoYA notificará al vendedor que el dinero fue consignado y adjuntará el comprobante si lo cargas.</div>
             </div>
             <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", padding: 16, borderTop: "1px solid var(--s100)" }}>
@@ -1767,50 +1807,54 @@ function PagosAdmin({ toast }) {
         )}
       </div>}
       {selected && (
-        <div className="card admin-payment-detail">
-          <div className="modal-hd" style={{ padding: 0, border: 0, marginBottom: 10 }}>
-            <div>
-              <h2 style={{ fontSize: 17 }}>{selected.Trato?.codigo || "Trato"} · Flujo de pago</h2>
-              <p style={{ fontSize: 12, color: "var(--s500)" }}>{selected.Trato?.titulo || "Sin título"}</p>
-            </div>
-            <button className="btn bg_ bsm" onClick={() => setSelected(null)}>×</button>
-          </div>
-          <div className="admin-flow-grid">
-            <MiniField label="Monto recibido esperado" value={fmt(selected.monto)} />
-            <MiniField label="Referencia transferencia" value={selected.pasarela_ref || "—"} mono />
-            <MiniField label="Método" value={selected.metadata?.method || selected.metodo_pago || selected.pasarela || "—"} />
-            <MiniField label="Estado del pago" value={selected.estado} />
-            <MiniField label="Comprador" value={`${selected.Trato?.comprador?.nombre || selected.User?.nombre || ""} ${selected.Trato?.comprador?.apellido || selected.User?.apellido || ""}`.trim() || "—"} />
-            <MiniField label="Vendedor" value={`${selected.Trato?.vendedor?.nombre || ""} ${selected.Trato?.vendedor?.apellido || ""}`.trim() || "—"} />
-            <MiniField label="Vendedor recibe" value={fmt(selected.neto_desembolso || selected.Trato?.monto_neto || selected.Trato?.monto)} />
-            <MiniField label="Llave reportada" value={selected.metadata?.transaction_ref || selected.pasarela_ref || "—"} mono />
-          </div>
-          <div className="admin-flow-box">
-            <b>Verificación manual</b>
-            <span>1. Busca en Nequi/Bre-B la referencia {selected.pasarela_ref || selected.metadata?.transaction_ref || "reportada"}.</span>
-            <span>2. Confirma que llegó exactamente {fmt(selected.monto)} para {selected.Trato?.codigo || "el trato"}.</span>
-            <span>3. Al confirmar, el vendedor recibe notificación para entregar. Al liberar, ambos ven que se refleja máximo en 1 hora.</span>
-            {selected.metadata?.transfer_concept && <span>Concepto enviado: {selected.metadata.transfer_concept}</span>}
-            {selected.metadata?.receipt_url && <a href={selected.metadata.receipt_url} target="_blank" rel="noreferrer">Abrir comprobante adjunto</a>}
-            {selected.metadata?.release_receipt_url && <a href={selected.metadata.release_receipt_url} target="_blank" rel="noreferrer">Abrir comprobante de consignación al vendedor</a>}
-            {selected.metadata?.notes && <span>Nota comprador: {selected.metadata.notes}</span>}
-          </div>
-          {selected.Trato?.metadata || selected.Trato ? (
-            selected.Trato?.estado && selected.Trato?.monto && selected.Trato?.monto_neto && (
-              <div className="admin-flow-box" style={{ marginTop: 10 }}>
-                <b>Valores de liberación</b>
-                <span>Valor exacto al vendedor: {fmt(sellerAmount(selected))}.</span>
-                <span>Ganancia libre TratoYA 4.5%: {fmt(freeGain(selected))}.</span>
-                <span>IMP/4x1000 cubierto dentro de comisión: {fmt(coveredCosts(selected))}.</span>
-                {selected.Trato?.metadata?.manual_payment?.commission_visible && <span>Comisión total cobrada: {fmt(selected.Trato.metadata.manual_payment.commission_visible)}.</span>}
+        <div className="overlay" onClick={() => setSelected(null)}>
+          <div className="modal admin-payment-flow-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-hd">
+              <div>
+                <h2 style={{ fontSize: 17 }}>{selected.Trato?.codigo || "Trato"} · Flujo de pago</h2>
+                <p style={{ fontSize: 12, color: "var(--s500)" }}>{selected.Trato?.titulo || "Sin título"}</p>
               </div>
-            )
-          ) : null}
-          <div style={{ display: "flex", gap: 8, marginTop: 12, flexWrap: "wrap" }}>
-            {selected.tipo === "retencion" && selected.estado !== "aprobado" && <button className="btn bp" disabled={busy} onClick={() => confirmar(selected)}>Confirmar recibido</button>}
-            {selected.tipo === "retencion" && ["pendiente","procesando"].includes(selected.estado) && <button className="btn brd" disabled={busy} onClick={() => rechazar(selected)}>Marcar fallido</button>}
-            {["pago_retenido","en_entrega","confirmado","pendiente_confirmacion"].includes(selected.Trato?.estado) && <button className="btn bp" disabled={busy} onClick={() => liberar(selected)}>LIBERAR</button>}
-            <a className="btn bg_" href={`${ADMIN_ENTRY_PATH}?trato=${encodeURIComponent(selected.trato_id)}`} target="_blank" rel="noreferrer">Ver trato completo</a>
+              <button className="btn bg_ bsm" onClick={() => setSelected(null)}>×</button>
+            </div>
+            <div className="modal-bd">
+              <div className="admin-flow-grid">
+                <MiniField label="Monto recibido esperado" value={fmt(selected.monto)} />
+                <MiniField label="Referencia transferencia" value={selected.pasarela_ref || "—"} mono />
+                <MiniField label="Método" value={selected.metadata?.method || selected.metodo_pago || selected.pasarela || "—"} />
+                <MiniField label="Estado del pago" value={selected.estado} />
+                <MiniField label="Comprador" value={`${selected.Trato?.comprador?.nombre || selected.User?.nombre || ""} ${selected.Trato?.comprador?.apellido || selected.User?.apellido || ""}`.trim() || "—"} />
+                <MiniField label="Vendedor" value={`${selected.Trato?.vendedor?.nombre || ""} ${selected.Trato?.vendedor?.apellido || ""}`.trim() || "—"} />
+                <MiniField label="Vendedor recibe" value={fmt(selected.neto_desembolso || selected.Trato?.monto_neto || selected.Trato?.monto)} />
+                <MiniField label="Llave reportada" value={selected.metadata?.transaction_ref || selected.pasarela_ref || "—"} mono />
+              </div>
+              <div className="admin-flow-box">
+                <b>Verificación manual</b>
+                <span>1. Busca en Nequi/Bre-B la referencia {selected.pasarela_ref || selected.metadata?.transaction_ref || "reportada"}.</span>
+                <span>2. Confirma que llegó exactamente {fmt(selected.monto)} para {selected.Trato?.codigo || "el trato"}.</span>
+                <span>3. Al confirmar, el vendedor recibe notificación para entregar. Al liberar, ambos ven que se refleja máximo en 1 hora.</span>
+                {selected.metadata?.transfer_concept && <span>Concepto enviado: {selected.metadata.transfer_concept}</span>}
+                {selected.metadata?.receipt_url && <a href={selected.metadata.receipt_url} target="_blank" rel="noreferrer">Abrir comprobante adjunto</a>}
+                {selected.metadata?.release_receipt_url && <a href={selected.metadata.release_receipt_url} target="_blank" rel="noreferrer">Abrir comprobante de consignación al vendedor</a>}
+                {selected.metadata?.notes && <span>Nota comprador: {selected.metadata.notes}</span>}
+              </div>
+              {selected.Trato?.metadata || selected.Trato ? (
+                selected.Trato?.estado && selected.Trato?.monto && selected.Trato?.monto_neto && (
+                  <div className="admin-flow-box" style={{ marginTop: 10 }}>
+                    <b>Valores de liberación</b>
+                    <span>Valor exacto al vendedor: {fmt(sellerAmount(selected))}.</span>
+                    <span>Ganancia libre TratoYA 4.5%: {fmt(freeGain(selected))}.</span>
+                    <span>IMP/4x1000 cubierto dentro de comisión: {fmt(coveredCosts(selected))}.</span>
+                    {selected.Trato?.metadata?.manual_payment?.commission_visible && <span>Comisión total cobrada: {fmt(selected.Trato.metadata.manual_payment.commission_visible)}.</span>}
+                  </div>
+                )
+              ) : null}
+            </div>
+            <div className="modal-ft" style={{ flexWrap: "wrap" }}>
+              {selected.tipo === "retencion" && selected.estado !== "aprobado" && <button className="btn bp" disabled={busy} onClick={() => confirmar(selected)}>Confirmar recibido</button>}
+              {selected.tipo === "retencion" && ["pendiente","procesando"].includes(selected.estado) && <button className="btn brd" disabled={busy} onClick={() => rechazar(selected)}>Marcar fallido</button>}
+              {["pago_retenido","en_entrega","confirmado","pendiente_confirmacion"].includes(selected.Trato?.estado) && <button className="btn bp" disabled={busy} onClick={() => liberar(selected)}>LIBERAR</button>}
+              <a className="btn bg_" href={`${ADMIN_ENTRY_PATH}?trato=${encodeURIComponent(selected.trato_id)}&from=pagos`} target="_blank" rel="noreferrer">Ver trato completo</a>
+            </div>
           </div>
         </div>
       )}
@@ -2232,7 +2276,7 @@ function ActividadEnVivo({ toast }) {
     <div className="page fi">
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <h1 style={{ fontSize: 20 }}>⚡ Actividad en vivo</h1>
+          <h1 style={{ fontSize: 20 }}>⚡ Transacciones en TR</h1>
           <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "4px 10px", background: "var(--cr)", borderRadius: 20, fontSize: 11.5, fontWeight: 600, color: "var(--g2)" }}>
             <div className="live" /> Actualiza cada 60s
           </div>
@@ -2722,6 +2766,7 @@ function AdminLogin({ onLogin, toast }) {
 export default function TratoYaAdmin() {
   const { ts, show, rm } = useToast();
   const toast = useCallback((m, t = "info") => show(m, t), [show]);
+  const urlParams = new URLSearchParams(window.location.search);
   const [admin, setAdmin] = useState(() => {
     const tok = localStorage.getItem("ty_admin_token_v2");
     try {
@@ -2730,9 +2775,15 @@ export default function TratoYaAdmin() {
       return (tok && u && (userRol === "admin" || userRol === "superadmin")) ? { ...u, rol: userRol } : null;
     } catch { return null; }
   });
-  const [page, setPage] = useState("dashboard");
+  const [page, setPage] = useState(() => {
+    const requested = urlParams.get("page");
+    return NAV.some((n) => n.id === requested) ? requested : "dashboard";
+  });
   const [disputasPendientes, setDisputasPendientes] = useState(0);
-  const tratoDetailId = new URLSearchParams(window.location.search).get("trato");
+  const tratoDetailId = urlParams.get("trato");
+  const detailFrom = urlParams.get("from");
+  const detailBackPage = NAV.some((n) => n.id === detailFrom) ? detailFrom : "dashboard";
+  const detailBackHref = `${ADMIN_ENTRY_PATH}?page=${encodeURIComponent(detailBackPage)}`;
 
   useEffect(() => {
     const onAuthExpired = (e) => {
@@ -2793,7 +2844,7 @@ export default function TratoYaAdmin() {
         <div className="admin-main" style={{ minHeight: "100vh", marginLeft: 0 }}>
           <div className="topbar">
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <a href={ADMIN_ENTRY_PATH} className="btn bg_ bsm" style={{ textDecoration: "none" }}>← Admin</a>
+              <a href={detailBackHref} className="btn admin-back-btn" style={{ textDecoration: "none" }}>← Atrás</a>
               <span style={{ fontFamily: "Syne", fontWeight: 700, fontSize: 14 }}>Detalle completo del trato</span>
             </div>
             <div style={{ display: "flex", gap: 9, alignItems: "center" }}>
@@ -2801,7 +2852,7 @@ export default function TratoYaAdmin() {
               <button className="btn bg_ bsm" onClick={logout}>🚪 Salir</button>
             </div>
           </div>
-          <TratoAdminFullPage tratoId={tratoDetailId} toast={toast} />
+          <TratoAdminFullPage tratoId={tratoDetailId} toast={toast} backHref={detailBackHref} />
         </div>
       ) : (
         <div className="admin-shell">
