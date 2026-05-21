@@ -384,11 +384,14 @@ tbody tr:hover td{background:var(--s50)}
   body{font-size:14px}
   .sb{width:100%;min-height:0;height:74px;top:auto;bottom:0;left:0;right:0;z-index:120;display:block;border-top:1px solid rgba(255,255,255,.08)}
   .sb-logo,.sb-usr,.nav-lbl{display:none}
-  .sb-nav{height:74px;display:flex;align-items:center;gap:4px;padding:7px 8px;overflow-x:auto;overflow-y:hidden}
-  .ni{min-width:68px;flex:1;justify-content:center;flex-direction:column;gap:3px;padding:7px 5px;margin:0;font-size:10.5px;text-align:center;border-radius:12px}
+  .sb-nav{height:74px;display:flex;align-items:center;gap:4px;padding:7px 8px;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x proximity}
+  .ni{min-width:0;flex:0 0 calc((100% - 16px)/5);justify-content:center;flex-direction:column;gap:3px;padding:7px 5px;margin:0;font-size:10.5px;text-align:center;border-radius:12px;scroll-snap-align:center}
   .ni span{font-size:17px!important}
   .ni .nav-text{font-size:10.5px!important;max-width:100%}
   .ni .nav-bubble{position:absolute;top:5px;right:9px;margin-left:0;min-width:15px;height:15px;padding:0 4px;font-size:9px!important;box-shadow:0 0 0 2px rgba(224,123,0,.18)}
+  .ni.nav-create{background:linear-gradient(135deg,var(--g),#dfff36);color:var(--n);font-weight:900;box-shadow:0 0 0 1px rgba(181,228,0,.35),0 8px 22px rgba(181,228,0,.28);animation:mobileCreateGlow 3.4s ease-in-out infinite}
+  .ni.nav-create:hover,.ni.nav-create.act{background:linear-gradient(135deg,var(--g),#e7ff55);color:var(--n);box-shadow:0 0 0 1px rgba(181,228,0,.5),0 10px 28px rgba(181,228,0,.38)}
+  .ni.nav-create .nav-text{color:var(--n);font-weight:900}
   .main{margin-left:0;padding-bottom:82px}
   .topbar{height:54px;padding:0 14px}
   .topbar > span{font-size:14px!important;max-width:46vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -441,6 +444,7 @@ tbody tr:hover td{background:var(--s50)}
   .wz{width:100%;overflow-x:auto;justify-content:flex-start}
   .wz-ln{min-width:22px;flex:0 0 22px}
 }
+@keyframes mobileCreateGlow{0%,100%{box-shadow:0 0 0 1px rgba(181,228,0,.34),0 8px 20px rgba(181,228,0,.24)}50%{box-shadow:0 0 0 1px rgba(181,228,0,.58),0 10px 30px rgba(181,228,0,.42)}}
 @media (max-width:520px){
   .lnav{flex-wrap:wrap}
   .lnav > div:last-child{width:100%;justify-content:space-between}

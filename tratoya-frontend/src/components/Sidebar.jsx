@@ -29,7 +29,7 @@ export default function Sidebar({ page, setPage, user, onLogout, hasPendingTrato
         {NAV.map(([id, ic, l]) => (
           <div
             key={id}
-            className={`ni ${page === id ? "act" : ""}`}
+            className={`ni ${id === "crear" ? "nav-create" : ""} ${page === id ? "act" : ""}`}
             onClick={() => setPage(id)}
             title={id === "tratos" && hasPendingTratos ? "Tienes tratos sin concretar" : undefined}
           >
