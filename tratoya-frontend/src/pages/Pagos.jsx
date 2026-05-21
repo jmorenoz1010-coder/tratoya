@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { api } from "../lib/api";
 import { fmt, fmtDate } from "../lib/utils";
 
@@ -32,8 +33,8 @@ export default function Pagos({ toast }) {
   return (
     <div className="page fi">
       <h1 className="page-hd" style={{ fontSize: 21, marginBottom: 18 }}>Historial de pagos</h1>
-      {selected && (
-        <div className="overlay" onClick={() => setSelected(null)}>
+      {selected && createPortal(
+        <div className="overlay payment-flow-overlay" onClick={() => setSelected(null)}>
           <div className="modal payment-flow-modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-hd">
               <div>
@@ -64,7 +65,8 @@ export default function Pagos({ toast }) {
               <div><b>Estado:</b> {(ESTADO_PAGO[selected.estado] || {}).label || selected.estado}</div>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
       {loading && pagos.length === 0 ? (
         <div style={{ textAlign: "center", padding: 40 }}>
