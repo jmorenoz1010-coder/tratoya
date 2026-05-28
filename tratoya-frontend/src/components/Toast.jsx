@@ -11,7 +11,6 @@ export function Toast({ message, type, onClose }) {
   return (
     <div className={`toast ${type}`} role="alert">
       {icon} {message}
-      <div className="toast-progress" />
     </div>
   );
 }

@@ -1,6 +1,6 @@
 import Av from "./Avatar";
 
-export default function Topbar({ title, user, page, setPage }) {
+export default function Topbar({ title, user, page, setPage, onMenuOpen }) {
   const nom = `${user?.nombre || ""} ${user?.apellido || ""}`.trim();
   const goBack = () => {
     if (page === "dashboard") window.location.href = "/";
@@ -22,19 +22,23 @@ export default function Topbar({ title, user, page, setPage }) {
           {title}
         </span>
       </div>
-      <div
-        className="user-chip"
-        style={{ display: "flex", alignItems: "center", gap: 8, padding: "5px 11px", background: "var(--s50)", borderRadius: 9, border: "1px solid var(--s100)" }}
+
+      <button
+        className="user-chip topbar-user-chip"
+        onClick={onMenuOpen}
+        aria-label="Abrir menú de cuenta"
+        style={{ display: "flex", alignItems: "center", gap: 8, padding: "5px 11px", background: "var(--s50)", borderRadius: 9, border: "1px solid var(--s100)", cursor: "pointer" }}
       >
         <Av name={nom} size={26} />
-        <span style={{ fontSize: 13, fontWeight: 600 }}>{user?.nombre || "—"}</span>
+        <span className="topbar-user-name" style={{ fontSize: 13, fontWeight: 600 }}>{user?.nombre || "—"}</span>
         {(user?.kyc_nivel === "premium" || user?.kyc_nivel === "verificado") && (
           <span
             title={user?.kyc_nivel === "premium" ? "Usuario Premium" : "Usuario Verificado"}
             style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: 16, height: 16, background: "#1877F2", borderRadius: "50%", color: "#fff", fontSize: 11, fontWeight: 900, lineHeight: 1, flexShrink: 0 }}
           >✓</span>
         )}
-      </div>
+        <span className="topbar-menu-arrow" aria-hidden="true">›</span>
+      </button>
     </div>
   );
 }

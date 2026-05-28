@@ -44,13 +44,13 @@ export default function Sidebar({ page, setPage, user, onLogout, hasPendingTrato
         {BOT.map(([id, ic, l]) => (
           <div
             key={id}
-            className={`ni ${page === id ? "act" : ""}`}
+            className={`ni nav-perfil ${page === id ? "act" : ""}`}
             onClick={() => setPage(id)}
           >
             <span style={{ fontSize: 15 }}>{ic}</span> {l}
           </div>
         ))}
-        <div className="ni" onClick={onLogout} style={{ marginTop: 6 }}>
+        <div className="ni nav-logout" onClick={onLogout} style={{ marginTop: 6 }}>
           <span style={{ fontSize: 15 }}>🚪</span> Cerrar sesión
         </div>
       </nav>

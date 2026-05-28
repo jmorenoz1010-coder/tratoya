@@ -149,7 +149,7 @@ code,pre,.mono{font-family:'JetBrains Mono',monospace}
 .logo-mk{width:30px;height:30px;background:var(--g);border-radius:8px;display:flex;align-items:center;justify-content:center;font-family:'Syne';font-weight:800;font-size:15px;color:var(--n);flex-shrink:0}
 .sb-nav{flex:1;padding:8px 7px;overflow-y:auto}
 .nav-sec{font-size:9px;font-weight:900;color:rgba(169,235,27,.5);letter-spacing:1.4px;text-transform:uppercase;padding:10px 8px 4px}
-.ni{display:flex;align-items:center;gap:8px;padding:9px 10px;border-radius:12px;cursor:pointer;font-size:12.5px;font-weight:800;color:rgba(244,255,249,.68);transition:all .15s;margin-bottom:3px;user-select:none;white-space:nowrap;border:1px solid transparent}
+.ni{display:flex;align-items:center;gap:8px;width:100%;padding:9px 10px;border-radius:12px;cursor:pointer;font-family:inherit;font-size:12.5px;font-weight:800;color:rgba(244,255,249,.68);transition:all .15s;margin-bottom:3px;user-select:none;white-space:nowrap;border:1px solid transparent;background:transparent;text-align:left}
 .ni:hover{background:rgba(255,255,255,.08);color:#fff;border-color:rgba(255,255,255,.08)}
 .ni.act{background:linear-gradient(135deg,rgba(169,235,27,.2),rgba(72,165,28,.13));color:#dfff60;font-weight:900;border-color:rgba(169,235,27,.25);box-shadow:0 12px 26px rgba(117,205,22,.13)}
 .ni-badge{margin-left:auto;background:var(--rd);color:#fff;font-size:9.5px;font-weight:800;padding:1px 6px;border-radius:10px}
@@ -341,11 +341,11 @@ function Sidebar({ page, setPage, admin, disputasPendientes = 0 }) {
         {NAV.map((item, i) => {
           if (item.sec) return <div key={i} className="nav-sec">{item.sec}</div>;
           return (
-            <div key={item.id} className={`ni ${page === item.id ? "act" : ""}`} onClick={() => setPage(item.id)}>
+            <button key={item.id} type="button" className={`ni ${page === item.id ? "act" : ""}`} onClick={() => setPage(item.id)}>
               <span style={{ fontSize: 14 }}>{item.ico}</span>
               {item.l}
               {item.badge && disputasPendientes > 0 && <span className="ni-badge">{disputasPendientes}</span>}
-            </div>
+            </button>
           );
         })}
       </nav>
@@ -566,7 +566,7 @@ function Usuarios({ toast }) {
         <table>
           <thead><tr><th>#</th><th>Usuario</th><th>Email</th><th>Nombre de usuario</th><th>Identificación</th><th>Banco</th><th>KYC</th><th>Rol</th><th>Estado</th><th>Tratos</th><th>Registro</th><th>Acciones</th></tr></thead>
           <tbody>
-            {loading && pagos.length === 0
+            {loading && users.length === 0
               ? <tr><td colSpan={12} style={{ textAlign: "center", padding: 32, color: "var(--s400)" }}><div className="spin" style={{ margin: "0 auto" }} /></td></tr>
               : filtered.length === 0
                 ? <tr><td colSpan={12} style={{ textAlign: "center", padding: 28, color: "var(--s400)", fontSize: 13 }}>Sin usuarios</td></tr>
@@ -2824,8 +2824,15 @@ export default function TratoYaAdmin() {
     toast("Sesión cerrada", "info");
   };
 
+  const goPage = useCallback((next) => {
+    const safePage = NAV.some((n) => n.id === next) ? next : "dashboard";
+    setPage(safePage);
+    const url = safePage === "dashboard" ? ADMIN_ENTRY_PATH : `${ADMIN_ENTRY_PATH}?page=${encodeURIComponent(safePage)}`;
+    window.history.replaceState(null, "", url);
+  }, []);
+
   const PAGES = {
-    dashboard:      <AdminDashboard toast={toast} setPage={setPage} />,
+    dashboard:      <AdminDashboard toast={toast} setPage={goPage} />,
     actividad:      <ActividadEnVivo toast={toast} />,
     usuarios:       <Usuarios toast={toast} />,
     roles:          <RolesAdmin toast={toast} currentAdmin={admin} />,
@@ -2865,7 +2872,7 @@ export default function TratoYaAdmin() {
         </div>
       ) : (
         <div className="admin-shell">
-          <Sidebar page={page} setPage={setPage} admin={admin} disputasPendientes={disputasPendientes} />
+          <Sidebar page={page} setPage={goPage} admin={admin} disputasPendientes={disputasPendientes} />
           <div className="admin-main">
             <div className="topbar">
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>

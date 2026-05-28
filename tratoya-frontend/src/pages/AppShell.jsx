@@ -1,9 +1,10 @@
-import { useState, useCallback, useEffect, useRef, lazy, Suspense } from "react";
+import { useState, useCallback, useEffect, useRef, useTransition, Suspense, lazy } from "react";
 import { api, clearSession } from "../lib/api";
 import { ESTADO, isSupportNotification } from "../lib/utils";
 import { API_URL } from "../lib/api";
 import Sidebar from "../components/Sidebar";
 import Topbar from "../components/Topbar";
+import Av from "../components/Avatar";
 
 const Dashboard   = lazy(() => import("./Dashboard"));
 const MisTratos   = lazy(() => import("./MisTratos"));
@@ -82,11 +83,53 @@ function CelebrationOverlay({ show }) {
   );
 }
 
-function PageLoader() {
+function MobileDrawer({ open, onClose, user, onProfile, onLogout }) {
+  const nom = `${user?.nombre || ""} ${user?.apellido || ""}`.trim();
+  const kycLabel =
+    user?.kyc_nivel === "premium" ? "✓ Premium"
+    : user?.kyc_nivel === "verificado" ? "✓ Verificado"
+    : user?.kyc_nivel === "basico" ? "Básico"
+    : "Sin verificar";
+
   return (
-    <div className="page" style={{ textAlign: "center", padding: 60 }}>
-      <div className="spin" style={{ margin: "0 auto", color: "var(--s400)" }} />
-    </div>
+    <>
+      <div
+        className={`mob-drawer-overlay${open ? " open" : ""}`}
+        onClick={onClose}
+        aria-hidden="true"
+      />
+      <div
+        className={`mob-drawer${open ? " open" : ""}`}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Menú de cuenta"
+      >
+        <div className="mob-drawer-handle" />
+        <div className="mob-drawer-profile">
+          <Av name={nom} size={54} />
+          <div className="mob-drawer-profile-info">
+            <div className="mob-drawer-name">{nom || "Usuario"}</div>
+            <div className="mob-drawer-kyc">{kycLabel}</div>
+          </div>
+        </div>
+        <div className="mob-drawer-actions">
+          <button
+            className="mob-drawer-item"
+            onClick={() => { onProfile(); onClose(); }}
+          >
+            <span aria-hidden="true">👤</span>
+            Mi perfil
+          </button>
+          <button
+            className="mob-drawer-item danger"
+            onClick={() => { onLogout(); onClose(); }}
+          >
+            <span aria-hidden="true">🚪</span>
+            Cerrar sesión
+          </button>
+        </div>
+      </div>
+    </>
   );
 }
 
@@ -106,14 +149,20 @@ export default function AppShell({ session, setSession, toast }) {
     const requested = new URLSearchParams(window.location.search).get("page");
     return PAGE_TITLES[requested] ? requested : "dashboard";
   });
+  const [, startTransition] = useTransition();
   const [tratoId, setTratoId] = useState(null);
   const [disputeTratoId, setDisputeTratoId] = useState(null);
   const [floatingNote, setFloatingNote] = useState(null);
   const [celebration, setCelebration] = useState(false);
+  const [drawerOpen, setDrawerOpen] = useState(false);
   const shownNotifIds = useRef(new Set());
   const sessionLoadTimeRef = useRef(Date.now());
   const [unreadTratoIds, setUnreadTratoIds] = useState(new Set());
   const [pendingTratosAlert, setPendingTratosAlert] = useState(false);
+
+  const navigateTo = useCallback((next) => {
+    startTransition(() => setPage(next));
+  }, []);
 
   const showFloatingNote = useCallback((note) => {
     setFloatingNote(note);
@@ -158,7 +207,6 @@ export default function AppShell({ session, setSession, toast }) {
 
   const updateUser = (u) => setSession((s) => ({ ...s, user: u }));
 
-  // Sembrar notificaciones ya leídas/no-leídas al cargar (sin toasts)
   useEffect(() => {
     if (!session?.token) return;
     (async () => {
@@ -186,7 +234,6 @@ export default function AppShell({ session, setSession, toast }) {
     })();
   }, [session?.token]);
 
-  // Desbloquear audio en primera interacción
   useEffect(() => {
     const events = ["pointerdown", "keydown", "touchstart", "click"];
     const unlock = () => unlockSound();
@@ -194,7 +241,6 @@ export default function AppShell({ session, setSession, toast }) {
     return () => events.forEach((e) => window.removeEventListener(e, unlock));
   }, []);
 
-  // Cierre por inactividad (15 min)
   useEffect(() => {
     const INACTIVITY_MS = 15 * 60 * 1000;
     let timerId;
@@ -208,7 +254,6 @@ export default function AppShell({ session, setSession, toast }) {
     return () => { clearTimeout(timerId); events.forEach((e) => window.removeEventListener(e, reset)); };
   }, [logout]);
 
-  // SSE notificaciones en tiempo real
   useEffect(() => {
     if (!session?.token) return;
     const ctrl = new AbortController();
@@ -257,16 +302,14 @@ export default function AppShell({ session, setSession, toast }) {
     return () => ctrl.abort();
   }, [session?.token, showFloatingNote, showCompletionCelebration]);
 
-  // Polling fallback: captura notificaciones perdidas cuando SSE se corta (Vercel timeout ~30s)
   useEffect(() => {
     if (!session?.token) return;
-    const INTERVAL = 25000; // 25 segundos
+    const INTERVAL = 25000;
     const poll = async () => {
       try {
         const r = await api.get("/users/notifications");
         const notifs = r.data || [];
         const unread = notifs.filter((n) => !n.leida && !shownNotifIds.current.has(String(n.id)) && new Date(n.createdAt || n.updatedAt).getTime() > sessionLoadTimeRef.current - 5000);
-        // Mostrar solo la más reciente no vista para no saturar
         if (unread.length > 0) {
           const latest = unread[0];
           shownNotifIds.current.add(String(latest.id));
@@ -280,7 +323,6 @@ export default function AppShell({ session, setSession, toast }) {
             trato_id: latest.datos?.trato_id || latest.datos?.metadata?.trato_id,
           });
           if (["pago_liberado", "trato_completado"].includes(tipo)) showCompletionCelebration();
-          // Marcar como leída para no repetirla
           api.put(`/users/notifications/${latest.id}/read`).catch(() => {});
         }
       } catch { /* silencioso */ }
@@ -290,8 +332,8 @@ export default function AppShell({ session, setSession, toast }) {
   }, [session?.token, showFloatingNote, showCompletionCelebration]);
 
   const openFloatingNote = () => {
-    if (floatingNote?.trato_id) { setTratoId(floatingNote.trato_id); setPage("detalle"); }
-    else setPage("dashboard");
+    if (floatingNote?.trato_id) { setTratoId(floatingNote.trato_id); navigateTo("detalle"); }
+    else navigateTo("dashboard");
     setFloatingNote(null);
   };
 
@@ -299,27 +341,54 @@ export default function AppShell({ session, setSession, toast }) {
 
   return (
     <div>
-      <Sidebar page={page} setPage={(next) => { setPage(next); if (next === "tratos") setPendingTratosAlert(false); }} user={session.user} onLogout={logout} hasPendingTratos={pendingTratosAlert} />
+      <Sidebar
+        page={page}
+        setPage={(next) => { navigateTo(next); if (next === "tratos") setPendingTratosAlert(false); }}
+        user={session.user}
+        onLogout={logout}
+        hasPendingTratos={pendingTratosAlert}
+      />
       <div className="main">
-        <Topbar title={PAGE_TITLES[page] || "TratoYa"} user={session.user} page={page} setPage={setPage} />
-        <Suspense fallback={<PageLoader />}>
+        <Topbar
+          title={PAGE_TITLES[page] || "TratoYa"}
+          user={session.user}
+          page={page}
+          setPage={navigateTo}
+          onMenuOpen={() => setDrawerOpen(true)}
+        />
+        <Suspense fallback={null}>
           <div key={page}>
-            {page === "dashboard"  && <Dashboard   {...sharedProps} setPage={setPage} setTratoId={setTratoId} setUser={updateUser} />}
-            {page === "tratos"     && <MisTratos    {...sharedProps} setPage={setPage} setTratoId={setTratoId} alertTratoIds={unreadTratoIds} />}
-            {page === "crear"      && <CrearTrato   {...sharedProps} setPage={setPage} />}
-            {page === "detalle"    && <TratoDetalle {...sharedProps} tratoId={tratoId} setPage={setPage} setDisputeTratoId={setDisputeTratoId} onStatusUpdate={notifyStatusUpdate} />}
+            {page === "dashboard"  && <Dashboard   {...sharedProps} setPage={navigateTo} setTratoId={setTratoId} setUser={updateUser} />}
+            {page === "tratos"     && <MisTratos    {...sharedProps} setPage={navigateTo} setTratoId={setTratoId} alertTratoIds={unreadTratoIds} />}
+            {page === "crear"      && <CrearTrato   {...sharedProps} setPage={navigateTo} />}
+            {page === "detalle"    && <TratoDetalle {...sharedProps} tratoId={tratoId} setPage={navigateTo} setDisputeTratoId={setDisputeTratoId} onStatusUpdate={notifyStatusUpdate} />}
             {page === "pagos"      && <Pagos        {...sharedProps} />}
-            {page === "disputas"   && <Disputas     {...sharedProps} setPage={setPage} setTratoId={setTratoId} initialTratoId={disputeTratoId} clearInitialTratoId={() => setDisputeTratoId(null)} />}
+            {page === "disputas"   && <Disputas     {...sharedProps} setPage={navigateTo} setTratoId={setTratoId} initialTratoId={disputeTratoId} clearInitialTratoId={() => setDisputeTratoId(null)} />}
             {page === "reputacion" && <Reputacion   {...sharedProps} setUser={updateUser} />}
             {page === "perfil"     && <Perfil       {...sharedProps} setUser={updateUser} />}
           </div>
         </Suspense>
       </div>
+
       {page !== "crear" && (
-        <button className="mobile-create-fab" type="button" onClick={() => setPage("crear")} aria-label="Crear trato">
+        <button
+          className="mobile-create-fab"
+          type="button"
+          onClick={() => navigateTo("crear")}
+          aria-label="Crear trato"
+        >
           <span aria-hidden="true" />
         </button>
       )}
+
+      <MobileDrawer
+        open={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        user={session.user}
+        onProfile={() => navigateTo("perfil")}
+        onLogout={logout}
+      />
+
       <FloatingNotification note={floatingNote} onOpen={openFloatingNote} onClose={() => setFloatingNote(null)} />
       <CelebrationOverlay show={celebration} />
     </div>
