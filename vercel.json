@@ -1,0 +1,11 @@
+{
+  "installCommand": "npm --prefix tratoya-frontend ci",
+  "buildCommand": "npm --prefix tratoya-frontend run build",
+  "outputDirectory": "tratoya-frontend/dist",
+  "rewrites": [
+    {
+      "source": "/((?!api).*)",
+      "destination": "/index.html"
+    }
+  ]
+}
