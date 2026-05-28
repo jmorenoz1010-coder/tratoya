@@ -1,6 +1,7 @@
 import { Fragment, useState, useEffect, useCallback, useRef } from "react";
 import { ADMIN_ENTRY_PATH } from "./lib/routes";
 import { publicTratoUrl, calcularComisionUI, parseCopAmount } from "./lib/utils";
+import logo from "./assets/tratoya-logo.png";
 
 /* ═══════════════════════════════════════════════════════════
    TRATOYA · PANEL DE ADMINISTRACIÓN
@@ -115,7 +116,7 @@ const PERMISSIONS = [
   { key: "Roles", invitado: false, user: false, soporte: false, moderador: false, admin: false, superadmin: true },
 ];
 
-const FONTS = `@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');`;
+const FONTS = `@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=Nunito+Sans:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap');`;
 
 const CSS = `
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -127,8 +128,8 @@ const CSS = `
   --sh:0 1px 4px rgba(7,25,47,.09);--shm:0 4px 14px rgba(7,25,47,.12);--shl:0 8px 28px rgba(7,25,47,.16)
 }
 html,body{height:100%}
-body{font-family:'DM Sans',sans-serif;background:#0A1628;color:var(--n);-webkit-font-smoothing:antialiased;line-height:1.55}
-h1,h2,h3,h4{font-family:'Syne',sans-serif;line-height:1.15}
+body{font-family:'Nunito Sans',sans-serif;background:#071819;color:var(--n);-webkit-font-smoothing:antialiased;line-height:1.55}
+h1,h2,h3,h4{font-family:'Manrope','Nunito Sans',sans-serif;line-height:1.12;letter-spacing:.005em}
 code,pre,.mono{font-family:'JetBrains Mono',monospace}
 ::-webkit-scrollbar{width:4px;height:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1);border-radius:2px}
 
@@ -141,15 +142,16 @@ code,pre,.mono{font-family:'JetBrains Mono',monospace}
 
 /* Layout — sidebar fijo + admin-main con margen, igual al patrón del AppShell */
 .admin-shell{min-height:100vh;background:var(--s50)}
-.admin-sidebar{width:220px;background:#060F1E;border-right:1px solid rgba(255,255,255,.05);display:flex;flex-direction:column;position:fixed;left:0;top:0;height:100vh;overflow-y:auto;z-index:100}
+.admin-sidebar{width:220px;background:radial-gradient(circle at 70% 8%,rgba(169,235,27,.18),transparent 30%),linear-gradient(180deg,#071819 0%,#0b2927 58%,#061112 100%);border-right:1px solid rgba(255,255,255,.08);display:flex;flex-direction:column;position:fixed;left:0;top:0;height:100vh;overflow-y:auto;z-index:100;box-shadow:18px 0 48px rgba(0,0,0,.18)}
 .sb-top{padding:18px 14px 12px;border-bottom:1px solid rgba(255,255,255,.05)}
 .sb-logo{display:flex;align-items:center;gap:9px}
+.admin-logo-img{width:136px;height:auto;display:block;filter:drop-shadow(0 12px 20px rgba(0,0,0,.35))}
 .logo-mk{width:30px;height:30px;background:var(--g);border-radius:8px;display:flex;align-items:center;justify-content:center;font-family:'Syne';font-weight:800;font-size:15px;color:var(--n);flex-shrink:0}
 .sb-nav{flex:1;padding:8px 7px;overflow-y:auto}
-.nav-sec{font-size:9px;font-weight:700;color:rgba(255,255,255,.22);letter-spacing:1.4px;text-transform:uppercase;padding:10px 8px 4px}
-.ni{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:500;color:rgba(255,255,255,.45);transition:all .15s;margin-bottom:1px;user-select:none;white-space:nowrap}
-.ni:hover{background:rgba(255,255,255,.06);color:rgba(255,255,255,.8)}
-.ni.act{background:rgba(168,196,0,.12);color:var(--g);font-weight:600}
+.nav-sec{font-size:9px;font-weight:900;color:rgba(169,235,27,.5);letter-spacing:1.4px;text-transform:uppercase;padding:10px 8px 4px}
+.ni{display:flex;align-items:center;gap:8px;padding:9px 10px;border-radius:12px;cursor:pointer;font-size:12.5px;font-weight:800;color:rgba(244,255,249,.68);transition:all .15s;margin-bottom:3px;user-select:none;white-space:nowrap;border:1px solid transparent}
+.ni:hover{background:rgba(255,255,255,.08);color:#fff;border-color:rgba(255,255,255,.08)}
+.ni.act{background:linear-gradient(135deg,rgba(169,235,27,.2),rgba(72,165,28,.13));color:#dfff60;font-weight:900;border-color:rgba(169,235,27,.25);box-shadow:0 12px 26px rgba(117,205,22,.13)}
 .ni-badge{margin-left:auto;background:var(--rd);color:#fff;font-size:9.5px;font-weight:800;padding:1px 6px;border-radius:10px}
 .sb-bot{padding:10px 12px 14px;border-top:1px solid rgba(255,255,255,.05)}
 
@@ -171,7 +173,7 @@ code,pre,.mono{font-family:'JetBrains Mono',monospace}
 .stat-sub{font-size:11px;color:var(--s600)}
 
 /* Buttons */
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;font-family:'DM Sans',sans-serif;font-weight:600;font-size:13px;border:none;cursor:pointer;transition:all .16s;border-radius:8px;padding:0 16px;height:36px;white-space:nowrap}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;font-family:'Nunito Sans',sans-serif;font-weight:800;font-size:13px;border:none;cursor:pointer;transition:all .16s;border-radius:8px;padding:0 16px;height:36px;white-space:nowrap}
 .btn:active{transform:scale(.97)}.btn:disabled{opacity:.5;cursor:not-allowed;transform:none!important}
 .bp{background:var(--g);color:var(--n)}.bp:hover:not(:disabled){background:#B8D400}
 .bn{background:var(--n);color:#fff}.bn:hover:not(:disabled){background:var(--n2)}
@@ -184,7 +186,7 @@ code,pre,.mono{font-family:'JetBrains Mono',monospace}
 .blg{height:42px;font-size:14px;padding:0 22px;border-radius:10px}
 
 /* Inputs */
-.inp{width:100%;height:38px;padding:0 12px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--n);background:#fff;border:1.5px solid var(--s200);border-radius:8px;outline:none;transition:border-color .16s,box-shadow .16s}
+.inp{width:100%;height:38px;padding:0 12px;font-family:'Nunito Sans',sans-serif;font-size:13px;color:var(--n);background:#fff;border:1.5px solid var(--s200);border-radius:8px;outline:none;transition:border-color .16s,box-shadow .16s}
 .inp:focus{border-color:var(--g);box-shadow:0 0 0 3px rgba(168,196,0,.12)}.inp::placeholder{color:var(--s400)}
 textarea.inp{height:auto;padding:9px 12px;resize:vertical}
 .fl{display:block;font-size:12px;font-weight:600;color:var(--s800);margin-bottom:5px}
@@ -241,8 +243,8 @@ tbody tr:last-child td{border-bottom:none}tbody tr:hover td{background:var(--s50
 .log-dot{width:8px;height:8px;border-radius:50%;margin-top:5px;flex-shrink:0}
 
 /* Admin login */
-.adm-login{min-height:100vh;background:#060F1E;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden}
-.adm-login::before{content:'';position:absolute;top:-20%;left:-10%;width:60%;height:60%;background:radial-gradient(ellipse,rgba(168,196,0,.07) 0%,transparent 60%);pointer-events:none}
+.adm-login{min-height:100vh;background:radial-gradient(circle at 72% 20%,rgba(169,235,27,.2),transparent 28%),linear-gradient(140deg,#061315 0%,#0b2526 48%,#071012 100%);display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden}
+.adm-login::before{content:'';position:absolute;top:-20%;left:-10%;width:60%;height:60%;background:radial-gradient(ellipse,rgba(169,235,27,.12) 0%,transparent 60%);pointer-events:none}
 
 /* Roles */
 .role-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:14px}
@@ -327,9 +329,10 @@ function Sidebar({ page, setPage, admin, disputasPendientes = 0 }) {
     <aside className="admin-sidebar">
       <div className="sb-top">
         <div className="sb-logo">
-          <div className="logo-mk">T</div>
+          <a href="/" aria-label="Ir al inicio">
+            <img className="admin-logo-img" src={logo} alt="TratoYa" />
+          </a>
           <div>
-            <span style={{ fontFamily: "Syne", fontSize: 15, fontWeight: 800, color: "#fff" }}>Trato<span style={{ color: "var(--g)" }}>Ya</span></span>
             <div style={{ fontSize: 9, fontWeight: 700, color: "var(--g)", background: "rgba(168,196,0,.12)", padding: "1px 6px", borderRadius: 4, display: "inline-block", marginLeft: 5 }}>ADMIN</div>
           </div>
         </div>
@@ -2713,11 +2716,18 @@ function AdminLogin({ onLogin, toast }) {
   const [form, setForm] = useState({ email: "", password: "" });
   const [loading, setLoading] = useState(false);
 
+  useEffect(() => {
+    localStorage.removeItem("ty_admin_token_v2");
+    localStorage.removeItem("ty_admin_refresh_v2");
+    localStorage.removeItem("ty_admin_user_v2");
+    localStorage.removeItem("ty_admin_token");
+  }, []);
+
   const login = async (e) => {
     e.preventDefault();
     setLoading(true);
     try {
-      const r = await api.post("/auth/login", { email: form.email, password: form.password });
+      const r = await api.post("/auth/login", { email: form.email.trim(), password: form.password.trim() });
       const userRol = r.user?.rol || (r.user?.is_admin ? "admin" : "user");
       if (userRol !== "admin" && userRol !== "superadmin") {
         toast("No tienes permisos de administrador", "error"); setLoading(false); return;
@@ -2737,10 +2747,9 @@ function AdminLogin({ onLogin, toast }) {
     <div className="adm-login">
       <div style={{ width: "100%", maxWidth: 380, position: "relative", zIndex: 1 }}>
         <div style={{ textAlign: "center", marginBottom: 32 }}>
-          <div style={{ display: "inline-flex", alignItems: "center", gap: 9, marginBottom: 10 }}>
-            <div className="logo-mk">T</div>
-            <span style={{ fontFamily: "Syne", fontSize: 20, fontWeight: 800, color: "#fff" }}>Trato<span style={{ color: "var(--g)" }}>Ya</span></span>
-          </div>
+          <a href="/" aria-label="Ir al inicio" style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", marginBottom: 12 }}>
+            <img src={logo} alt="TratoYa" style={{ width: 176, height: "auto", filter: "drop-shadow(0 18px 24px rgba(0,0,0,.36))" }} />
+          </a>
           <div style={{ fontFamily: "Syne", fontSize: 13, fontWeight: 700, color: "rgba(255,255,255,.4)", letterSpacing: "2px", textTransform: "uppercase" }}>Panel de Administración</div>
         </div>
 
@@ -2802,8 +2811,8 @@ export default function TratoYaAdmin() {
 
   useEffect(() => {
     document.title = tratoDetailId
-      ? "Detalle de trato · Admin TratoYA"
-      : `${NAV.find(n => n.id === page)?.l || "Inicio"} · Admin TratoYA`;
+      ? "Trato YA / Admin / Detalle de trato"
+      : `Trato YA / Admin / ${NAV.find(n => n.id === page)?.l || "Inicio"}`;
   }, [page, tratoDetailId]);
 
   const logout = () => {

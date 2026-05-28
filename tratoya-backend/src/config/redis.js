@@ -2,17 +2,21 @@ const { createClient } = require('redis');
 const logger = require('../utils/logger');
 
 let client = null;
-let reconnectTimer = null;
 let reconnectDelay = 1000;
 const MAX_DELAY = 30000;
+const REDIS_REQUIRED = process.env.REDIS_REQUIRED === 'true';
 
 async function connectRedis() {
   client = createClient({
     url: process.env.REDIS_URL || 'redis://localhost:6379',
     socket: {
+      connectTimeout: Number(process.env.REDIS_CONNECT_TIMEOUT_MS || 1500),
       reconnectStrategy: (retries) => {
+        if (!REDIS_REQUIRED) {
+          return false;
+        }
         reconnectDelay = Math.min(reconnectDelay * 2, MAX_DELAY);
-        logger.warn(`Redis reintentando conexión #${retries} en ${reconnectDelay}ms`);
+        logger.warn(`Redis reintentando conexion #${retries} en ${reconnectDelay}ms`);
         return reconnectDelay;
       },
     },
@@ -26,16 +30,22 @@ async function connectRedis() {
   });
   client.on('ready', () => {
     reconnectDelay = 1000;
-    logger.info('✅ Redis listo');
+    logger.info('Redis listo');
   });
 
-  await client.connect();
+  try {
+    await client.connect();
+  } catch (err) {
+    if (REDIS_REQUIRED) throw err;
+    logger.warn(`Redis no disponible; cache deshabilitado (${err.message})`);
+    client = null;
+  }
   return client;
 }
 
 const getRedis = () => client;
 
-// Wrapper seguro: si Redis no está disponible, no revienta la app
+// Wrapper seguro: si Redis no esta disponible, no detiene la app.
 const safeRedis = {
   async get(key) {
     try { return client?.isReady ? await client.get(key) : null; } catch { return null; }

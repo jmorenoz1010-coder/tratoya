@@ -40,17 +40,19 @@ export default function Dashboard({ setPage, setTratoId, user, toast, setUser })
   const completados = tratos.filter((t) => t.estado === "completado").length || userStats?.tratos_exitosos || 0;
 
   return (
-    <div className="page">
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 18 }}>
+    <div className="page dashboard-page">
+      <div className="dashboard-head" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 18 }}>
         <div>
           <h1 className="page-hd" style={{ fontSize: 21, marginBottom: 2 }}>
             Hola, {userStats?.nombre || user?.nombre} 👋
           </h1>
           <p className="page-sub" style={{ fontSize: 13 }}>Resumen de tu cuenta</p>
         </div>
-        <div style={{ display: "flex", gap: 8 }}>
+        <div className="dashboard-actions" style={{ display: "flex", gap: 8 }}>
           <button className="btn bo bsm" onClick={() => loadDashboard()} title="Actualizar">↻</button>
-          <button className="btn bp blg" onClick={() => setPage("crear")}>➕ Nuevo trato</button>
+          <button className="btn bp blg dashboard-create-btn" onClick={() => setPage("crear")}>
+            <span className="soft-plus" aria-hidden="true" /> Nuevo trato
+          </button>
         </div>
       </div>
 
@@ -65,7 +67,7 @@ export default function Dashboard({ setPage, setTratoId, user, toast, setUser })
             { ico: "⭐", bg: "var(--cr)", l: "Reputación",       v: parseFloat(userStats?.reputacion || 0).toFixed(1) || "—" },
           ].map((k, i) => (
             <div key={i} className="kpi">
-              <div style={{ width: 32, height: 32, borderRadius: 9, background: k.bg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15, marginBottom: 8 }}>
+              <div className="kpi-icon" style={{ width: 32, height: 32, borderRadius: 9, background: k.bg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15, marginBottom: 8 }}>
                 {k.ico}
               </div>
               <div style={{ fontSize: 10, fontWeight: 600, color: "var(--s400)", textTransform: "uppercase", letterSpacing: ".5px", marginBottom: 5 }}>
@@ -97,7 +99,7 @@ export default function Dashboard({ setPage, setTratoId, user, toast, setUser })
               </div>
             </div>
           ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: 9 }}>
+            <div className="deal-list" style={{ display: "flex", flexDirection: "column", gap: 9 }}>
               {activos.map((t) => {
                 const ec = ESTADO[t.estado] || ESTADO.borrador;
                 const cp = t.vendedor?.id === user?.id ? t.comprador : t.vendedor;
@@ -107,7 +109,7 @@ export default function Dashboard({ setPage, setTratoId, user, toast, setUser })
                     className="tc"
                     onClick={() => { setTratoId(t.id); setPage("detalle"); }}
                   >
-                    <div style={{ width: 40, height: 40, borderRadius: 10, background: "var(--cr)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, flexShrink: 0 }}>
+                    <div className="deal-icon" style={{ width: 40, height: 40, borderRadius: 10, background: "var(--cr)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, flexShrink: 0 }}>
                       {TIPO_ICO[t.tipo] || "📋"}
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
@@ -164,8 +166,8 @@ export default function Dashboard({ setPage, setTratoId, user, toast, setUser })
             <div style={{ fontSize: 11.5, color: "rgba(255,255,255,.4)", marginBottom: 10 }}>
               Comparte el link con tu contraparte
             </div>
-            <div style={{ background: "var(--g)", color: "var(--n)", borderRadius: 7, padding: "6px 13px", fontSize: 12, fontWeight: 700, display: "inline-flex", gap: 5 }}>
-              ➕ Crear
+            <div className="quick-create-pill" style={{ background: "var(--g)", color: "var(--n)", borderRadius: 7, padding: "6px 13px", fontSize: 12, fontWeight: 700, display: "inline-flex", gap: 5 }}>
+              <span className="soft-plus" aria-hidden="true" /> Crear
             </div>
           </div>
         </div>

@@ -123,7 +123,7 @@ export default function AppShell({ session, setSession, toast }) {
   }, []);
 
   useEffect(() => {
-    document.title = `${PAGE_TITLES[page] || "TratoYA"} · TratoYA`;
+    document.title = `Trato YA / ${PAGE_TITLES[page] || "Inicio"}`;
   }, [page]);
 
   const estadoLabel = useCallback(
@@ -315,6 +315,11 @@ export default function AppShell({ session, setSession, toast }) {
           </div>
         </Suspense>
       </div>
+      {page !== "crear" && (
+        <button className="mobile-create-fab" type="button" onClick={() => setPage("crear")} aria-label="Crear trato">
+          <span aria-hidden="true" />
+        </button>
+      )}
       <FloatingNotification note={floatingNote} onOpen={openFloatingNote} onClose={() => setFloatingNote(null)} />
       <CelebrationOverlay show={celebration} />
     </div>

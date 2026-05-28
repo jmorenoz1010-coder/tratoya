@@ -111,7 +111,7 @@ export default function PublicTratoPage({ link, session, goAuth, toast }) {
           )}
 
           <div style={{ marginBottom: 18 }}>
-            <CommissionBreakdown monto={montoTrato} quien={quienComision} note="Este es el valor exacto que debes transferir para activar la custodia TratoYa." />
+            <CommissionBreakdown monto={montoTrato} quien={quienComision} note="Este es el valor exacto que debes transferir para activar el pago protegido TratoYa." />
           </div>
 
           {!session ? (

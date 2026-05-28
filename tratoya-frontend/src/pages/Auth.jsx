@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { api, saveSession } from "../lib/api";
-import { passwordChecks, strongPasswordOk, normalizeHandle, DOC_TYPES, FINANCIAL_ENTITIES, getBankType, BREB_ENTITY } from "../lib/utils";
+import logo from "../assets/tratoya-logo.png";
+import { API_URL, api, saveSession } from "../lib/api";
+import { passwordChecks, strongPasswordOk, normalizeHandle, DOC_TYPES, FINANCIAL_ENTITIES, getBankType } from "../lib/utils";
 
 function playWelcomeSound() {
   try {
@@ -25,14 +26,27 @@ function playWelcomeSound() {
   } catch { /* silencioso */ }
 }
 
-export default function Auth({ setSession, toast }) {
-  const [mode, setMode] = useState("login");
+export default function Auth({ setSession, toast, initialMode = "login" }) {
+  const [mode, setMode] = useState(initialMode === "register" ? "register" : "login");
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
-  const [f, setF_] = useState({ nombre: "", apellido: "", email: "", password: "", confirm_password: "", telefono: "", tipo_identificacion: "CC", cedula: "", banco: "", tipo_cuenta: "ahorros", numero_cuenta: "" });
+  const [f, setF_] = useState({
+    nombre: "",
+    apellido: "",
+    email: "",
+    password: "",
+    confirm_password: "",
+    telefono: "",
+    tipo_identificacion: "CC",
+    cedula: "",
+    banco: "",
+    tipo_cuenta: "ahorros",
+    numero_cuenta: "",
+  });
+
   const sf = (k, v) => setF_((p) => ({ ...p, [k]: v }));
   const checks = passwordChecks(f.password, f);
-  const bankKind = getBankType(f.banco); // "bank" | "wallet" | "breb"
+  const bankKind = getBankType(f.banco);
   const usernamePreview = normalizeHandle(f.email.split("@")[0]);
 
   const login = async (e) => {
@@ -54,7 +68,15 @@ export default function Auth({ setSession, toast }) {
     if (f.password !== f.confirm_password) { toast("Las contraseñas no coinciden", "error"); return; }
     setLoading(true);
     try {
-      await api.post("/auth/register", { nombre: f.nombre, apellido: f.apellido, email: f.email, password: f.password, telefono: f.telefono, cedula: f.cedula, tipo_identificacion: f.tipo_identificacion });
+      await api.post("/auth/register", {
+        nombre: f.nombre,
+        apellido: f.apellido,
+        email: f.email,
+        password: f.password,
+        telefono: f.telefono,
+        cedula: f.cedula,
+        tipo_identificacion: f.tipo_identificacion,
+      });
       const r = await api.post("/auth/login", { email: f.email, password: f.password });
       saveSession(r.token, r.refresh_token, r.user);
       if (f.banco && f.numero_cuenta) {
@@ -62,7 +84,7 @@ export default function Auth({ setSession, toast }) {
         let tipo = f.tipo_cuenta;
         if (bkind === "breb") tipo = "breb";
         else if (bkind === "wallet") {
-          const wmap = { "Nequi": "nequi", "Daviplata": "daviplata" };
+          const wmap = { Nequi: "nequi", Daviplata: "daviplata" };
           tipo = wmap[f.banco] || "nequi";
         }
         await api.post("/users/bank-accounts", { banco: f.banco, tipo, numero: f.numero_cuenta, titular: `${f.nombre} ${f.apellido}` });
@@ -74,41 +96,72 @@ export default function Auth({ setSession, toast }) {
     setLoading(false);
   };
 
+  const switchMode = () => {
+    setMode(mode === "login" ? "register" : "login");
+    setStep(1);
+    setF_((p) => ({ ...p, password: "", confirm_password: "" }));
+  };
+  const goBack = () => {
+    if (window.history.length > 1) window.history.back();
+    else window.location.href = "/";
+  };
+  const socialLogin = (provider) => {
+    const key = provider.toUpperCase();
+    const configuredUrl = import.meta.env[`VITE_${key}_AUTH_URL`];
+    if (configuredUrl) {
+      window.location.href = configuredUrl;
+      return;
+    }
+    window.location.href = `${API_URL}/auth/oauth/${provider.toLowerCase()}`;
+    return;
+  };
+
   return (
-    <div className="auth-pg">
-      <div className="auth-l">
-        <div style={{ position: "relative", zIndex: 1 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 42 }}>
-            <div style={{ width: 29, height: 29, background: "var(--g)", borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "Manrope", fontWeight: 800, fontSize: 14, color: "var(--n)" }}>T</div>
-            <span style={{ fontFamily: "Manrope", fontSize: 18, fontWeight: 800, color: "#fff" }}>Trato<span style={{ color: "var(--g)" }}>Ya</span></span>
-            <span style={{ fontSize: 9, fontWeight: 700, color: "var(--g)", background: "rgba(168,196,0,.15)", padding: "2px 6px", borderRadius: 5 }}>BETA</span>
-          </div>
-          <div style={{ fontSize: 33, fontFamily: "Manrope", fontWeight: 800, color: "#fff", lineHeight: 1.15, marginBottom: 13 }}>
-            Tu pago seguro<br /><span style={{ color: "var(--g)" }}>hasta el final.</span>
-          </div>
-          <p style={{ color: "rgba(255,255,255,.5)", fontSize: 14, lineHeight: 1.6, maxWidth: 290 }}>
-            Intermediaciones seguras para cualquier trato entre personas.
-          </p>
+    <div className="auth-pg auth-future">
+      <button className="public-back auth-public-back" type="button" onClick={goBack} aria-label="Volver">←</button>
+      <aside className="auth-l">
+        <div className="auth-orbit" aria-hidden="true" />
+        <div className="auth-brand-panel">
+          <a className="auth-logo-link" href="/" aria-label="Ir al inicio">
+            <img src={logo} alt="TratoYa" />
+          </a>
+          <span className="auth-beta">BETA</span>
+          <h1>Tu pago seguro<br /><span>hasta el final.</span></h1>
+          <p>Intermediación segura para compras y ventas en línea. Protegemos tu dinero hasta que ambas partes cumplan.</p>
         </div>
-        <div style={{ position: "relative", zIndex: 1 }}>
-          {["🔒 Dinero en custodia fiduciaria", "⚡ Trato en 3 minutos", "⭐ Mediación en 72 horas"].map((t) => (
-            <div key={t} style={{ marginBottom: 8 }}><span className="bdg gn" style={{ fontSize: 11.5 }}>{t}</span></div>
+        <div className="auth-trust-list">
+          {["Pago protegido", "Trato en 3 minutos", "Mediación en 72 horas"].map((t) => (
+            <span key={t}>{t}</span>
           ))}
         </div>
-      </div>
+      </aside>
 
-      <div className="auth-r">
+      <section className="auth-r">
         <div className="auth-w fi">
-          <h2 style={{ fontSize: 24, marginBottom: 5 }}>{mode === "login" ? "Bienvenido de nuevo" : "Crear cuenta gratis"}</h2>
-          <p style={{ color: "var(--s600)", fontSize: 13, marginBottom: 24 }}>
-            {mode === "login" ? "Ingresa a tu cuenta TratoYa" : "Empieza a hacer tratos seguros"}
-          </p>
+          <div className="auth-card-head">
+            <div>
+              <h2>{mode === "login" ? "Bienvenido de nuevo" : "Crear cuenta gratis"}</h2>
+              <p>{mode === "login" ? "Ingresa a tu cuenta TratoYa" : "Empieza a hacer tratos seguros"}</p>
+            </div>
+          </div>
+
+          <div className="auth-social-login" aria-label="Registro con proveedores externos">
+            <button type="button" onClick={() => socialLogin("Google")}><ProviderIcon name="google" /> Continuar con Google</button>
+            <button type="button" onClick={() => socialLogin("Apple")}><ProviderIcon name="apple" /> Continuar con Apple</button>
+          </div>
+          <div className="auth-divider"><span>o continúa con tu correo</span></div>
 
           {mode === "login" ? (
             <form onSubmit={login}>
-              <div className="fg"><label className="fl">Email</label><input className="inp" type="email" autoComplete="email" placeholder="tu@correo.com" value={f.email} onChange={(e) => sf("email", e.target.value)} /></div>
-              <div className="fg"><label className="fl">Contraseña</label><input className="inp" type="password" autoComplete="current-password" placeholder="Tu contraseña" value={f.password} onChange={(e) => sf("password", e.target.value)} /></div>
-              <button type="submit" className="btn bp blg" style={{ width: "100%", marginTop: 4 }} disabled={loading}>
+              <div className="fg">
+                <label className="fl">Email</label>
+                <input className="inp" type="email" autoComplete="email" placeholder="tu@correo.com" value={f.email} onChange={(e) => sf("email", e.target.value)} />
+              </div>
+              <div className="fg">
+                <label className="fl">Contraseña</label>
+                <input className="inp" type="password" autoComplete="current-password" placeholder="Tu contraseña" value={f.password} onChange={(e) => sf("password", e.target.value)} />
+              </div>
+              <button type="submit" className="btn bp blg auth-primary" disabled={loading}>
                 {loading ? <><div className="spin" /> Entrando...</> : "Iniciar sesión"}
               </button>
             </form>
@@ -117,12 +170,24 @@ export default function Auth({ setSession, toast }) {
               {step === 1 && (
                 <div className="fi">
                   <div className="g2">
-                    <div className="fg"><label className="fl">Nombre *</label><input className="inp" placeholder="Juan" value={f.nombre} onChange={(e) => sf("nombre", e.target.value)} /></div>
-                    <div className="fg"><label className="fl">Apellido *</label><input className="inp" placeholder="Pérez" value={f.apellido} onChange={(e) => sf("apellido", e.target.value)} /></div>
+                    <div className="fg">
+                      <label className="fl">Nombre *</label>
+                      <input className="inp" placeholder="Juan" value={f.nombre} onChange={(e) => sf("nombre", e.target.value)} />
+                    </div>
+                    <div className="fg">
+                      <label className="fl">Apellido *</label>
+                      <input className="inp" placeholder="Pérez" value={f.apellido} onChange={(e) => sf("apellido", e.target.value)} />
+                    </div>
                   </div>
-                  <div className="fg"><label className="fl">Email *</label><input className="inp" type="email" autoComplete="email" placeholder="tu@correo.com" value={f.email} onChange={(e) => sf("email", e.target.value)} /></div>
-                  <div className="fg"><label className="fl">WhatsApp</label><input className="inp" placeholder="+57 300 123 4567" value={f.telefono} onChange={(e) => sf("telefono", e.target.value)} /></div>
-                  <div className="g2" style={{ gap: 10 }}>
+                  <div className="fg">
+                    <label className="fl">Email *</label>
+                    <input className="inp" type="email" autoComplete="email" placeholder="tu@correo.com" value={f.email} onChange={(e) => sf("email", e.target.value)} />
+                  </div>
+                  <div className="fg">
+                    <label className="fl">WhatsApp</label>
+                    <input className="inp" placeholder="+57 300 123 4567" value={f.telefono} onChange={(e) => sf("telefono", e.target.value)} />
+                  </div>
+                  <div className="g2 auth-tight-grid">
                     <div className="fg">
                       <label className="fl">Tipo de ID *</label>
                       <select className="inp" value={f.tipo_identificacion} onChange={(e) => sf("tipo_identificacion", e.target.value)}>
@@ -134,7 +199,7 @@ export default function Auth({ setSession, toast }) {
                       <input className="inp" placeholder="1234567890" value={f.cedula} onChange={(e) => sf("cedula", e.target.value.replace(/\D/g, ""))} />
                     </div>
                   </div>
-                  <button className="btn bp blg" style={{ width: "100%" }} disabled={!f.nombre || !f.apellido || !f.email || !f.cedula} onClick={() => setStep(2)}>
+                  <button type="button" className="btn bp blg auth-primary" disabled={!f.nombre || !f.apellido || !f.email || !f.cedula} onClick={() => setStep(2)}>
                     Continuar →
                   </button>
                 </div>
@@ -142,15 +207,15 @@ export default function Auth({ setSession, toast }) {
 
               {step === 2 && (
                 <div className="fi">
-                  <button className="btn bg_ bsm" style={{ marginBottom: 16 }} onClick={() => setStep(1)}>← Atrás</button>
+                  <button type="button" className="btn bg_ bsm auth-back" onClick={() => setStep(1)}>← Atrás</button>
                   <div className="fg">
                     <label className="fl">Contraseña *</label>
                     <input className="inp" type="password" placeholder="Mínimo 6 caracteres" value={f.password} onChange={(e) => sf("password", e.target.value)} />
-                    <div style={{ display: "flex", flexDirection: "column", gap: 4, marginTop: 8 }}>
+                    <div className="auth-checks">
                       {checks.map(([k, label, ok]) => (
-                        <div key={k} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11.5 }}>
-                          <span style={{ color: ok ? "var(--g2)" : "var(--s400)", fontSize: 14 }}>{ok ? "✓" : "○"}</span>
-                          <span style={{ color: ok ? "var(--g2)" : "var(--s400)" }}>{label}</span>
+                        <div key={k} className={ok ? "ok" : ""}>
+                          <span>{ok ? "✓" : "○"}</span>
+                          <span>{label}</span>
                         </div>
                       ))}
                     </div>
@@ -159,7 +224,7 @@ export default function Auth({ setSession, toast }) {
                     <label className="fl">Confirmar contraseña *</label>
                     <input className="inp" type="password" placeholder="Repite tu contraseña" value={f.confirm_password} onChange={(e) => sf("confirm_password", e.target.value)} />
                   </div>
-                  <button className="btn bp blg" style={{ width: "100%" }} disabled={!strongPasswordOk(f.password, f) || f.password !== f.confirm_password} onClick={() => setStep(3)}>
+                  <button type="button" className="btn bp blg auth-primary" disabled={!strongPasswordOk(f.password, f) || f.password !== f.confirm_password} onClick={() => setStep(3)}>
                     Continuar →
                   </button>
                 </div>
@@ -167,27 +232,27 @@ export default function Auth({ setSession, toast }) {
 
               {step === 3 && (
                 <div className="fi">
-                  <button className="btn bg_ bsm" style={{ marginBottom: 16 }} onClick={() => setStep(2)}>← Atrás</button>
+                  <button type="button" className="btn bg_ bsm auth-back" onClick={() => setStep(2)}>← Atrás</button>
 
                   {usernamePreview && (
-                    <div style={{ background: "var(--s50)", border: "1px solid var(--s100)", borderRadius: 9, padding: "10px 14px", marginBottom: 14, fontSize: 13 }}>
-                      <span style={{ color: "var(--s500)" }}>Tu nombre de usuario será: </span>
-                      <strong style={{ color: "var(--g2)" }}>@{usernamePreview}</strong>
-                      <div style={{ fontSize: 11.5, color: "var(--s400)", marginTop: 3 }}>Podrás cambiarlo después en tu perfil.</div>
+                    <div className="auth-preview">
+                      <span>Tu nombre de usuario será: </span>
+                      <strong>@{usernamePreview}</strong>
+                      <div>Podrás cambiarlo después en tu perfil.</div>
                     </div>
                   )}
 
-                  <p style={{ fontSize: 13, color: "var(--s600)", marginBottom: 14 }}>Opcional: agrega tu cuenta bancaria para recibir pagos.</p>
+                  <p className="auth-helper">Opcional: agrega tu cuenta bancaria para recibir pagos.</p>
                   <div className="fg">
                     <label className="fl">Entidad financiera</label>
                     <select className="inp" value={f.banco} onChange={(e) => { sf("banco", e.target.value); sf("numero_cuenta", ""); }}>
-                      <option value="">— Omitir por ahora —</option>
+                      <option value="">Omitir por ahora</option>
                       {FINANCIAL_ENTITIES.map((b) => <option key={b} value={b}>{b}</option>)}
                     </select>
                   </div>
 
                   {f.banco && bankKind === "bank" && (
-                    <div className="g2" style={{ gap: 10 }}>
+                    <div className="g2 auth-tight-grid">
                       <div className="fg">
                         <label className="fl">Tipo de cuenta</label>
                         <select className="inp" value={f.tipo_cuenta} onChange={(e) => sf("tipo_cuenta", e.target.value)}>
@@ -212,27 +277,45 @@ export default function Auth({ setSession, toast }) {
                   {f.banco && bankKind === "breb" && (
                     <div className="fg">
                       <label className="fl">Llave Bre-B</label>
-                      <input className="inp" placeholder="@ingresa tu llave" value={f.numero_cuenta} onChange={(e) => sf("numero_cuenta", e.target.value)} style={{ color: f.numero_cuenta ? undefined : "var(--s400)" }} />
+                      <input className="inp" placeholder="@ingresa tu llave" value={f.numero_cuenta} onChange={(e) => sf("numero_cuenta", e.target.value)} />
                       <div className="fh">Puede ser tu número de celular, email o alias con @</div>
                     </div>
                   )}
 
-                  <button className="btn bp blg" style={{ width: "100%" }} onClick={register} disabled={loading}>
-                    {loading ? <><div className="spin" /> Creando cuenta...</> : "✅ Crear cuenta"}
+                  <button type="button" className="btn bp blg auth-primary" onClick={register} disabled={loading}>
+                    {loading ? <><div className="spin" /> Creando cuenta...</> : "Crear cuenta"}
                   </button>
                 </div>
               )}
             </>
           )}
 
-          <p style={{ textAlign: "center", marginTop: 18, fontSize: 13.5, color: "var(--s600)" }}>
+          <p className="auth-switch">
             {mode === "login" ? "¿Sin cuenta? " : "¿Ya tienes cuenta? "}
-            <span style={{ color: "var(--g2)", fontWeight: 700, cursor: "pointer" }} onClick={() => { setMode(mode === "login" ? "register" : "login"); setStep(1); setF_((p) => ({ ...p, password: "" })); }}>
+            <button type="button" onClick={switchMode}>
               {mode === "login" ? "Regístrate gratis" : "Inicia sesión"}
-            </span>
+            </button>
           </p>
         </div>
-      </div>
+      </section>
     </div>
+  );
+}
+
+function ProviderIcon({ name }) {
+  if (name === "google") {
+    return (
+      <svg viewBox="0 0 48 48" aria-hidden="true">
+        <path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.3 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.1 6.1 29.3 4 24 4 13 4 4 13 4 24s9 20 20 20 20-9 20-20c0-1.3-.1-2.4-.4-3.5Z"/>
+        <path fill="#FF3D00" d="m6.3 14.7 6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.1 6.1 29.3 4 24 4 16.2 4 9.5 8.5 6.3 14.7Z"/>
+        <path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.5-5.2l-6.2-5.2C29.3 35.1 26.8 36 24 36c-5.3 0-9.7-3.3-11.3-7.9l-6.5 5C9.3 39.5 16.1 44 24 44Z"/>
+        <path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.3-2.2 4.2-4.1 5.6l6.2 5.2C36.9 39.3 44 34 44 24c0-1.3-.1-2.4-.4-3.5Z"/>
+      </svg>
+    );
+  }
+  return (
+    <svg viewBox="0 0 48 48" aria-hidden="true">
+      <path fill="currentColor" d="M32.9 25.4c0-5.5 4.5-8.2 4.7-8.3-2.6-3.8-6.6-4.3-8-4.4-3.4-.3-6.7 2-8.4 2-1.8 0-4.5-2-7.3-1.9-3.8.1-7.3 2.2-9.2 5.6-3.9 6.8-1 16.8 2.8 22.3 1.9 2.7 4.1 5.7 7 5.6 2.8-.1 3.9-1.8 7.3-1.8 3.4 0 4.4 1.8 7.4 1.8 3.1 0 5-2.7 6.9-5.4 2.2-3.1 3-6.1 3.1-6.3-.1 0-6.3-2.4-6.3-9.2ZM27.3 9.1c1.5-1.8 2.5-4.3 2.2-6.8-2.1.1-4.7 1.4-6.2 3.2-1.4 1.6-2.6 4.2-2.3 6.7 2.3.2 4.7-1.2 6.3-3.1Z"/>
+    </svg>
   );
 }

@@ -1,4 +1,5 @@
 import Av from "./Avatar";
+import logo from "../assets/tratoya-logo.png";
 
 const NAV = [
   ["dashboard", "🏠", "Inicio"],
@@ -15,10 +16,9 @@ export default function Sidebar({ page, setPage, user, onLogout, hasPendingTrato
   return (
     <aside className="sb">
       <div className="sb-logo">
-        <div className="sb-mk">T</div>
-        <span style={{ fontFamily: "Manrope", fontSize: 18, fontWeight: 800, color: "#fff" }}>
-          Trato<span style={{ color: "var(--g)" }}>Ya</span>
-        </span>
+        <a className="sb-brand-link" href="/" aria-label="Ir al inicio">
+          <img src={logo} alt="TratoYa" />
+        </a>
         <span style={{ marginLeft: 4, fontSize: 9, fontWeight: 700, color: "var(--g)", background: "rgba(168,196,0,.15)", padding: "2px 6px", borderRadius: 6 }}>
           BETA
         </span>

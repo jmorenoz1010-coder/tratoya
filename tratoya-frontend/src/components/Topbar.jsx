@@ -2,18 +2,22 @@ import Av from "./Avatar";
 
 export default function Topbar({ title, user, page, setPage }) {
   const nom = `${user?.nombre || ""} ${user?.apellido || ""}`.trim();
+  const goBack = () => {
+    if (page === "dashboard") window.location.href = "/";
+    else setPage("dashboard");
+  };
+
   return (
     <div className="topbar">
       <div style={{ display: "flex", alignItems: "center", gap: 9, minWidth: 0 }}>
-        {page !== "dashboard" && (
-          <button
-            className="btn bg_ back-mini"
-            onClick={() => setPage("dashboard")}
-            title="Volver"
-          >
-            ←
-          </button>
-        )}
+        <button
+          className="btn bg_ back-mini app-back-mini"
+          onClick={goBack}
+          title={page === "dashboard" ? "Volver al inicio" : "Volver"}
+          aria-label={page === "dashboard" ? "Volver al inicio" : "Volver"}
+        >
+          ←
+        </button>
         <span style={{ fontFamily: "Manrope", fontWeight: 700, fontSize: 15, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
           {title}
         </span>

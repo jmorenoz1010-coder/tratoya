@@ -1,0 +1,15 @@
+<svg width="188" height="56" viewBox="0 0 188 56" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect x="0.5" y="0.5" width="187" height="55" rx="10.5" fill="#050505" stroke="#FFFFFF" stroke-opacity=".34"/>
+  <path d="M20 14.3v27.4c0 .8.2 1.4.6 1.8l16-15.5-16-15.5c-.4.4-.6 1-.6 1.8z" fill="url(#gpa)"/>
+  <path d="M42.3 22.7l-5.7-3.3L21.1 12.1 37.5 28l4.8-5.3z" fill="url(#gpb)"/>
+  <path d="M21.1 43.9l15.5-7.3 5.7-3.3-4.8-5.3-16.4 15.9z" fill="url(#gpc)"/>
+  <path d="M48.2 26.4l-5.9-3.7-4.8 5.3 4.8 5.3 5.9-3.7c2.4-1.4 2.4-1.8 0-3.2z" fill="url(#gpd)"/>
+  <text x="119" y="21" text-anchor="middle" fill="#f7faf9" font-family="Arial, Helvetica, sans-serif" font-size="8.5" font-weight="700" letter-spacing=".7">PROXIMAMENTE EN</text>
+  <text x="119" y="41" text-anchor="middle" fill="#ffffff" font-family="Arial, Helvetica, sans-serif" font-size="19" font-weight="900">Google Play</text>
+  <defs>
+    <linearGradient id="gpa" x1="19" y1="11" x2="38" y2="30" gradientUnits="userSpaceOnUse"><stop stop-color="#00f0ff"/><stop offset="1" stop-color="#00c853"/></linearGradient>
+    <linearGradient id="gpb" x1="22" y1="12" x2="43" y2="25" gradientUnits="userSpaceOnUse"><stop stop-color="#b6ff2d"/><stop offset="1" stop-color="#ffe05f"/></linearGradient>
+    <linearGradient id="gpc" x1="22" y1="43" x2="43" y2="31" gradientUnits="userSpaceOnUse"><stop stop-color="#ff4f7b"/><stop offset="1" stop-color="#ffcc33"/></linearGradient>
+    <linearGradient id="gpd" x1="38" y1="22" x2="50" y2="34" gradientUnits="userSpaceOnUse"><stop stop-color="#ffd633"/><stop offset="1" stop-color="#ff7a00"/></linearGradient>
+  </defs>
+</svg>

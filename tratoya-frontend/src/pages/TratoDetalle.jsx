@@ -159,7 +159,7 @@ export default function TratoDetalle({ tratoId, setPage, setDisputeTratoId, user
 
   const steps = [
     { l: "Trato creado",   s: "Condiciones aceptadas", done: true },
-    { l: "Pago en custodia", s: `${fmt(montoTrato)} protegido`, done: ["pago_retenido","en_entrega","confirmado","completado"].includes(trato.estado), active: trato.estado === "pago_retenido" },
+    { l: "Pago protegido", s: `${fmt(montoTrato)} seguro`, done: ["pago_retenido","en_entrega","confirmado","completado"].includes(trato.estado), active: trato.estado === "pago_retenido" },
     { l: "En entrega",    s: trato.guia_envio ? (medioEnvio === "en_persona" ? `📍 ${puntoEncuentro || "En persona"}` : medioEnvio === "domiciliario" ? `🛵 ${telefonoDomiciliario || "contacto"}` : `Guía ${trato.guia_envio}`) : "Pendiente", done: ["en_entrega","confirmado","completado"].includes(trato.estado), active: trato.estado === "en_entrega" },
     { l: "Confirmación",  s: "Comprador verifica", done: ["confirmado","completado"].includes(trato.estado), active: trato.estado === "confirmado" },
     { l: "Pago liberado", s: `${fmt(neto)} al vendedor`, done: trato.estado === "completado" },
