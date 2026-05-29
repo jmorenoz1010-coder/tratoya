@@ -34,10 +34,7 @@ export default function MisTratos({ setPage, setTratoId, user, toast, alertTrato
     <div className="page fi">
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
         <h1 className="page-hd" style={{ fontSize: 21 }}>Mis Tratos</h1>
-        <div style={{ display: "flex", gap: 7 }}>
-          <button className="btn bg_ bsm" onClick={load}>↻</button>
-          <button className="btn bp" onClick={() => setPage("crear")}>➕ Nuevo</button>
-        </div>
+        <button className="btn bg_ bsm" onClick={load}>↻</button>
       </div>
 
       <div style={{ display: "flex", gap: 10, marginBottom: 14, flexWrap: "wrap" }}>

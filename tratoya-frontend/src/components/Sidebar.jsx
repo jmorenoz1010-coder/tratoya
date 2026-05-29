@@ -11,7 +11,7 @@ const NAV = [
 ];
 const BOT = [["perfil", "👤", "Perfil"]];
 
-export default function Sidebar({ page, setPage, user, onLogout, hasPendingTratos = false }) {
+export default function Sidebar({ page, setPage, user, onLogout, onMenuOpen, hasPendingTratos = false }) {
   const nom = user ? `${user.nombre} ${user.apellido}` : "";
   return (
     <aside className="sb">
@@ -52,6 +52,11 @@ export default function Sidebar({ page, setPage, user, onLogout, hasPendingTrato
         ))}
         <div className="ni nav-logout" onClick={onLogout} style={{ marginTop: 6 }}>
           <span style={{ fontSize: 15 }}>🚪</span> Cerrar sesión
+        </div>
+        {/* Hamburger — solo visible en mobile nav */}
+        <div className="ni nav-menu" onClick={onMenuOpen} role="button" aria-label="Abrir menú">
+          <span style={{ fontSize: 16, lineHeight: 1, letterSpacing: 1 }}>☰</span>
+          <span className="nav-text">Más</span>
         </div>
       </nav>
 

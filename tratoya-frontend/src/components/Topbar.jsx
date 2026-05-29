@@ -1,11 +1,11 @@
 import Av from "./Avatar";
 
-export default function Topbar({ title, user, page, setPage, onMenuOpen }) {
+export default function Topbar({ title, user, page, setPage, onMenuOpen, onBack }) {
   const nom = `${user?.nombre || ""} ${user?.apellido || ""}`.trim();
-  const goBack = () => {
+  const goBack = onBack || (() => {
     if (page === "dashboard") window.location.href = "/";
     else setPage("dashboard");
-  };
+  });
 
   return (
     <div className="topbar">

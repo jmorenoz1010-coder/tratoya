@@ -149,6 +149,7 @@ export default function AppShell({ session, setSession, toast }) {
     const requested = new URLSearchParams(window.location.search).get("page");
     return PAGE_TITLES[requested] ? requested : "dashboard";
   });
+  const [pageStack, setPageStack] = useState([]);
   const [, startTransition] = useTransition();
   const [tratoId, setTratoId] = useState(null);
   const [disputeTratoId, setDisputeTratoId] = useState(null);
@@ -161,14 +162,49 @@ export default function AppShell({ session, setSession, toast }) {
   const [pendingTratosAlert, setPendingTratosAlert] = useState(false);
 
   const navigateTo = useCallback((next) => {
-    startTransition(() => setPage(next));
-  }, []);
+    startTransition(() => {
+      setPageStack((s) => [...s, page]);
+      setPage(next);
+      window.history.pushState({ tratoyaPage: next }, "");
+    });
+  }, [page]);
+
+  const goBack = useCallback(() => {
+    startTransition(() => {
+      if (pageStack.length > 0) {
+        const prev = pageStack[pageStack.length - 1];
+        setPageStack((s) => s.slice(0, -1));
+        setPage(prev);
+      } else {
+        window.location.href = "/";
+      }
+    });
+  }, [pageStack]);
+
+  // Captura el botón "atrás" nativo del navegador
+  useEffect(() => {
+    window.history.pushState(null, "");
+    const handlePop = () => {
+      startTransition(() => {
+        if (pageStack.length > 0) {
+          const prev = pageStack[pageStack.length - 1];
+          setPageStack((s) => s.slice(0, -1));
+          setPage(prev);
+          window.history.pushState(null, "");
+        } else {
+          window.location.href = "/";
+        }
+      });
+    };
+    window.addEventListener("popstate", handlePop);
+    return () => window.removeEventListener("popstate", handlePop);
+  }, [pageStack]);
 
   const showFloatingNote = useCallback((note) => {
     setFloatingNote(note);
     if (navigator.vibrate) try { navigator.vibrate(note?.tipo === "trato_completado" ? [45, 28, 45] : [35]); } catch {}
     playBubble();
-    setTimeout(() => setFloatingNote((n) => (n === note ? null : n)), 9000);
+    setTimeout(() => setFloatingNote((n) => (n === note ? null : n)), 3000);
   }, []);
 
   useEffect(() => {
@@ -346,6 +382,7 @@ export default function AppShell({ session, setSession, toast }) {
         setPage={(next) => { navigateTo(next); if (next === "tratos") setPendingTratosAlert(false); }}
         user={session.user}
         onLogout={logout}
+        onMenuOpen={() => setDrawerOpen(true)}
         hasPendingTratos={pendingTratosAlert}
       />
       <div className="main">
@@ -354,6 +391,7 @@ export default function AppShell({ session, setSession, toast }) {
           user={session.user}
           page={page}
           setPage={navigateTo}
+          onBack={goBack}
           onMenuOpen={() => setDrawerOpen(true)}
         />
         <Suspense fallback={null}>
@@ -377,7 +415,7 @@ export default function AppShell({ session, setSession, toast }) {
           onClick={() => navigateTo("crear")}
           aria-label="Crear trato"
         >
-          <span aria-hidden="true" />
+          + Crear trato
         </button>
       )}
 

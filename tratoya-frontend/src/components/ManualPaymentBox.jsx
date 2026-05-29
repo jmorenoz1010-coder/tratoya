@@ -8,14 +8,12 @@ const PAYMENT_NAME = import.meta.env.VITE_MANUAL_PAYMENT_NAME || "TratoYa";
 export default function ManualPaymentBox({ amount, reference, busy, onReport }) {
   const [open, setOpen] = useState(false);
   const [method, setMethod] = useState("breb");
-  const [transactionRef, setTransactionRef] = useState("");
-  const [transferConcept, setTransferConcept] = useState("");
   const [receipt, setReceipt] = useState(null);
   const [notes, setNotes] = useState("");
 
   const submit = () => {
     if (!receipt) return;
-    onReport({ method, transactionRef: transactionRef.trim(), transferConcept: transferConcept.trim(), receipt, notes });
+    onReport({ method, transactionRef: "", transferConcept: "", receipt, notes });
   };
 
   const ready = Boolean(receipt);
@@ -79,24 +77,13 @@ export default function ManualPaymentBox({ amount, reference, busy, onReport }) 
         Incluye la referencia <strong>{reference}</strong> en el concepto de la transferencia si tu banco lo permite.
       </div>
 
-      <div className="g2 manual-pay-form">
-        <div className="fg">
-          <label className="fl">Método usado</label>
-          <select className="inp" value={method} onChange={(e) => setMethod(e.target.value)}>
-            <option value="breb">Bre-B</option>
-            <option value="nequi">Nequi</option>
-            <option value="transferencia">Transferencia</option>
-          </select>
-        </div>
-        <div className="fg">
-          <label className="fl">Número de transferencia <span>Opcional</span></label>
-          <input className="inp" placeholder="Si tu banco lo muestra" value={transactionRef} onChange={(e) => setTransactionRef(e.target.value)} />
-        </div>
-      </div>
       <div className="fg">
-        <label className="fl">Mensaje o concepto enviado en Nequi/Bre-B <span>Recomendado</span></label>
-        <input className="inp" placeholder={`Ej: Pago trato ${reference}`} value={transferConcept} onChange={(e) => setTransferConcept(e.target.value)} />
-        <div className="fh">Aviso: si tu app lo permite, escribe el número generado por TratoYa ({reference}) en el mensaje de Nequi o de la transferencia para verificar más rápido.</div>
+        <label className="fl">Método usado</label>
+        <select className="inp" value={method} onChange={(e) => setMethod(e.target.value)}>
+          <option value="breb">Bre-B</option>
+          <option value="nequi">Nequi</option>
+          <option value="transferencia">Transferencia</option>
+        </select>
       </div>
       <div className="fg">
         <label className="fl">Comprobante de pago <span>Obligatorio</span></label>
