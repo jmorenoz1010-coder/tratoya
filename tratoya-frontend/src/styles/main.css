@@ -1674,7 +1674,7 @@ tbody tr:hover td{background:var(--s50)}
 .auth-callback-screen p{margin:0;font-weight:900}
 
 @media (max-width:720px){
-  .public-back{top:12px;left:12px;width:40px;height:40px;font-size:21px}
+  .public-back{display:none!important}
   .auth-social-login{grid-template-columns:1fr}
   .legal-header{align-items:flex-start;flex-direction:column;margin-top:36px}
   .legal-header img{width:146px}

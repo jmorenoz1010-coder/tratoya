@@ -130,5 +130,11 @@ async function start() {
 
 if (process.env.VERCEL !== '1') {
   start();
+} else {
+  // En Vercel (serverless) no levantamos el servidor, pero sí pre-calentamos la DB
+  const { sequelize } = require('./config/database');
+  sequelize.authenticate().catch((e) => {
+    logger.warn('⚠️  DB warm-up en Vercel falló:', e.message);
+  });
 }
 module.exports = app;

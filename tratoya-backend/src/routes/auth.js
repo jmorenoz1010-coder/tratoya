@@ -282,7 +282,11 @@ router.post('/login', [
     const { email, password } = req.body;
     const user = await User.findOne({ where: { email } });
 
-    if (!user || !(await bcrypt.compare(password, user.password_hash))) {
+    let passwordOk = false;
+    if (user && user.password_hash) {
+      try { passwordOk = await bcrypt.compare(password, user.password_hash); } catch { passwordOk = false; }
+    }
+    if (!passwordOk) {
       return res.status(401).json({ success: false, message: 'Email o contraseña incorrectos' });
     }
     if (user.is_blocked) {
