@@ -4,10 +4,9 @@ import logo from "../assets/tratoya-logo.png";
 const NAV = [
   ["dashboard", "🏠", "Inicio"],
   ["tratos",    "📋", "Mis Tratos"],
-  ["crear",     "➕", "Crear trato"],
+  ["crear",     "⚡", "Crear trato"],
   ["pagos",     "💳", "Pagos"],
   ["disputas",  "⚖️", "Disputas"],
-  ["reputacion","⭐", "Reputación"],
 ];
 const BOT = [["perfil", "👤", "Perfil"]];
 
@@ -29,7 +28,7 @@ export default function Sidebar({ page, setPage, user, onLogout, onMenuOpen, has
         {NAV.map(([id, ic, l]) => (
           <div
             key={id}
-            className={`ni ${id === "crear" ? "nav-create" : ""} ${page === id ? "act" : ""}`}
+            className={`ni ${id === "crear" ? "nav-create" : ""} ${id === "disputas" ? "nav-disputas" : ""} ${page === id ? "act" : ""}`}
             onClick={() => setPage(id)}
             title={id === "tratos" && hasPendingTratos ? "Tienes tratos sin concretar" : undefined}
           >
@@ -55,7 +54,7 @@ export default function Sidebar({ page, setPage, user, onLogout, onMenuOpen, has
         </div>
         {/* Hamburger — solo visible en mobile nav */}
         <div className="ni nav-menu" onClick={onMenuOpen} role="button" aria-label="Abrir menú">
-          <span style={{ fontSize: 16, lineHeight: 1, letterSpacing: 1 }}>☰</span>
+          <span style={{ fontSize: 15 }}>☰</span>
           <span className="nav-text">Más</span>
         </div>
       </nav>

@@ -4,7 +4,7 @@ import { api } from "../lib/api";
 const STATUS_COPY = {
   PAID:             ["✅", "Pago recibido",      "Tus fondos quedaron registrados en TratoYA."],
   PAYMENT_PENDING:  ["⏳", "Pago pendiente",     "Tu pago está pendiente de confirmación."],
-  CREATED:          ["⏳", "Verificando pago",   "Estamos verificando tu pago manual."],
+  CREATED:          ["⏳", "Verificando pago",   "Estamos verificando tu pago."],
   PAYMENT_DECLINED: ["❌", "Pago rechazado",     "El pago fue rechazado. Puedes intentar nuevamente."],
   PAYMENT_ERROR:    ["⚠️", "Error en el pago",  "Hubo un error procesando el pago."],
   PAYMENT_VOIDED:   ["↩️", "Pago anulado",      "El pago fue anulado."],
@@ -30,7 +30,7 @@ export default function PaymentResultPage({ session, goAuth, toast }) {
   }, [session, reference]);
 
   const status = result?.status;
-  const [icon, title, body] = STATUS_COPY[status] || ["💳", "Resultado del pago", "Estamos verificando tu pago manual."];
+  const [icon, title, body] = STATUS_COPY[status] || ["💳", "Resultado del pago", "Estamos verificando tu pago."];
 
   return (
     <div style={{ minHeight: "100vh", display: "grid", placeItems: "center", background: "var(--s50)", padding: 20 }}>

@@ -316,6 +316,38 @@ tbody tr:hover td{background:var(--s50)}
 @keyframes keyShine{0%{left:-45%;opacity:0}35%{opacity:.9}70%,100%{left:115%;opacity:0}}
 
 
+/* ── Trato row cards (MisTratos) ────────────────────── */
+.trato-row{background:#fff;border-radius:13px;padding:13px 14px;border:1.5px solid var(--s100);display:flex;align-items:center;gap:10px;transition:all .18s}
+.trato-row:hover{border-color:var(--g);box-shadow:0 4px 16px rgba(7,25,47,.09);transform:translateY(-1px)}
+.trato-menu-btn{width:34px;height:34px;border:0;background:transparent;border-radius:9px;cursor:pointer;font-size:20px;color:var(--s400);display:flex;align-items:center;justify-content:center;flex-shrink:0;line-height:1;transition:background .14s,color .14s}
+.trato-menu-btn:hover{background:var(--s100);color:var(--n)}
+.trato-dropdown{background:#fff;border:1px solid var(--s100);border-radius:11px;padding:4px;box-shadow:0 8px 28px rgba(7,25,47,.14);position:absolute;right:12px;top:calc(100% + 4px);z-index:20;min-width:170px;animation:pi .18s ease both}
+.trato-dropdown-item{padding:9px 13px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:8px;color:var(--n);background:none;border:0;width:100%;text-align:left;transition:background .12s}
+.trato-dropdown-item:hover{background:var(--s50)}
+
+/* ── Pago cards (Pagos) ─────────────────────────────── */
+.pago-card{background:#fff;border-radius:13px;padding:14px 16px;border:1.5px solid var(--s100);cursor:pointer;transition:all .18s}
+.pago-card:hover{border-color:var(--g);box-shadow:0 4px 16px rgba(7,25,47,.09);transform:translateY(-1px)}
+.pago-card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:9px}
+.pago-card-trato-info{min-width:0;flex:1}
+.pago-card-codigo{font-family:'Manrope';font-weight:700;font-size:11px;color:var(--g2);display:block;margin-bottom:2px}
+.pago-card-titulo{font-size:13.5px;font-weight:600;color:var(--n);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;max-width:200px}
+.pago-card-bottom{display:flex;align-items:center;justify-content:space-between}
+.pago-card-amount{font-family:'Manrope';font-weight:800;font-size:17px;color:var(--n)}
+.pago-card-date{font-size:12px;color:var(--s400)}
+
+/* ── Desktop sidebar create button ──────────────────── */
+.ni.nav-create{
+  background:linear-gradient(135deg,#dfff36 0%,#93d317 56%,#4ba51c 100%)!important;
+  color:#071819!important;
+  font-weight:900!important;
+  border-color:rgba(181,228,0,.35)!important;
+  box-shadow:0 8px 22px rgba(74,165,28,.22);
+  margin:6px 2px 8px;
+  animation:createGlow 2.8s ease-in-out infinite;
+}
+.ni.nav-create:hover{transform:translateY(-1px);box-shadow:0 12px 32px rgba(74,165,28,.38)!important}
+
 /* ── KPI cards ──────────────────────────────────────── */
 .kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:11px;margin-bottom:18px}
 .kpi{background:#fff;border-radius:13px;padding:15px 17px;border:1px solid var(--s100);transition:transform .2s,box-shadow .2s}
@@ -412,12 +444,12 @@ tbody tr:hover td{background:var(--s50)}
   .sb{width:100%;min-height:0;height:76px;top:auto;bottom:0;left:0;right:0;z-index:120;display:block;border-top:1px solid rgba(169,235,27,.14);box-shadow:0 -18px 44px rgba(0,0,0,.28)}
   .sb-logo,.sb-usr,.nav-lbl{display:none}
   .sb-nav{height:76px;display:flex;align-items:center;gap:5px;padding:8px max(8px,env(safe-area-inset-left)) calc(8px + env(safe-area-inset-bottom)) max(8px,env(safe-area-inset-right));overflow-x:auto;overflow-y:hidden;scroll-snap-type:x proximity}
-  .ni{min-width:0;flex:0 0 calc((100% - 20px)/6);justify-content:center;flex-direction:column;gap:3px;padding:7px 4px;margin:0;font-size:10px;text-align:center;border-radius:15px;scroll-snap-align:center;color:rgba(244,255,249,.74)}
+  .ni{min-width:0;flex:0 0 calc((100% - 12px)/4);justify-content:center;flex-direction:column;gap:3px;padding:7px 4px;margin:0;font-size:10px;text-align:center;border-radius:15px;scroll-snap-align:center;color:rgba(244,255,249,.74)}
   .ni span{font-size:16px!important}
   .ni .nav-text{font-size:10.5px!important;max-width:100%}
   .ni .nav-bubble{position:absolute;top:5px;right:9px;margin-left:0;min-width:15px;height:15px;padding:0 4px;font-size:9px!important;box-shadow:0 0 0 2px rgba(224,123,0,.18)}
-  /* Crear trato, perfil y cerrar sesión se ocultan en el nav mobile — accesibles via FAB y drawer */
-  .ni.nav-create,.ni.nav-perfil,.ni.nav-logout{display:none!important}
+  /* Crear trato, disputas, perfil y cerrar sesión se ocultan en el nav mobile — accesibles via FAB y drawer */
+  .ni.nav-create,.ni.nav-perfil,.ni.nav-logout,.ni.nav-disputas{display:none!important}
   /* Títulos de página visibles sobre el fondo oscuro */
   .page-hd{color:#fff!important}
   .main{margin-left:0;padding-bottom:96px;background:radial-gradient(circle at 88% 4%,rgba(169,235,27,.13),transparent 22%),linear-gradient(180deg,#071819 0,#0b2523 112px,#f4f7f5 112px,#f4f7f5 100%)}
@@ -452,27 +484,26 @@ tbody tr:hover td{background:var(--s50)}
   .quick-create-pill{border-radius:999px!important;padding:8px 14px!important;align-items:center;box-shadow:0 12px 28px rgba(181,228,0,.24)}
   .mobile-create-fab{
     position:fixed;
-    right:14px;
+    right:16px;
     bottom:92px;
     z-index:130;
-    width:auto;
-    height:42px;
-    padding:0 16px 0 12px;
-    gap:6px;
+    width:60px;
+    height:60px;
+    border-radius:22px;
     border:0;
-    border-radius:21px;
-    display:flex;
-    align-items:center;
-    font-family:inherit;
-    font-size:13px;
-    font-weight:700;
-    letter-spacing:-0.2px;
+    display:grid;
+    place-items:center;
+    font-family:'Manrope',sans-serif;
+    font-size:32px;
+    font-weight:800;
+    line-height:1;
     color:#071819;
     background:linear-gradient(135deg,#dfff36 0%,#93d317 56%,#4ba51c 100%);
     box-shadow:0 8px 22px rgba(74,165,28,.38),0 0 0 5px rgba(169,235,27,.1);
     animation:mobileFabBreath 2.8s ease-in-out infinite;
     cursor:pointer;
   }
+  .mobile-create-fab span{font-size:32px;font-weight:800;line-height:1;color:#071819}
   .lnav{height:auto;min-height:62px;padding:10px 14px;gap:10px;align-items:center}
   .lnav .btn{height:36px;font-size:12px;padding:0 12px}
   .hero{padding:42px 18px 46px}

@@ -50,8 +50,8 @@ export default function Dashboard({ setPage, setTratoId, user, toast, setUser })
         </div>
         <div className="dashboard-actions" style={{ display: "flex", gap: 8 }}>
           <button className="btn bo bsm" onClick={() => loadDashboard()} title="Actualizar">↻</button>
-          <button className="btn bp blg dashboard-create-btn" onClick={() => setPage("crear")}>
-            <span className="soft-plus" aria-hidden="true" /> Nuevo trato
+          <button className="btn bp blg dashboard-create-btn create-glow-btn" onClick={() => setPage("crear")}>
+            <span className="soft-plus" aria-hidden="true" /> Crear trato
           </button>
         </div>
       </div>
@@ -153,23 +153,6 @@ export default function Dashboard({ setPage, setTratoId, user, toast, setUser })
             ))}
           </div>
 
-          <div
-            style={{ marginTop: 12, background: "var(--n)", borderRadius: 12, padding: 14, cursor: "pointer", transition: "transform .2s" }}
-            onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.02)")}
-            onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
-            onClick={() => setPage("crear")}
-          >
-            <div style={{ fontSize: 18, marginBottom: 5 }}>⚡</div>
-            <div style={{ fontFamily: "Manrope", fontWeight: 800, fontSize: 13.5, color: "#fff", marginBottom: 3 }}>
-              Trato rápido
-            </div>
-            <div style={{ fontSize: 11.5, color: "rgba(255,255,255,.4)", marginBottom: 10 }}>
-              Comparte el link con tu contraparte
-            </div>
-            <div className="quick-create-pill" style={{ background: "var(--g)", color: "var(--n)", borderRadius: 7, padding: "6px 13px", fontSize: 12, fontWeight: 700, display: "inline-flex", gap: 5 }}>
-              <span className="soft-plus" aria-hidden="true" /> Crear
-            </div>
-          </div>
         </div>
       </div>
     </div>

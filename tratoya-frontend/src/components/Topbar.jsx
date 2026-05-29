@@ -1,6 +1,6 @@
 import Av from "./Avatar";
 
-export default function Topbar({ title, user, page, setPage, onMenuOpen, onBack }) {
+export default function Topbar({ title, user, page, setPage, onMenuOpen, onBack, onProfile }) {
   const nom = `${user?.nombre || ""} ${user?.apellido || ""}`.trim();
   const goBack = onBack || (() => {
     if (page === "dashboard") window.location.href = "/";
@@ -25,8 +25,8 @@ export default function Topbar({ title, user, page, setPage, onMenuOpen, onBack 
 
       <button
         className="user-chip topbar-user-chip"
-        onClick={onMenuOpen}
-        aria-label="Abrir menú de cuenta"
+        onClick={onProfile || onMenuOpen}
+        aria-label="Ir a mi perfil"
         style={{ display: "flex", alignItems: "center", gap: 8, padding: "5px 11px", background: "var(--s50)", borderRadius: 9, border: "1px solid var(--s100)", cursor: "pointer" }}
       >
         <Av name={nom} size={26} />

@@ -1,24 +1,38 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { api } from "../lib/api";
 import { fmt, fmtDate, ESTADO, TIPO_ICO, publicTratoUrl } from "../lib/utils";
 import { SkeletonList } from "../components/SkeletonCard";
 
+let tratosCache = [];
+
 export default function MisTratos({ setPage, setTratoId, user, toast, alertTratoIds = new Set() }) {
-  const [tratos, setTratos] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [tratos, setTratos] = useState(tratosCache);
+  const [loading, setLoading] = useState(tratosCache.length === 0);
   const [filter, setFilter] = useState("todos");
   const [q, setQ] = useState("");
-  const [qrModal, setQrModal] = useState(null);
+  const [openMenu, setOpenMenu] = useState(null);
+  const menuRef = useRef(null);
 
   const load = () => {
-    setLoading(true);
     api.get("/tratos?limit=50")
-      .then((r) => setTratos(r.data || []))
+      .then((r) => {
+        tratosCache = r.data || [];
+        setTratos(tratosCache);
+      })
       .catch((e) => toast(e.message, "error"))
       .finally(() => setLoading(false));
   };
 
-  useEffect(load, []);
+  useEffect(() => { load(); }, []);
+
+  // Cerrar menú al hacer clic fuera
+  useEffect(() => {
+    const handleClick = (e) => {
+      if (menuRef.current && !menuRef.current.contains(e.target)) setOpenMenu(null);
+    };
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, []);
 
   const filtered = tratos.filter((t) => {
     if (filter === "activos" && ["completado", "cancelado", "expirado"].includes(t.estado)) return false;
@@ -34,7 +48,6 @@ export default function MisTratos({ setPage, setTratoId, user, toast, alertTrato
     <div className="page fi">
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
         <h1 className="page-hd" style={{ fontSize: 21 }}>Mis Tratos</h1>
-        <button className="btn bg_ bsm" onClick={load}>↻</button>
       </div>
 
       <div style={{ display: "flex", gap: 10, marginBottom: 14, flexWrap: "wrap" }}>
@@ -49,14 +62,14 @@ export default function MisTratos({ setPage, setTratoId, user, toast, alertTrato
           🔍{" "}
           <input
             placeholder="Buscar..."
-            style={{ border: "none", outline: "none", fontSize: 13, fontFamily: "Inter", background: "transparent", width: "100%" }}
+            style={{ border: "none", outline: "none", fontSize: 13, fontFamily: "inherit", background: "transparent", width: "100%" }}
             value={q}
             onChange={(e) => setQ(e.target.value)}
           />
         </div>
       </div>
 
-      {loading ? (
+      {loading && tratos.length === 0 ? (
         <SkeletonList count={5} />
       ) : filtered.length === 0 ? (
         <div className="empty">
@@ -68,65 +81,78 @@ export default function MisTratos({ setPage, setTratoId, user, toast, alertTrato
           </button>
         </div>
       ) : (
-        <div className="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Código</th>
-                <th>Título</th>
-                <th>Rol</th>
-                <th>Monto</th>
-                <th>Estado</th>
-                <th>Fecha</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((t) => {
-                const ec = ESTADO[t.estado] || ESTADO.borrador;
-                const rol = t.vendedor?.id === user?.id ? "Vendedor" : "Comprador";
-                return (
-                  <tr
-                    key={t.id}
-                    style={{ cursor: "pointer" }}
-                    onClick={() => { setTratoId(t.id); setPage("detalle"); }}
-                  >
-                    <td>
-                      <span style={{ fontFamily: "Manrope", fontWeight: 700, fontSize: 11, color: "var(--g2)" }}>
-                        {t.codigo}
-                      </span>
-                      {alertTratoIds?.has(t.id) && <span style={{color:"var(--or)", fontSize:14, marginLeft:4}} title="Tienes notificaciones sin leer sobre este trato">⚠️</span>}
-                    </td>
-                    <td style={{ fontWeight: 600, maxWidth: 220 }}>
-                      <div style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: 220 }}>
-                        {TIPO_ICO[t.tipo] || "📋"} {t.titulo}
-                      </div>
-                    </td>
-                    <td>
-                      <span className={`bdg ${rol === "Vendedor" ? "nb" : "or"}`}>{rol}</span>
-                    </td>
-                    <td style={{ fontFamily: "Manrope", fontWeight: 700 }}>{fmt(t.monto)}</td>
-                    <td><span className={`bdg ${ec.c}`}>{ec.l}</span></td>
-                    <td style={{ fontSize: 11.5, color: "var(--s400)" }}>{fmtDate(t.createdAt)}</td>
-                    <td>
-                      {t.link_compartir && (
-                        <button
-                          className="btn bo bsm"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            navigator.clipboard.writeText(publicTratoUrl(t.link_compartir));
-                            toast("Link copiado ✓", "success");
-                          }}
-                        >
-                          🔗
-                        </button>
-                      )}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+        <div style={{ display: "flex", flexDirection: "column", gap: 9 }} ref={menuRef}>
+          {filtered.map((t) => {
+            const ec = ESTADO[t.estado] || ESTADO.borrador;
+            const rol = t.vendedor?.id === user?.id ? "Vendedor" : "Comprador";
+            const isMenuOpen = openMenu === t.id;
+            return (
+              <div key={t.id} className="trato-row" style={{ position: "relative" }}>
+                {/* Fila principal clicable */}
+                <div
+                  style={{ display: "flex", alignItems: "center", gap: 11, cursor: "pointer", flex: 1, minWidth: 0 }}
+                  onClick={() => { setTratoId(t.id); setPage("detalle"); }}
+                >
+                  <div style={{ width: 42, height: 42, borderRadius: 11, background: "var(--cr)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 19, flexShrink: 0 }}>
+                    {TIPO_ICO[t.tipo] || "📋"}
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontWeight: 700, fontSize: 14, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", marginBottom: 4, display: "flex", alignItems: "center", gap: 6 }}>
+                      {t.titulo}
+                      {alertTratoIds?.has(t.id) && <span style={{ color: "var(--or)", fontSize: 13 }} title="Tienes notificaciones sin leer">⚠️</span>}
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 7, flexWrap: "wrap" }}>
+                      <span className={`bdg ${ec.c}`}>{ec.l}</span>
+                      <span style={{ fontSize: 11.5, color: "var(--s400)" }}>{fmtDate(t.createdAt)}</span>
+                    </div>
+                  </div>
+                  <div style={{ fontFamily: "Manrope", fontWeight: 800, fontSize: 14, flexShrink: 0, marginLeft: 4 }}>
+                    {fmt(t.monto)}
+                  </div>
+                </div>
+
+                {/* Botón de menú ⋮ */}
+                <button
+                  className="trato-menu-btn"
+                  onClick={(e) => { e.stopPropagation(); setOpenMenu(isMenuOpen ? null : t.id); }}
+                  aria-label="Más opciones"
+                >
+                  ⋮
+                </button>
+
+                {/* Dropdown */}
+                {isMenuOpen && (
+                  <div className="trato-dropdown">
+                    <div className="trato-dropdown-item" style={{ color: "var(--s600)", cursor: "default", fontSize: 11 }}>
+                      <span>🔖</span> {t.codigo}
+                    </div>
+                    <div className="trato-dropdown-item" style={{ color: "var(--s600)", cursor: "default", fontSize: 11 }}>
+                      <span>{rol === "Vendedor" ? "🏷️" : "🛒"}</span> {rol}
+                    </div>
+                    {t.link_compartir && (
+                      <button
+                        className="trato-dropdown-item"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigator.clipboard.writeText(publicTratoUrl(t.link_compartir));
+                          toast("Link copiado ✓", "success");
+                          setOpenMenu(null);
+                        }}
+                      >
+                        <span>🔗</span> Copiar link
+                      </button>
+                    )}
+                    <button
+                      className="trato-dropdown-item"
+                      onClick={(e) => { e.stopPropagation(); setTratoId(t.id); setPage("detalle"); setOpenMenu(null); }}
+                    >
+                      <span>👁️</span> Ver detalle
+                    </button>
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
     </div>

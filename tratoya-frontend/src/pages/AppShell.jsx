@@ -83,7 +83,7 @@ function CelebrationOverlay({ show }) {
   );
 }
 
-function MobileDrawer({ open, onClose, user, onProfile, onLogout }) {
+function MobileDrawer({ open, onClose, user, onProfile, onLogout, onDisputas }) {
   const nom = `${user?.nombre || ""} ${user?.apellido || ""}`.trim();
   const kycLabel =
     user?.kyc_nivel === "premium" ? "✓ Premium"
@@ -102,7 +102,7 @@ function MobileDrawer({ open, onClose, user, onProfile, onLogout }) {
         className={`mob-drawer${open ? " open" : ""}`}
         role="dialog"
         aria-modal="true"
-        aria-label="Menú de cuenta"
+        aria-label="Menú"
       >
         <div className="mob-drawer-handle" />
         <div className="mob-drawer-profile">
@@ -113,6 +113,13 @@ function MobileDrawer({ open, onClose, user, onProfile, onLogout }) {
           </div>
         </div>
         <div className="mob-drawer-actions">
+          <button
+            className="mob-drawer-item"
+            onClick={() => { onDisputas?.(); onClose(); }}
+          >
+            <span aria-hidden="true">⚖️</span>
+            Disputas
+          </button>
           <button
             className="mob-drawer-item"
             onClick={() => { onProfile(); onClose(); }}
@@ -392,6 +399,7 @@ export default function AppShell({ session, setSession, toast }) {
           page={page}
           setPage={navigateTo}
           onBack={goBack}
+          onProfile={() => navigateTo("perfil")}
           onMenuOpen={() => setDrawerOpen(true)}
         />
         <Suspense fallback={null}>
@@ -415,7 +423,7 @@ export default function AppShell({ session, setSession, toast }) {
           onClick={() => navigateTo("crear")}
           aria-label="Crear trato"
         >
-          + Crear trato
+          <span aria-hidden="true">+</span>
         </button>
       )}
 
@@ -424,6 +432,7 @@ export default function AppShell({ session, setSession, toast }) {
         onClose={() => setDrawerOpen(false)}
         user={session.user}
         onProfile={() => navigateTo("perfil")}
+        onDisputas={() => navigateTo("disputas")}
         onLogout={logout}
       />
 

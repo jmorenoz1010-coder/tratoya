@@ -100,7 +100,7 @@ export default function ManualPaymentBox({ amount, reference, busy, onReport }) 
       <button className="btn bp blg" style={{ width: "100%" }} onClick={submit} disabled={busy || !ready}>
         {busy ? <div className="spin" /> : "Ya realicé el pago"}
       </button>
-      <div className="manual-pay-foot">Pago en revisión. Te avisamos en máximo 1 hora.</div>
+      <div className="manual-pay-foot">Verificando tu pago automáticamente. Te notificamos de inmediato.</div>
     </div>
     </div>
   );
