@@ -8,7 +8,7 @@ export default defineConfig({
     host: '0.0.0.0',
     proxy: {
       '/api': {
-        target: process.env.VITE_PROXY_API_URL || 'http://localhost:4000',
+        target: process.env.VITE_PROXY_API_URL || 'https://api.tratoya.com',
         changeOrigin: true,
       },
     },
