@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
+import { calcularComisionUI, fmt } from "../lib/utils";
 import logo from "../assets/tratoya-logo.png";
 import heroSecureBag from "../assets/hero-secure-bag.png";
 import stepPaymentProtected from "../assets/step-payment-protected.png";
@@ -74,6 +75,86 @@ const faqs = [
    "Si comprador y vendedor no llegan a un acuerdo, el equipo de soporte de TratoYa revisa la evidencia, media entre las partes y toma una decisión para proteger a quien tiene la razón."],
 ];
 
+function TratoCalculator({ register }) {
+  const [open, setOpen] = useState(false);
+  const [rawMonto, setRawMonto] = useState("");
+  const [quien, setQuien] = useState("comprador");
+
+  const monto = Number(String(rawMonto).replace(/\D/g, "")) || 0;
+  const calc = monto >= 50000 ? calcularComisionUI(monto, quien) : null;
+
+  const fmtCOP = (n) => n ? fmt(n) : "—";
+
+  return (
+    <section className="ty-section ty-calc" id="simula">
+      <p className="ty-eyebrow">SIN SORPRESAS</p>
+      <h2>¿Cuánto cobra <span>TratoYa?</span></h2>
+      <p className="ty-calc-sub">Ingresa el valor de tu trato y ve exactamente cuánto paga el comprador y cuánto recibe el vendedor.</p>
+
+      {!open ? (
+        <button className="ty-button" type="button" onClick={() => setOpen(true)} style={{ minHeight: 52, padding: "0 32px", fontSize: 17 }}>
+          Simula tu trato →
+        </button>
+      ) : (
+        <div className="ty-calc-box">
+          <div className="ty-calc-form">
+            <div className="ty-calc-field">
+              <label>Valor del trato (COP)</label>
+              <input
+                type="text"
+                inputMode="numeric"
+                className="ty-calc-input"
+                placeholder="Ej: 500.000"
+                value={rawMonto}
+                onChange={(e) => setRawMonto(e.target.value.replace(/[^0-9]/g, ""))}
+              />
+              {rawMonto && monto < 50000 && (
+                <span className="ty-calc-warn">El monto mínimo es $50.000</span>
+              )}
+            </div>
+            <div className="ty-calc-field">
+              <label>¿Quién paga la comisión?</label>
+              <select className="ty-calc-input" value={quien} onChange={(e) => setQuien(e.target.value)}>
+                <option value="comprador">El comprador</option>
+                <option value="vendedor">El vendedor</option>
+                <option value="compartida">50% cada uno</option>
+              </select>
+            </div>
+          </div>
+
+          {calc && (
+            <div className="ty-calc-result">
+              <div className="ty-calc-row">
+                <span>Valor acordado</span>
+                <strong>{fmtCOP(monto)}</strong>
+              </div>
+              <div className="ty-calc-row">
+                <span>Comisión TratoYa (4.5%)</span>
+                <strong>{fmtCOP(calc.comision)}</strong>
+              </div>
+              <div className="ty-calc-divider" />
+              <div className="ty-calc-row ty-calc-highlight">
+                <span>🛒 El comprador paga en total</span>
+                <strong>{fmtCOP(calc.totalPagar)}</strong>
+              </div>
+              <div className="ty-calc-row ty-calc-highlight green">
+                <span>📦 El vendedor recibe</span>
+                <strong>{fmtCOP(calc.vendedorRecibe)}</strong>
+              </div>
+              <p className="ty-calc-note">
+                TratoYa retiene el dinero hasta que el comprador confirme la entrega. Sin sorpresas.
+              </p>
+              <button className="ty-button" type="button" onClick={register} style={{ width: "100%", minHeight: 48, marginTop: 4, fontSize: 16 }}>
+                Crear un trato gratis →
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+    </section>
+  );
+}
+
 export default function Landing({ goAuth }) {
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: "auto" });
@@ -124,8 +205,8 @@ export default function Landing({ goAuth }) {
               <button className="ty-button ty-button-large" type="button" onClick={register}>
                 EMPIEZA GRATIS <span aria-hidden="true">›</span>
               </button>
-              <a className="ty-play" href="#como-funciona">
-                <Icon name="play" /> Cómo funciona
+              <a className="ty-play" href="#simula">
+                <Icon name="bolt" /> Simula tu trato
               </a>
             </div>
             <div className="ty-mini-benefits">
@@ -148,6 +229,9 @@ export default function Landing({ goAuth }) {
           ))}
         </section>
       </section>
+
+      {/* ── CALCULADORA ─────────────────────────────────────── */}
+      <TratoCalculator register={register} />
 
       {/* ── ¿QUÉ ES TRATOYA? ─────────────────────────────────── */}
       <section className="ty-section ty-what" id="que-es">

@@ -92,7 +92,7 @@ export default function TratoDetalle({ tratoId, setPage, setDisputeTratoId, user
   useEffect(() => {
     previousEstadoRef.current = null;
     load();
-    const t = setInterval(() => load(true), 8000);
+    const t = setInterval(() => load(true), 14000);
     return () => clearInterval(t);
   }, [tratoId]);
 
@@ -171,11 +171,19 @@ export default function TratoDetalle({ tratoId, setPage, setDisputeTratoId, user
 
   return (
     <div className="page fi">
-      <div style={{ display: "flex", alignItems: "center", gap: 9, marginBottom: 16 }}>
-        <button className="btn bg_ bsm" onClick={() => setPage("tratos")}>← Volver</button>
-        <div style={{ height: 14, width: 1, background: "var(--s200)" }} />
-        <span style={{ fontFamily: "Manrope", fontWeight: 700, fontSize: 12.5, color: "var(--g2)" }}>{trato.codigo}</span>
-        <span className={`bdg ${ec.c}`}>{ec.l}</span>
+      <div style={{ marginBottom: 16 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 9, marginBottom: 8 }}>
+          <button className="btn bg_ bsm" onClick={() => setPage("tratos")}>← Volver</button>
+          <div style={{ height: 14, width: 1, background: "var(--s200)" }} />
+          <span style={{ fontFamily: "Manrope", fontWeight: 700, fontSize: 12.5, color: "var(--g2)" }}>{trato.codigo}</span>
+          <span className={`bdg ${ec.c}`}>{ec.l}</span>
+        </div>
+        {ec.desc && (
+          <div style={{ background: "var(--cr)", border: "1px solid var(--s100)", borderRadius: 10, padding: "10px 13px" }}>
+            <p style={{ margin: 0, fontSize: 13, color: "var(--n)", lineHeight: 1.55 }}>{ec.desc}</p>
+            {ec.help && <p style={{ margin: "4px 0 0", fontSize: 12, color: "var(--g2)", fontWeight: 600 }}>{ec.help}</p>}
+          </div>
+        )}
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 305px", gap: 14 }}>

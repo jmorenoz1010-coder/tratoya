@@ -163,17 +163,72 @@ export const calcularComisionUI = (monto, quien = "comprador") => {
 };
 
 export const ESTADO = {
-  borrador:               { l: "Borrador",                       c: "bg" },
-  activo:                 { l: "Listo para pago",                c: "nb" },
-  pago_pendiente:         { l: "Revisar comprobante",            c: "or" },
-  pago_retenido:          { l: "Pago confirmado · entregar",     c: "nb" },
-  en_entrega:             { l: "Entrega en curso",               c: "or" },
-  pendiente_confirmacion: { l: "Comprador debe confirmar",       c: "or" },
-  confirmado:             { l: "Listo para liberar",             c: "gn" },
-  completado:             { l: "Completado",                     c: "gn" },
-  disputado:              { l: "⚖️ En disputa",                  c: "rd" },
-  cancelado:              { l: "Cancelado",                      c: "bg" },
-  expirado:               { l: "Expirado",                       c: "bg" },
+  borrador: {
+    l: "Esperando aceptación", c: "or",
+    desc: "El trato fue creado, pero la otra parte aún no lo ha aceptado.",
+    help: "Falta que la otra parte acepte el trato para continuar.",
+  },
+  activo: {
+    l: "Esperando pago del comprador", c: "or",
+    desc: "Ambas partes aceptaron el trato. Ahora el comprador debe realizar el pago en TratoYa.",
+    help: "El comprador debe pagar para que TratoYa proteja el dinero.",
+  },
+  pago_pendiente: {
+    l: "Pago en verificación", c: "nb",
+    desc: "El comprador registró el pago y TratoYa está verificando la transacción.",
+    help: "Estamos revisando que el pago haya sido recibido correctamente.",
+  },
+  pago_retenido: {
+    l: "Pago protegido · Pendiente de entrega", c: "gn",
+    desc: "TratoYa verificó el pago y el dinero está protegido. Ahora el vendedor debe entregar.",
+    help: "El comprador ya pagó. El dinero está seguro en TratoYa. El vendedor debe entregar el producto o servicio.",
+  },
+  en_entrega: {
+    l: "Entrega en curso", c: "nb",
+    desc: "El vendedor indicó que está realizando la entrega del producto o servicio.",
+    help: "El vendedor marcó que la entrega está en proceso.",
+  },
+  pendiente_confirmacion: {
+    l: "Esperando confirmación del comprador", c: "or",
+    desc: "El vendedor marcó la entrega como realizada. El comprador debe confirmar que recibió lo acordado.",
+    help: "El comprador debe confirmar la recepción para que el pago pueda ser liberado.",
+  },
+  confirmado: {
+    l: "Entrega confirmada · Pago por liberar", c: "gn",
+    desc: "El comprador confirmó la recepción. TratoYa procederá a liberar el pago al vendedor.",
+    help: "La entrega fue confirmada. El pago está listo para ser liberado al vendedor.",
+  },
+  completado: {
+    l: "Trato completado", c: "gn",
+    desc: "El trato finalizó correctamente y el pago fue liberado al vendedor.",
+    help: "El trato terminó correctamente. El vendedor recibió el pago.",
+  },
+  disputado: {
+    l: "En revisión por disputa", c: "rd",
+    desc: "Existe un desacuerdo entre comprador y vendedor. TratoYa revisará el caso antes de liberar o devolver el dinero.",
+    help: "El trato está en revisión. TratoYa evaluará el caso antes de tomar una decisión.",
+  },
+  cancelado: {
+    l: "Trato cancelado", c: "bg",
+    desc: "El trato fue cancelado. Si ya había un pago aprobado, se iniciará el proceso de devolución.",
+    help: "El trato ya no continuará. Si hubo dinero pagado, se gestionará la devolución cuando aplique.",
+  },
+  expirado: {
+    l: "Trato vencido", c: "bg",
+    desc: "El trato venció porque no se completó dentro del tiempo establecido.",
+    help: "El tiempo para completar este trato terminó.",
+  },
+};
+
+export const PAGO_ESTADO = {
+  creado:      { l: "Pago registrado",          c: "nb", desc: "El comprador registró un pago en TratoYa.", help: "El pago fue registrado y queda pendiente de revisión." },
+  procesando:  { l: "Verificando pago",          c: "nb", desc: "TratoYa está revisando que el pago haya sido recibido correctamente.", help: "Estamos comprobando la transferencia o el comprobante de pago." },
+  aprobado:    { l: "Pago aprobado y protegido", c: "gn", desc: "El pago fue verificado y el dinero está protegido en TratoYa.", help: "El dinero ya fue confirmado y está protegido hasta que se cumpla el trato." },
+  pendiente:   { l: "Pendiente de verificación", c: "or", desc: "El pago aún está en espera de revisión o confirmación.", help: "El pago todavía no ha sido confirmado." },
+  rechazado:   { l: "Pago no aprobado",          c: "rd", desc: "El pago o comprobante no pudo ser validado. El comprador debe intentarlo nuevamente.", help: "No pudimos validar este pago. El comprador debe cargar un nuevo comprobante o intentar nuevamente." },
+  anulado:     { l: "Pago anulado",              c: "bg", desc: "El registro de pago fue cancelado o dejado sin efecto.", help: "Este registro de pago ya no está activo." },
+  reembolsado: { l: "Dinero devuelto",           c: "nb", desc: "El dinero fue devuelto al comprador.", help: "El pago fue devuelto al comprador." },
+  error:       { l: "Error en pago",             c: "rd", desc: "Ocurrió un error procesando el pago.", help: "Contacta a soporte si el problema persiste." },
 };
 
 export const TIPO_ICO = {

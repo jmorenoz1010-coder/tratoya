@@ -54,7 +54,7 @@ export default function Sidebar({ page, setPage, user, onLogout, onMenuOpen, has
         </div>
         {/* Hamburger — solo visible en mobile nav */}
         <div className="ni nav-menu" onClick={onMenuOpen} role="button" aria-label="Abrir menú">
-          <span style={{ fontSize: 15 }}>☰</span>
+          <span className="nav-menu-ico">☰</span>
           <span className="nav-text">Más</span>
         </div>
       </nav>

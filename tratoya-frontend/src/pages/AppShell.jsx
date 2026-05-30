@@ -167,6 +167,7 @@ export default function AppShell({ session, setSession, toast }) {
   const sessionLoadTimeRef = useRef(Date.now());
   const [unreadTratoIds, setUnreadTratoIds] = useState(new Set());
   const [pendingTratosAlert, setPendingTratosAlert] = useState(false);
+  const [pendingBubble, setPendingBubble] = useState(null);
 
   const navigateTo = useCallback((next) => {
     startTransition(() => {
@@ -183,8 +184,10 @@ export default function AppShell({ session, setSession, toast }) {
         setPageStack((s) => s.slice(0, -1));
         setPage(prev);
       } else {
-        window.location.href = "/";
+        // No salir de la app — volver al dashboard
+        setPage("dashboard");
       }
+      window.history.pushState(null, "");
     });
   }, [pageStack]);
 
@@ -197,10 +200,11 @@ export default function AppShell({ session, setSession, toast }) {
           const prev = pageStack[pageStack.length - 1];
           setPageStack((s) => s.slice(0, -1));
           setPage(prev);
-          window.history.pushState(null, "");
         } else {
-          window.location.href = "/";
+          // Mantener dentro de la app
+          setPage("dashboard");
         }
+        window.history.pushState(null, "");
       });
     };
     window.addEventListener("popstate", handlePop);
@@ -227,7 +231,21 @@ export default function AppShell({ session, setSession, toast }) {
     setCelebration(true);
     if (navigator.vibrate) try { navigator.vibrate([45, 28, 45]); } catch {}
     playCelebration();
-    setTimeout(() => setCelebration(false), 2600);
+    setTimeout(() => {
+      setCelebration(false);
+      // Después de celebrar, verificar si hay tratos activos pendientes
+      import("../lib/api").then(({ api }) => {
+        api.get("/tratos?limit=50").then((r) => {
+          const active = (r.data || []).filter((t) =>
+            !["completado", "cancelado", "expirado"].includes(t.estado)
+          );
+          if (active.length > 0) {
+            setPendingBubble({ count: active.length });
+            setTimeout(() => setPendingBubble(null), 12000);
+          }
+        }).catch(() => {});
+      });
+    }, 2600);
   }, []);
 
   const notifyStatusUpdate = useCallback((trato, _prev, nextEstado) => {
@@ -347,7 +365,7 @@ export default function AppShell({ session, setSession, toast }) {
 
   useEffect(() => {
     if (!session?.token) return;
-    const INTERVAL = 25000;
+    const INTERVAL = 40000;
     const poll = async () => {
       try {
         const r = await api.get("/users/notifications");
@@ -402,7 +420,7 @@ export default function AppShell({ session, setSession, toast }) {
           onProfile={() => navigateTo("perfil")}
           onMenuOpen={() => setDrawerOpen(true)}
         />
-        <Suspense fallback={null}>
+        <Suspense fallback={<div style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: 60 }}><div className="spin" /></div>}>
           <div key={page}>
             {page === "dashboard"  && <Dashboard   {...sharedProps} setPage={navigateTo} setTratoId={setTratoId} setUser={updateUser} />}
             {page === "tratos"     && <MisTratos    {...sharedProps} setPage={navigateTo} setTratoId={setTratoId} alertTratoIds={unreadTratoIds} />}
@@ -439,6 +457,15 @@ export default function AppShell({ session, setSession, toast }) {
 
       <FloatingNotification note={floatingNote} onOpen={openFloatingNote} onClose={() => setFloatingNote(null)} />
       <CelebrationOverlay show={celebration} />
+      {pendingBubble && (
+        <button
+          className="pending-bubble"
+          onClick={() => { navigateTo("tratos"); setPendingBubble(null); }}
+          aria-label={`Tienes ${pendingBubble.count} trato${pendingBubble.count > 1 ? "s" : ""} activo${pendingBubble.count > 1 ? "s" : ""}`}
+        >
+          📋 {pendingBubble.count} trato{pendingBubble.count > 1 ? "s" : ""} activo{pendingBubble.count > 1 ? "s" : ""} →
+        </button>
+      )}
     </div>
   );
 }

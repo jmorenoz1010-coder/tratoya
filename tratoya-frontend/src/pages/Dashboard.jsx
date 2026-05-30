@@ -3,22 +3,28 @@ import { api } from "../lib/api";
 import { fmt, fmtDate, timeAgo, ESTADO, TIPO_ICO } from "../lib/utils";
 import { SkeletonKpiGrid, SkeletonList } from "../components/SkeletonCard";
 
+let dashboardCache = null; // { tratos, notifs, userStats }
+
 export default function Dashboard({ setPage, setTratoId, user, toast, setUser }) {
-  const [tratos, setTratos] = useState([]);
-  const [notifs, setNotifs] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [userStats, setUserStats] = useState(user);
+  const cached = dashboardCache;
+  const [tratos, setTratos] = useState(cached?.tratos || []);
+  const [notifs, setNotifs] = useState(cached?.notifs || []);
+  const [loading, setLoading] = useState(!cached);
+  const [userStats, setUserStats] = useState(cached?.userStats || user);
 
   const loadDashboard = useCallback(async (silent = false) => {
-    if (!silent) setLoading(true);
     try {
       const [t, n, me] = await Promise.all([
         api.get("/tratos?limit=6"),
         api.get("/users/notifications"),
         api.get("/auth/me"),
       ]);
-      setTratos(t.data || []);
-      setNotifs((n.data || []).slice(0, 5));
+      const newTratos = t.data || [];
+      const newNotifs = (n.data || []).slice(0, 5);
+      const newUserStats = me.data || userStats;
+      dashboardCache = { tratos: newTratos, notifs: newNotifs, userStats: newUserStats };
+      setTratos(newTratos);
+      setNotifs(newNotifs);
       if (me.data) { setUserStats(me.data); setUser?.(me.data); }
     } catch (e) {
       if (!silent) toast(e?.message || "Error cargando inicio", "error");
@@ -29,15 +35,22 @@ export default function Dashboard({ setPage, setTratoId, user, toast, setUser })
 
   useEffect(() => {
     loadDashboard();
-    const t = setInterval(() => loadDashboard(true), 30000);
+    const t = setInterval(() => loadDashboard(true), 45000);
     return () => clearInterval(t);
   }, [loadDashboard]);
 
   const activos = tratos.filter((t) => !["completado", "cancelado", "expirado"].includes(t.estado));
   const protegido = activos
-    .filter((t) => t.estado === "pago_retenido")
+    .filter((t) => ["pago_retenido", "en_entrega", "confirmado"].includes(t.estado))
     .reduce((s, t) => s + parseFloat(t.monto || 0), 0);
   const completados = tratos.filter((t) => t.estado === "completado").length || userStats?.tratos_exitosos || 0;
+
+  const kpis = [
+    { ico: "📋", bg: "var(--cr)", l: "Tratos activos",   v: activos.length,   action: () => setPage("tratos") },
+    { ico: "🔒", bg: "var(--cr)", l: "Dinero protegido", v: fmt(protegido),   action: () => setPage("tratos") },
+    { ico: "✅", bg: "var(--cr)", l: "Completados",      v: completados,       action: () => setPage("tratos") },
+    { ico: "⭐", bg: "var(--cr)", l: "Reputación",       v: parseFloat(userStats?.reputacion || 0).toFixed(1) || "—", action: null },
+  ];
 
   return (
     <div className="page dashboard-page">
@@ -49,7 +62,6 @@ export default function Dashboard({ setPage, setTratoId, user, toast, setUser })
           <p className="page-sub" style={{ fontSize: 13 }}>Resumen de tu cuenta</p>
         </div>
         <div className="dashboard-actions" style={{ display: "flex", gap: 8 }}>
-          <button className="btn bo bsm" onClick={() => loadDashboard()} title="Actualizar">↻</button>
           <button className="btn bp blg dashboard-create-btn create-glow-btn" onClick={() => setPage("crear")}>
             <span className="soft-plus" aria-hidden="true" /> Crear trato
           </button>
@@ -60,13 +72,15 @@ export default function Dashboard({ setPage, setTratoId, user, toast, setUser })
         <SkeletonKpiGrid />
       ) : (
         <div className="kpi-grid fi">
-          {[
-            { ico: "📋", bg: "#E6EBF2", l: "Tratos activos",   v: activos.length },
-            { ico: "🔒", bg: "var(--cr)", l: "Dinero protegido", v: fmt(protegido) },
-            { ico: "✅", bg: "var(--cr)", l: "Completados",      v: completados },
-            { ico: "⭐", bg: "var(--cr)", l: "Reputación",       v: parseFloat(userStats?.reputacion || 0).toFixed(1) || "—" },
-          ].map((k, i) => (
-            <div key={i} className="kpi">
+          {kpis.map((k, i) => (
+            <div
+              key={i}
+              className={`kpi${k.action ? " kpi-clickable" : ""}`}
+              onClick={k.action || undefined}
+              role={k.action ? "button" : undefined}
+              tabIndex={k.action ? 0 : undefined}
+              onKeyDown={k.action ? (e) => e.key === "Enter" && k.action() : undefined}
+            >
               <div className="kpi-icon" style={{ width: 32, height: 32, borderRadius: 9, background: k.bg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15, marginBottom: 8 }}>
                 {k.ico}
               </div>
@@ -74,6 +88,7 @@ export default function Dashboard({ setPage, setTratoId, user, toast, setUser })
                 {k.l}
               </div>
               <div className="kpi-val">{k.v}</div>
+              {k.action && <div style={{ fontSize: 10, color: "var(--g2)", marginTop: 5, fontWeight: 700 }}>Ver →</div>}
             </div>
           ))}
         </div>
@@ -124,7 +139,7 @@ export default function Dashboard({ setPage, setTratoId, user, toast, setUser })
                       <div style={{ fontFamily: "Manrope", fontWeight: 800, fontSize: 13.5, marginBottom: 3 }}>
                         {fmt(t.monto)}
                       </div>
-                      <span className={`bdg ${ec.c}`}>{ec.l}</span>
+                      <span className={`bdg ${ec.c}`} style={{ fontSize: 10 }}>{ec.l}</span>
                     </div>
                   </div>
                 );
@@ -152,7 +167,6 @@ export default function Dashboard({ setPage, setTratoId, user, toast, setUser })
               </div>
             ))}
           </div>
-
         </div>
       </div>
     </div>
