@@ -602,6 +602,7 @@ tbody tr:hover td{background:var(--s50)}
   --ty-green-2:#4ba51c;
   --ty-muted:#66747d;
   --ty-line:#dfeae5;
+  --ty-surface:#f4f8f2;
   --ty-shadow:0 22px 60px rgba(13,32,56,.1);
   min-height:100vh;
   background:#f7faf8;
@@ -1896,6 +1897,503 @@ tbody tr:hover td{background:var(--s50)}
 .mob-drawer-item:active{background:var(--s100)}
 .mob-drawer-item.danger{color:var(--re)}
 .mob-drawer-item span{font-size:22px;line-height:1;flex-shrink:0}
+
+/* ═══════════════════════════════════════════════════════════
+   NU-STYLE LANDING — Round 5
+   palette: #dfff36 lime │ #9ed819 fresh │ #4fb51e confident
+            #2d8c1e deep │ #071819 dark  │ #0b2927 teal
+   ═══════════════════════════════════════════════════════════ */
+
+/* ── Scroll-reveal ──────────────────────────────────────────
+   Elements with .ty-r start invisible; .ty-rv makes them appear.
+   Stagger via CSS custom property --td (delay).              */
+.ty-r{
+  opacity:0;
+  transform:translateY(26px);
+  transition:
+    opacity .65s ease var(--td,0s),
+    transform .65s cubic-bezier(.16,1,.3,1) var(--td,0s);
+}
+.ty-rv{opacity:1!important;transform:none!important}
+
+/* Reduce motion: skip all reveal animations */
+@media (prefers-reduced-motion:reduce){
+  .ty-r{opacity:1!important;transform:none!important;transition:none!important}
+}
+
+/* ── Section scaffold ───────────────────────────────────────*/
+.ty-sec{padding:clamp(60px,8vw,104px) 0;width:100%}
+.ty-sec-inner{
+  width:min(1280px,100%);
+  margin:0 auto;
+  padding:0 clamp(22px,5vw,72px);
+}
+
+/* ── Section themes ─────────────────────────────────────────*/
+.ty-sec-dark{
+  background:
+    radial-gradient(circle at 80% 12%,rgba(138,211,23,.13),transparent 28%),
+    linear-gradient(150deg,#071819 0%,#0d2827 55%,#071213 100%);
+  color:#fff;
+}
+.ty-sec-deep{
+  background:
+    radial-gradient(circle at 22% 76%,rgba(79,181,30,.14),transparent 30%),
+    linear-gradient(145deg,#091f1c 0%,#0c2e2a 60%,#081615 100%);
+  color:#fff;
+}
+.ty-sec-teal{
+  background:
+    radial-gradient(circle at 88% 50%,rgba(158,216,25,.12),transparent 26%),
+    linear-gradient(140deg,#0b2927 0%,#0e3330 55%,#081b1a 100%);
+  color:#fff;
+}
+.ty-sec-lime{
+  background:linear-gradient(135deg,#dfff36 0%,#c4ee1a 55%,#9ed819 100%);
+  color:#071819;
+}
+.ty-sec-light{
+  background:linear-gradient(180deg,#f4f8f2 0%,#eaf3e4 100%);
+  color:#071819;
+}
+.ty-sec-white{background:#fff;color:#071819}
+
+/* ── Typography scale ───────────────────────────────────────*/
+.ty-display{
+  font-family:'Manrope','Nunito Sans',sans-serif;
+  font-size:clamp(46px,5.8vw,84px);
+  font-weight:900;
+  line-height:1.04;
+  letter-spacing:-.025em;
+}
+.ty-headline{
+  font-family:'Manrope','Nunito Sans',sans-serif;
+  font-size:clamp(32px,4vw,58px);
+  font-weight:900;
+  line-height:1.1;
+  letter-spacing:-.015em;
+  margin:0 0 12px;
+}
+.ty-body-lg{
+  font-size:clamp(16px,1.5vw,20px);
+  line-height:1.7;
+  color:rgba(7,24,25,.72);
+}
+.ty-eyebrow{
+  font-size:12px;
+  font-weight:900;
+  letter-spacing:.14em;
+  text-transform:uppercase;
+  margin:0 0 10px;
+  color:var(--ty-green-2);
+  display:block;
+}
+
+/* ── Hero badge ─────────────────────────────────────────────*/
+.ty-hero-badge{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  padding:6px 16px 6px 14px;
+  border-radius:999px;
+  background:rgba(169,235,27,.14);
+  border:1px solid rgba(169,235,27,.32);
+  color:#b8ff35;
+  font-size:13px;
+  font-weight:800;
+  margin-bottom:20px;
+  backdrop-filter:blur(8px);
+}
+
+/* ── Steps Nu-style ─────────────────────────────────────────*/
+.ty-steps-nu{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:22px;
+  margin-top:44px;
+}
+.ty-step-nu{
+  background:rgba(255,255,255,.07);
+  border:1px solid rgba(255,255,255,.12);
+  border-radius:20px;
+  padding:28px 22px 24px;
+  display:flex;
+  flex-direction:column;
+  gap:16px;
+  transition:border-color .2s,background .2s;
+}
+.ty-step-nu:hover{background:rgba(255,255,255,.11);border-color:rgba(169,235,27,.28)}
+.ty-step-nu-num{
+  font-family:'Manrope',sans-serif;
+  font-size:12px;
+  font-weight:900;
+  color:#dfff36;
+  letter-spacing:.1em;
+}
+.ty-step-nu-img{
+  width:72px;
+  height:72px;
+  border-radius:18px;
+  background:rgba(169,235,27,.12);
+  display:grid;
+  place-items:center;
+  overflow:hidden;
+  flex-shrink:0;
+}
+.ty-step-nu-img img{width:54px;height:54px;object-fit:contain}
+.ty-step-nu-body h3{
+  margin:0 0 8px;
+  color:#fff;
+  font-size:16px;
+  font-weight:800;
+}
+.ty-step-nu-body p{
+  margin:0;
+  color:rgba(255,255,255,.62);
+  font-size:14px;
+  line-height:1.6;
+}
+
+/* ── Role cards Nu-style ────────────────────────────────────*/
+.ty-role-nu{
+  background:rgba(255,255,255,.07);
+  border:1.5px solid rgba(255,255,255,.1);
+  border-top:3px solid var(--ac,#dfff36);
+  border-radius:20px;
+  padding:30px 26px;
+  display:flex;
+  flex-direction:column;
+  gap:18px;
+  transition:border-color .2s,background .2s,transform .2s;
+}
+.ty-role-nu:hover{
+  background:rgba(255,255,255,.1);
+  border-color:var(--ac,#dfff36);
+  transform:translateY(-4px);
+}
+.ty-role-nu-head{
+  display:flex;
+  align-items:center;
+  gap:14px;
+}
+.ty-role-nu-head span{font-size:30px;line-height:1}
+.ty-role-nu-head h3{
+  margin:0;
+  color:#fff;
+  font-size:20px;
+  font-weight:900;
+}
+.ty-role-nu ul{
+  list-style:none;
+  margin:0;padding:0;
+  display:flex;flex-direction:column;gap:11px;
+  flex:1;
+}
+.ty-role-nu ul li{
+  display:flex;
+  align-items:flex-start;
+  gap:10px;
+  font-size:14px;
+  color:rgba(255,255,255,.78);
+  line-height:1.55;
+}
+.ty-check{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  width:20px;
+  height:20px;
+  border-radius:50%;
+  background:rgba(169,235,27,.18);
+  border:1px solid rgba(169,235,27,.35);
+  color:#dfff36;
+  font-size:11px;
+  font-weight:900;
+  flex-shrink:0;
+  margin-top:1px;
+}
+.ty-role-btn{
+  margin-top:auto;
+  width:100%;
+  min-height:46px;
+  border-radius:10px;
+  background:rgba(169,235,27,.14);
+  border:1px solid rgba(169,235,27,.3);
+  color:#dfff36;
+  font-size:14px;
+  font-weight:900;
+  transition:background .2s,color .2s,border-color .2s;
+}
+.ty-role-btn:hover{
+  background:rgba(169,235,27,.25);
+  border-color:rgba(169,235,27,.55);
+  color:#fff;
+}
+
+/* ── Use-cases carousel ─────────────────────────────────────*/
+.ty-use-carousel{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:16px;
+  margin-top:8px;
+}
+.ty-use-card-dark{
+  background:rgba(255,255,255,.07);
+  border:1px solid rgba(255,255,255,.1);
+  border-radius:18px;
+  padding:24px 20px;
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+  transition:border-color .2s,background .2s,transform .2s;
+}
+.ty-use-card-dark:hover{
+  background:rgba(255,255,255,.11);
+  border-color:rgba(158,216,25,.3);
+  transform:translateY(-3px);
+}
+.ty-use-ico{font-size:28px;line-height:1}
+.ty-use-card-dark strong{
+  font-size:15px;
+  font-weight:800;
+  color:#fff;
+  line-height:1.2;
+}
+.ty-use-card-dark p{
+  margin:0;
+  font-size:13.5px;
+  color:rgba(255,255,255,.58);
+  line-height:1.55;
+}
+
+/* ── Testimonials carousel ──────────────────────────────────*/
+.ty-testi-carousel{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:20px;
+  margin-top:36px;
+}
+.ty-testi-card{
+  background:rgba(255,255,255,.07);
+  border:1px solid rgba(255,255,255,.1);
+  border-radius:20px;
+  padding:28px 24px;
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+  position:relative;
+  transition:border-color .2s,background .2s;
+}
+.ty-testi-card:hover{background:rgba(255,255,255,.11);border-color:rgba(158,216,25,.25)}
+.ty-testi-card .ty-avatar{
+  width:44px;height:44px;border-radius:50%;
+  background:linear-gradient(135deg,#9ed819,#2d8c1e);
+  color:#fff;
+  font-family:'Manrope',sans-serif;
+  font-weight:900;
+  font-size:16px;
+  display:grid;
+  place-items:center;
+  margin-bottom:4px;
+}
+.ty-testi-card .ty-quote{
+  position:static;
+  font-size:42px;
+  color:#dfff36;
+  font-weight:900;
+  line-height:.8;
+  display:block;
+  margin:-6px 0 2px;
+}
+.ty-testi-card p{
+  font-size:14px;
+  color:rgba(255,255,255,.78);
+  line-height:1.65;
+  margin:0;
+  flex:1;
+}
+.ty-testi-card strong{
+  font-size:14px;
+  font-weight:800;
+  color:#fff;
+  display:block;
+}
+.ty-testi-card small{
+  font-size:12px;
+  color:rgba(255,255,255,.42);
+}
+
+/* ── FAQ accordion ──────────────────────────────────────────*/
+.ty-faq-list{display:flex;flex-direction:column;gap:10px}
+.ty-faq-item{
+  border:1.5px solid rgba(7,24,25,.1);
+  border-radius:14px;
+  overflow:hidden;
+  background:#fff;
+  transition:border-color .2s;
+}
+.ty-faq-item:hover{border-color:var(--ty-green-2)}
+.ty-faq-q{
+  width:100%;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:16px;
+  padding:18px 22px;
+  background:transparent;
+  border:0;
+  cursor:pointer;
+  font-family:'Nunito Sans',sans-serif;
+  font-size:16px;
+  font-weight:700;
+  color:#071819;
+  text-align:left;
+  transition:color .2s;
+}
+.ty-faq-q.open{color:var(--ty-green-2)}
+.ty-faq-q:hover{color:var(--ty-green-2)}
+.ty-faq-q span:first-child{flex:1;line-height:1.45}
+.ty-faq-toggle{
+  display:inline-grid;
+  place-items:center;
+  width:28px;height:28px;
+  border-radius:50%;
+  border:1.5px solid rgba(7,24,25,.14);
+  font-size:20px;
+  font-weight:700;
+  color:var(--ty-muted);
+  transition:transform .25s cubic-bezier(.34,1.56,.64,1),border-color .2s,color .2s;
+  flex-shrink:0;
+  line-height:1;
+}
+.ty-faq-toggle.open{
+  transform:rotate(45deg);
+  border-color:var(--ty-green-2);
+  color:var(--ty-green-2);
+}
+.ty-faq-a{
+  max-height:0;
+  overflow:hidden;
+  transition:max-height .35s cubic-bezier(.4,0,.2,1);
+}
+.ty-faq-a.open{max-height:400px}
+.ty-faq-a p{
+  margin:0;
+  padding:0 22px 20px;
+  font-size:14.5px;
+  color:var(--ty-muted);
+  line-height:1.7;
+}
+
+/* ── Lime CTA section ───────────────────────────────────────*/
+.ty-cta-hero{
+  position:relative;
+  overflow:hidden;
+}
+.ty-cta-hero::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  background:
+    radial-gradient(circle at 30% 50%,rgba(255,255,255,.22),transparent 40%),
+    radial-gradient(circle at 80% 20%,rgba(79,181,30,.28),transparent 36%);
+  pointer-events:none;
+}
+.ty-cta-hero .ty-sec-inner{position:relative;z-index:1}
+.ty-cta-dark-btn{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-height:58px;
+  padding:0 42px;
+  border-radius:12px;
+  background:#071819;
+  color:#dfff36;
+  font-family:'Manrope',sans-serif;
+  font-size:16px;
+  font-weight:900;
+  letter-spacing:.04em;
+  border:0;
+  cursor:pointer;
+  box-shadow:0 18px 46px rgba(7,24,25,.26);
+  transition:transform .2s ease,box-shadow .2s ease;
+}
+.ty-cta-dark-btn:hover{
+  transform:translateY(-2px);
+  box-shadow:0 22px 58px rgba(7,24,25,.34);
+}
+.ty-cta-dark-btn:active{transform:translateY(0)}
+
+/* ── Calculator empty state ─────────────────────────────────*/
+.ty-calc-empty{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:10px;
+  min-height:90px;
+  border:1.5px dashed var(--ty-line);
+  border-radius:12px;
+  background:var(--s50);
+  font-size:14px;
+  color:var(--ty-muted);
+  font-weight:600;
+  padding:18px;
+  text-align:center;
+}
+
+/* ── Footer brand ───────────────────────────────────────────*/
+.ty-footer-brand{
+  display:flex;
+  flex-direction:column;
+}
+.ty-footer-brand p{max-width:260px}
+
+/* ── Problem grid (dark version) ────────────────────────────
+   Reused in dark sections — keep existing base, extend colors */
+.ty-sec-dark .ty-problem-item,
+.ty-sec-deep .ty-problem-item{
+  background:rgba(255,255,255,.07);
+  border-color:rgba(255,255,255,.1);
+}
+.ty-sec-dark .ty-problem-item strong,
+.ty-sec-deep .ty-problem-item strong{color:#fff}
+.ty-sec-dark .ty-problem-item p,
+.ty-sec-deep .ty-problem-item p{color:rgba(255,255,255,.62)}
+.ty-sec-dark .ty-problem-item.good{border-color:rgba(158,216,25,.35)}
+.ty-sec-dark .ty-problem-item.bad{border-color:rgba(255,100,100,.25)}
+
+/* ── Responsive: new sections ────────────────────────────── */
+@media (max-width:1100px){
+  .ty-steps-nu{grid-template-columns:repeat(2,1fr)}
+  .ty-use-carousel{grid-template-columns:repeat(2,1fr)}
+  .ty-testi-carousel{grid-template-columns:repeat(2,1fr)}
+}
+@media (max-width:780px){
+  .ty-steps-nu{grid-template-columns:1fr;gap:14px}
+  .ty-step-nu{flex-direction:row;padding:20px 18px;align-items:flex-start}
+  .ty-step-nu-img{width:56px;height:56px;border-radius:14px;flex-shrink:0}
+  .ty-step-nu-img img{width:42px;height:42px}
+  .ty-step-nu-body h3{font-size:15px;margin-bottom:5px}
+  .ty-use-carousel{grid-template-columns:1fr}
+  .ty-testi-carousel{grid-template-columns:1fr}
+  .ty-what-cards{grid-template-columns:1fr}
+  .ty-headline{font-size:clamp(28px,7vw,44px)}
+  .ty-display{font-size:clamp(38px,9vw,60px)}
+  .ty-faq-q{font-size:15px;padding:15px 16px}
+  .ty-faq-a p{padding:0 16px 16px}
+  .ty-cta-dark-btn{width:100%;max-width:360px;font-size:15px}
+  .ty-calc-box{margin-left:0;margin-right:0}
+}
+@media (max-width:520px){
+  .ty-sec{padding:clamp(40px,10vw,72px) 0}
+  .ty-steps-nu{gap:12px}
+  .ty-step-nu{padding:16px 14px;gap:12px}
+  .ty-step-nu-body h3{font-size:14px}
+  .ty-testi-carousel,.ty-use-carousel{gap:12px}
+  .ty-faq-q{font-size:14px}
+  .ty-role-nu{padding:22px 18px}
+  .ty-role-nu-head h3{font-size:18px}
+}
 
 @media (max-width:800px){
   .mob-drawer{display:block}
