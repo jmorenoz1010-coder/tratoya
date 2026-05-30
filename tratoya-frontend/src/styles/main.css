@@ -2451,19 +2451,125 @@ tbody tr:hover td{background:var(--s50)}
   .ty-link-btn{font-size:12px!important}
 }
 
-/* Nu-inspired mobile stacked reveal */
+/* Nu-inspired mobile stacked panels */
 @media (max-width:780px) and (prefers-reduced-motion:no-preference){
   .ty-landing{
     background:#071819;
     overflow-x:hidden;
+    overflow-y:visible;
+    isolation:isolate;
+  }
+  .ty-top-shell{
+    position:sticky;
+    top:0;
+    z-index:0;
+    height:100svh;
+    min-height:100svh;
+    max-height:100svh;
+    display:flex;
+    flex-direction:column;
+    overflow:hidden;
+    padding-bottom:0;
+    transform:translateZ(0);
+  }
+  .ty-top-shell .ty-hero{
+    flex:1;
+    align-content:start;
+    padding-bottom:170px;
+  }
+  .ty-top-shell .ty-hero-visual{
+    min-height:260px;
+  }
+  .ty-top-shell .ty-stats{
+    position:absolute;
+    left:18px;
+    right:18px;
+    bottom:18px;
+    width:auto;
+    margin:0;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:10px;
+    padding:12px;
+    border-radius:18px;
+    z-index:4;
+  }
+  .ty-top-shell .ty-stats .ty-mini{
+    justify-content:flex-start;
+    border-right:0;
+    gap:8px;
+  }
+  .ty-top-shell .ty-stats .ty-icon{
+    width:34px;
+    height:34px;
+    padding:6px;
+    border-radius:11px;
+  }
+  .ty-top-shell .ty-stats .ty-mini strong{
+    font-size:18px;
+  }
+  .ty-top-shell .ty-stats .ty-mini p{
+    font-size:10.5px;
+    line-height:1.25;
   }
   .ty-sec{
     position:relative;
-    padding:46px 0;
+    z-index:2;
+    margin-top:-56px;
+    min-height:calc(100svh + 90px);
+    padding:0;
+    border-radius:30px 30px 0 0;
+    overflow:hidden;
+    box-shadow:0 -24px 64px rgba(2,14,18,.22);
+    transform:translateZ(0);
+  }
+  .ty-sec,
+  .ty-why,
+  .ty-download{
+    position:sticky;
+    top:0;
+  }
+  .ty-sec + .ty-sec,
+  .ty-sec + .ty-why,
+  .ty-why + .ty-sec,
+  .ty-sec + .ty-download,
+  .ty-download + .ty-sec{
+    margin-top:-64px;
   }
   .ty-sec-inner{
-    padding-left:18px;
-    padding-right:18px;
+    min-height:100svh;
+    padding:88px 18px 46px;
+  }
+  .ty-sec-white .ty-sec-inner,
+  .ty-sec-light .ty-sec-inner,
+  .ty-sec-lime .ty-sec-inner{
+    color:#071819;
+  }
+  .ty-why{
+    z-index:2;
+    min-height:100svh;
+    margin-top:-64px;
+    border-radius:30px 30px 0 0;
+    overflow:hidden;
+    box-shadow:0 -24px 64px rgba(2,14,18,.18);
+    padding-top:88px;
+    padding-bottom:42px;
+    transform:translateZ(0);
+  }
+  .ty-download{
+    z-index:2;
+    min-height:100svh;
+    margin-top:-64px;
+    border-radius:30px 30px 0 0;
+    box-shadow:0 -24px 64px rgba(2,14,18,.22);
+    padding-top:88px;
+    padding-bottom:48px;
+    transform:translateZ(0);
+  }
+  .ty-footer{
+    position:relative;
+    z-index:4;
+    margin-top:-24px;
+    border-radius:28px 28px 0 0;
   }
   .ty-what-card,
   .ty-step-nu,
