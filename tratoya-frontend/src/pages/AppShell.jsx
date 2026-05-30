@@ -423,7 +423,8 @@ export default function AppShell({ session, setSession, toast }) {
           onClick={() => navigateTo("crear")}
           aria-label="Crear trato"
         >
-          <span aria-hidden="true">+</span>
+          <span className="fab-plus" aria-hidden="true">+</span>
+          <span className="fab-label">Crear trato</span>
         </button>
       )}
 
