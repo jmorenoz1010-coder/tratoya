@@ -151,8 +151,10 @@ tbody tr:hover td{background:var(--s50)}
 
 /* ── Pills / Tabs ───────────────────────────────────── */
 .pt{display:flex;gap:3px;background:var(--s100);padding:3px;border-radius:9px}
-.pt-i{padding:5px 13px;border-radius:7px;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;color:var(--s600)}
+.pt-i{padding:5px 13px;border-radius:7px;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;color:var(--s600);border:0;background:transparent;font-family:inherit}
 .pt-i.act{background:#fff;color:var(--n);box-shadow:var(--sh)}
+.trato-filters-row{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;align-items:center}
+.trato-search{display:flex;align-items:center;gap:7px;background:#fff;border:1.5px solid var(--s200);border-radius:9px;padding:0 11px;height:36px;flex:1 1 140px;max-width:220px}
 
 /* ── Timeline ───────────────────────────────────────── */
 .tl-item{display:flex;gap:13px;padding-bottom:16px;position:relative}
@@ -257,6 +259,10 @@ tbody tr:hover td{background:var(--s50)}
 @keyframes createGlow{0%,100%{box-shadow:0 10px 24px rgba(181,228,0,.25)}50%{box-shadow:0 16px 38px rgba(181,228,0,.48)}}
 .payment-flow-overlay{align-items:flex-start;padding-top:clamp(18px,6vh,54px)}
 .payment-flow-modal{max-width:680px}
+.payment-detail-overlay{overflow:hidden;align-items:center;padding:20px}
+.payment-detail-modal{display:flex;flex-direction:column;max-height:min(86dvh,720px);overflow:hidden}
+.payment-detail-scroll{overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding-top:2px}
+.payment-status-panel{margin:0 18px 14px;background:var(--s50);border-radius:10px;padding:11px 14px}
 .flow-steps{padding:18px;display:grid;grid-template-columns:repeat(4,1fr);gap:10px;align-items:start}
 .flow-step{position:relative;background:var(--s50);border:1px solid var(--s100);border-radius:12px;padding:13px 12px;min-height:110px}
 .flow-step.done{background:var(--cr);border-color:rgba(181,228,0,.45)}
@@ -319,6 +325,9 @@ tbody tr:hover td{background:var(--s50)}
 /* ── Trato row cards (MisTratos) ────────────────────── */
 .trato-row{background:#fff;border-radius:13px;padding:13px 14px;border:1.5px solid var(--s100);display:flex;align-items:center;gap:10px;transition:all .18s}
 .trato-row:hover{border-color:var(--g);box-shadow:0 4px 16px rgba(7,25,47,.09);transform:translateY(-1px)}
+.trato-actions{display:flex;align-items:center;justify-content:flex-end;margin-top:10px;padding-top:9px;border-top:1px solid var(--s100)}
+.trato-details-link{border:0;border-radius:999px;background:rgba(181,228,0,.16);color:var(--g2);font-family:'Manrope','Inter',sans-serif;font-size:12px;font-weight:900;min-height:32px;padding:0 13px;cursor:pointer;transition:background .16s,transform .16s,box-shadow .16s;white-space:nowrap}
+.trato-details-link:hover{background:rgba(181,228,0,.28);transform:translateY(-1px);box-shadow:0 8px 18px rgba(181,228,0,.18)}
 .trato-menu-btn{width:34px;height:34px;border:0;background:transparent;border-radius:9px;cursor:pointer;font-size:20px;color:var(--s400);display:flex;align-items:center;justify-content:center;flex-shrink:0;line-height:1;transition:background .14s,color .14s}
 .trato-menu-btn:hover{background:var(--s100);color:var(--n)}
 .trato-dropdown{background:#fff;border:1px solid var(--s100);border-radius:11px;padding:4px;box-shadow:0 8px 28px rgba(7,25,47,.14);position:absolute;right:12px;top:calc(100% + 4px);z-index:20;min-width:170px;animation:pi .18s ease both}
@@ -326,12 +335,12 @@ tbody tr:hover td{background:var(--s50)}
 .trato-dropdown-item:hover{background:var(--s50)}
 
 /* ── Pago cards (Pagos) ─────────────────────────────── */
-.pago-card{background:#fff;border-radius:13px;padding:14px 16px;border:1.5px solid var(--s100);cursor:pointer;transition:all .18s}
+.pago-card{background:#fff;border-radius:13px;padding:14px 16px;border:1.5px solid var(--s100);cursor:pointer;transition:all .18s;max-width:100%;overflow:hidden}
 .pago-card:hover{border-color:var(--g);box-shadow:0 4px 16px rgba(7,25,47,.09);transform:translateY(-1px)}
 .pago-card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:9px}
 .pago-card-trato-info{min-width:0;flex:1}
 .pago-card-codigo{font-family:'Manrope';font-weight:700;font-size:11px;color:var(--g2);display:block;margin-bottom:2px}
-.pago-card-titulo{font-size:13.5px;font-weight:600;color:var(--n);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;max-width:200px}
+.pago-card-titulo{font-size:13.5px;font-weight:600;color:var(--n);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;max-width:100%}
 .pago-card-bottom{display:flex;align-items:center;justify-content:space-between}
 .pago-card-amount{font-family:'Manrope';font-weight:800;font-size:17px;color:var(--n)}
 .pago-card-date{font-size:12px;color:var(--s400)}
@@ -561,6 +570,13 @@ tbody tr:hover td{background:var(--s50)}
   .tc{align-items:flex-start;padding:12px}
   .pt{width:100%;overflow-x:auto}
   .pt-i{flex:1;text-align:center;white-space:nowrap}
+  .trato-filters-row{display:grid;grid-template-columns:1fr;gap:10px;margin:0 0 14px}
+  .trato-filters-row .pt{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));overflow:visible;border-radius:12px;padding:4px}
+  .trato-filters-row .pt-i{padding:8px 6px;font-size:12px}
+  .trato-search{width:100%;max-width:none;min-width:0;height:40px;border-radius:12px}
+  .trato-row{display:block;width:100%;max-width:100%;overflow:hidden;padding:13px 12px}
+  .trato-actions{justify-content:flex-end;margin-top:9px;padding-top:8px}
+  .trato-details-link{min-height:30px;padding:0 12px;font-size:11.5px}
   .commbox{padding:12px}
   .cr{gap:12px}
   .cr span:last-child{text-align:right}
@@ -586,6 +602,15 @@ tbody tr:hover td{background:var(--s50)}
   .admin-flow-grid{grid-template-columns:1fr}
   .flow-steps{grid-template-columns:1fr}
   .flow-step em{display:none}
+  .payment-detail-overlay{align-items:flex-end;padding:0;background:rgba(7,25,47,.52)}
+  .payment-detail-modal{width:100%;max-width:none;max-height:88dvh;border-radius:22px 22px 0 0}
+  .payment-detail-scroll{padding-bottom:max(16px,env(safe-area-inset-bottom));touch-action:pan-y}
+  .payment-status-panel{margin:0 14px 12px}
+  .pago-card{padding:13px 12px;border-radius:14px}
+  .pago-card-top{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:start}
+  .pago-card .bdg{max-width:42vw;white-space:normal;text-align:center;line-height:1.15}
+  .pago-card-bottom{gap:10px}
+  .pago-card-date{font-size:11px;text-align:right}
   .live-payments-head{flex-direction:column}
   .live-payment-row{grid-template-columns:1fr}
   .live-payment-row strong{font-size:18px}
@@ -2424,4 +2449,81 @@ tbody tr:hover td{background:var(--s50)}
   .ty-nav-actions{gap:6px!important}
   .ty-button-small{padding:0 10px!important;font-size:12px!important;min-height:40px!important}
   .ty-link-btn{font-size:12px!important}
+}
+
+/* Nu-inspired mobile stacked reveal */
+@media (max-width:780px) and (prefers-reduced-motion:no-preference){
+  .ty-landing{
+    background:#071819;
+    overflow-x:hidden;
+  }
+  .ty-sec{
+    position:relative;
+    padding:46px 0;
+  }
+  .ty-sec-inner{
+    padding-left:18px;
+    padding-right:18px;
+  }
+  .ty-what-card,
+  .ty-step-nu,
+  .ty-role-nu,
+  .ty-use-card-dark,
+  .ty-benefit,
+  .ty-problem-item,
+  .ty-testi-card,
+  .ty-faq-item,
+  .ty-calc-box{
+    transform-origin:center top;
+    will-change:transform,opacity;
+  }
+  .ty-what-card.ty-r,
+  .ty-step-nu.ty-r,
+  .ty-role-nu.ty-r,
+  .ty-use-card-dark.ty-r,
+  .ty-benefit.ty-r,
+  .ty-problem-item.ty-r,
+  .ty-testi-card.ty-r,
+  .ty-faq-item.ty-r,
+  .ty-calc-box.ty-r{
+    opacity:0;
+    transform:translateY(42px) scale(.93);
+    transition:
+      opacity .58s ease var(--td,0s),
+      transform .68s cubic-bezier(.2,1.08,.28,1) var(--td,0s);
+  }
+  .ty-what-card.ty-rv,
+  .ty-step-nu.ty-rv,
+  .ty-role-nu.ty-rv,
+  .ty-use-card-dark.ty-rv,
+  .ty-benefit.ty-rv,
+  .ty-problem-item.ty-rv,
+  .ty-testi-card.ty-rv,
+  .ty-faq-item.ty-rv,
+  .ty-calc-box.ty-rv{
+    opacity:1!important;
+    transform:translateY(0) scale(1)!important;
+  }
+  .ty-steps-nu,
+  .ty-use-carousel,
+  .ty-testi-carousel,
+  .ty-what-cards{
+    gap:16px;
+  }
+  .ty-step-nu,
+  .ty-role-nu,
+  .ty-use-card-dark,
+  .ty-benefit,
+  .ty-problem-item,
+  .ty-testi-card,
+  .ty-faq-item{
+    border-radius:24px;
+    box-shadow:0 24px 50px rgba(2,14,18,.18);
+  }
+  .ty-sec-dark .ty-step-nu,
+  .ty-sec-deep .ty-role-nu,
+  .ty-sec-teal .ty-use-card-dark{
+    background:rgba(255,255,255,.09);
+    backdrop-filter:blur(12px);
+  }
 }

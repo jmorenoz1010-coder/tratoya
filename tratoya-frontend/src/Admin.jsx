@@ -1307,7 +1307,7 @@ function AdminTratoDetailModal({ detail, loading, onClose, onRefresh, onLiberar,
                   {manualPayment && (
                     <div className="admin-flow-box" style={{ marginBottom: 12 }}>
                       <b>Pago reportado por comprador</b>
-                      <span>Referencia requerida: {manualPayment.payment_reference_required || t.codigo || "—"}</span>
+                      <span>ID de operación: {manualPayment.payment_reference_required || t.codigo || "—"}</span>
                       <span>Transacción: {manualPayment.transaction_ref || "—"}</span>
                       <span>Método: {manualPayment.method || "—"} · Esperado: {fmt(manualPayment.amount_expected)}</span>
                       {manualPayment.receipt_url && <a href={manualPayment.receipt_url} target="_blank" rel="noreferrer">Abrir comprobante del comprador</a>}
@@ -1315,7 +1315,7 @@ function AdminTratoDetailModal({ detail, loading, onClose, onRefresh, onLiberar,
                   )}
                   <div className="admin-unified-flow">
                     {[
-                      ["Comprador paga", Boolean(manualPayment), manualPayment ? "Comprobante cargado" : "Pendiente"],
+                      ["Pago recibido", Boolean(manualPayment), manualPayment ? "Comprobante cargado" : "Pendiente"],
                       ["TratoYA valida", ["pago_retenido","en_entrega","pendiente_confirmacion","confirmado","completado"].includes(t.estado), t.estado === "pago_pendiente" ? "Revisar comprobante" : "Validación"],
                       ["Vendedor entrega", ["en_entrega","pendiente_confirmacion","confirmado","completado"].includes(t.estado), "Entrega"],
                       ["Fondos liberados", t.estado === "completado", "Cierre"],
@@ -1797,7 +1797,7 @@ function PagosAdmin({ toast }) {
               <div className="live-payment-row" key={`live-${p.id}`} onClick={() => setSelected(p)}>
                 <div>
                   <b>{p.Trato?.codigo || "Trato"}</b>
-                  <span>{p.Trato?.titulo || "Pago manual"} · {timeAgo(p.createdAt)}</span>
+                  <span>{p.Trato?.titulo || "Pago"} · {timeAgo(p.createdAt)}</span>
                 </div>
                 <strong>{fmt(p.monto)}</strong>
                 <div className="live-actions">
@@ -1831,7 +1831,7 @@ function PagosAdmin({ toast }) {
                 <MiniField label="Llave reportada" value={selected.metadata?.transaction_ref || selected.pasarela_ref || "—"} mono />
               </div>
               <div className="admin-flow-box">
-                <b>Verificación manual</b>
+                <b>Verificación del pago</b>
                 <span>1. Busca en Nequi/Bre-B la referencia {selected.pasarela_ref || selected.metadata?.transaction_ref || "reportada"}.</span>
                 <span>2. Confirma que llegó exactamente {fmt(selected.monto)} para {selected.Trato?.codigo || "el trato"}.</span>
                 <span>3. Al confirmar, el vendedor recibe notificación para entregar. Al liberar, ambos ven que se refleja máximo en 1 hora.</span>
