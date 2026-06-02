@@ -65,8 +65,11 @@ export default function TratoDetalle({ tratoId, setPage, setDisputeTratoId, user
   const [pruebaFotos, setPruebaFotos] = useState([]);
   const [busy, setBusy] = useState(false);
   const [paymentReport, setPaymentReport] = useState(null);
+  const [guideDismissed, setGuideDismissed] = useState(false);
   const previousEstadoRef = useRef(null);
   const chatEndRef = useRef(null);
+  const actionRef = useRef(null);
+  const reviewRef = useRef(null);
 
   const load = async (silent = false) => {
     try {
@@ -178,6 +181,105 @@ export default function TratoDetalle({ tratoId, setPage, setDisputeTratoId, user
           <span style={{ fontFamily: "Manrope", fontWeight: 700, fontSize: 12.5, color: "var(--g2)" }}>{trato.codigo}</span>
           <span className={`bdg ${ec.c}`}>{ec.l}</span>
         </div>
+        {/* ── Guía de próximo paso ────────────────────────── */}
+        {!guideDismissed && (() => {
+          // Definición de guías por estado + rol
+          const PASO = {
+            borrador: {
+              V: { ico: "🔗", titulo: "Comparte el link del trato", desc: "Cópiale el link al comprador para que lo acepte y realice el pago. Sin ese paso, el trato no avanza.", cta: "Copiar link", ctaType: "copy" },
+              C: { ico: "⏳", titulo: "El vendedor está configurando el trato", desc: "Te llegará una notificación cuando el trato esté listo para que lo aceptes y pagues." },
+            },
+            activo: {
+              V: { ico: "⏳", titulo: "Esperando el pago del comprador", desc: "El comprador recibió el link. Cuando realice la transferencia y la reporte, verás el trato avanzar." },
+              C: { ico: "💰", titulo: "¡Realiza el pago para activar el trato!", desc: "Transfiere el monto exacto con la referencia indicada y sube el comprobante. Verificamos en menos de 1 hora.", cta: "↓ Ir a pagar", ctaType: "scroll" },
+            },
+            pago_pendiente: {
+              V: { ico: "🔍", titulo: "Verificando el pago del comprador", desc: "El comprador ya reportó el pago. Nuestro equipo lo está revisando. Te notificamos en cuanto esté confirmado." },
+              C: { ico: "🔍", titulo: "Tu pago está siendo verificado", desc: "Estamos revisando tu transferencia. Tiempo estimado: menos de 1 hora. Recibirás notificación cuando esté listo. No necesitas hacer nada más." },
+            },
+            pago_retenido: {
+              V: { ico: "📦", titulo: "¡Dinero protegido — ya puedes entregar!", desc: "El pago está en custodia de TratoYa. Registra el envío con guía, datos del domiciliario o punto de encuentro.", cta: "↓ Registrar envío", ctaType: "scroll" },
+              C: { ico: "🛡️", titulo: "El dinero está protegido en TratoYa", desc: "El vendedor procederá a entregar el producto o servicio. Recibirás notificación cuando registre el envío." },
+            },
+            en_entrega: {
+              V: { ico: "🚚", titulo: "Entrega registrada — esperando confirmación", desc: "Ya registraste el envío. Cuando el comprador reciba el producto y lo confirme, el pago será liberado automáticamente." },
+              C: { ico: "✅", titulo: "¿Ya recibiste el producto?", desc: "El vendedor registró la entrega. Cuando lo tengas en tus manos y todo esté bien, confírmalo para liberar el pago.", cta: "↓ Confirmar entrega", ctaType: "scroll" },
+            },
+            pendiente_confirmacion: {
+              V: { ico: "⏳", titulo: "Esperando que el comprador confirme", desc: "El comprador necesita confirmar la recepción. Puedes recordárselo por el chat del trato." },
+              C: { ico: "✅", titulo: "¡Confirma para liberar el pago al vendedor!", desc: "El vendedor marcó la entrega como realizada. Si recibiste todo lo acordado en perfecto estado, confírmalo ahora.", cta: "↓ Confirmar recepción", ctaType: "scroll" },
+            },
+            confirmado: {
+              V: { ico: "🎉", titulo: "¡El comprador confirmó — pago siendo liberado!", desc: "Tu pago está en proceso de liberación. Lo recibirás en máximo 24 horas hábiles." },
+              C: { ico: "🎉", titulo: "¡Trato casi completado!", desc: "Confirmaste la entrega. El pago al vendedor está siendo procesado." },
+            },
+            completado: {
+              all: { ico: "⭐", titulo: "¡Trato completado con éxito!", desc: "Todo salió bien. Si quieres, deja una reseña para que otros usuarios conozcan tu experiencia.", cta: "↓ Dejar reseña", ctaType: "scroll-review" },
+            },
+            disputado: {
+              all: { ico: "⚖️", titulo: "En revisión por disputa", desc: "Nuestro equipo está analizando la situación. Te notificaremos cuando haya una resolución. Mantén disponible cualquier evidencia." },
+            },
+            cancelado: {
+              all: { ico: "❌", titulo: "Trato cancelado", desc: "Este trato no se completó. Si necesitas hacer una nueva transacción, puedes crear un nuevo trato." },
+            },
+            expirado: {
+              all: { ico: "⏰", titulo: "Trato vencido", desc: "Este trato venció sin completarse. Coordina con tu contraparte y crea uno nuevo si lo necesitan." },
+            },
+          };
+          const rol = esV ? "V" : "C";
+          const guiasEstado = PASO[trato.estado];
+          if (!guiasEstado) return null;
+          const guia = guiasEstado[rol] || guiasEstado.all;
+          if (!guia) return null;
+
+          const isActive = !["completado","cancelado","disputado","expirado"].includes(trato.estado);
+          const isWaiting = ["pago_pendiente","confirmado"].includes(trato.estado)
+            || (trato.estado === "activo" && esV)
+            || (trato.estado === "en_entrega" && esV)
+            || (trato.estado === "pago_retenido" && esC)
+            || (trato.estado === "pendiente_confirmacion" && esV);
+          const isUrgent = guia.cta && !isWaiting;
+
+          const scrollToAction = () => {
+            if (guia.ctaType === "scroll-review") {
+              reviewRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+            } else {
+              actionRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+              // Efecto de highlight
+              if (actionRef.current) {
+                actionRef.current.classList.add("nsg-highlight");
+                setTimeout(() => actionRef.current?.classList.remove("nsg-highlight"), 1800);
+              }
+            }
+          };
+
+          const handleCta = () => {
+            if (guia.ctaType === "copy") {
+              navigator.clipboard.writeText(publicTratoUrl(trato.link_compartir));
+              toast("Link copiado ✓", "success");
+            } else {
+              scrollToAction();
+            }
+          };
+
+          return (
+            <div className={`nsg-card ${isUrgent ? "nsg-urgent" : isWaiting ? "nsg-waiting" : "nsg-neutral"}`}>
+              <button className="nsg-close" onClick={() => setGuideDismissed(true)} aria-label="Cerrar guía">×</button>
+              <div className="nsg-head">
+                <span className="nsg-ico">{guia.ico}</span>
+                <div>
+                  <div className="nsg-label">{isUrgent ? "Tu próximo paso" : isWaiting ? "Estado actual" : "Información"}</div>
+                  <div className="nsg-title">{guia.titulo}</div>
+                </div>
+              </div>
+              <p className="nsg-desc">{guia.desc}</p>
+              {guia.cta && (
+                <button className="nsg-cta" onClick={handleCta}>{guia.cta}</button>
+              )}
+            </div>
+          );
+        })()}
+
         {ec.desc && (
           <div style={{ background: "var(--cr)", border: "1px solid var(--s100)", borderRadius: 10, padding: "10px 13px" }}>
             <p style={{ margin: 0, fontSize: 13, color: "var(--n)", lineHeight: 1.55 }}>{ec.desc}</p>
@@ -217,7 +319,7 @@ export default function TratoDetalle({ tratoId, setPage, setDisputeTratoId, user
 
             {/* Acciones del vendedor: envío */}
             {canShip && (
-              <div style={{ marginTop: 14 }}>
+              <div ref={actionRef} style={{ marginTop: 14 }}>
                 <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 10 }}>📦 Registrar envío</div>
                 <div className="fg">
                   <label className="fl">Medio de envío</label>
@@ -310,7 +412,7 @@ export default function TratoDetalle({ tratoId, setPage, setDisputeTratoId, user
 
             {/* Acción del comprador: pagar */}
             {canPay && (
-              <div style={{ marginTop: 11 }}>
+              <div ref={actionRef} style={{ marginTop: 11 }}>
                 <ManualPaymentBox amount={commissionCalc.totalPagar} reference={trato.codigo} busy={busy} onReport={reportarPagoManual} />
                 {paymentReport?.reference && (
                   <div style={{ fontSize: 11, color: "var(--s600)", marginTop: 8 }}>Reporte: {paymentReport.reference}</div>
@@ -320,7 +422,7 @@ export default function TratoDetalle({ tratoId, setPage, setDisputeTratoId, user
 
             {/* Acción del comprador: confirmar */}
             {canConfirm && (
-              <div style={{ marginTop: 11, display: "flex", gap: 9 }}>
+              <div ref={actionRef} style={{ marginTop: 11, display: "flex", gap: 9 }}>
                 <button className="btn bp" style={{ flex: 1 }} onClick={() => action(() => api.post(`/tratos/${tratoId}/confirmar`), "¡Entrega confirmada! El pago será liberado.")} disabled={busy}>
                   {busy ? <div className="spin" /> : "✅ Confirmar que lo recibí"}
                 </button>
@@ -339,7 +441,9 @@ export default function TratoDetalle({ tratoId, setPage, setDisputeTratoId, user
 
           {/* Reseña */}
           {trato.estado === "completado" && (
-            <ReviewBox tratoId={tratoId} reviews={reviews} user={user} toast={toast} onSaved={() => load(true)} />
+            <div ref={reviewRef}>
+              <ReviewBox tratoId={tratoId} reviews={reviews} user={user} toast={toast} onSaved={() => load(true)} />
+            </div>
           )}
         </div>
 

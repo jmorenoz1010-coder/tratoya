@@ -1439,29 +1439,60 @@ adminRouter.post('/pagos/:id/rechazar', async (req, res, next) => {
     const trato = await Trato.findByPk(pago.trato_id);
     if (!trato) return res.status(404).json({ success: false, message: 'Trato no encontrado' });
     const metadata = pago.metadata || {};
+    // Razón de rechazo opcional enviada desde el admin
+    const motivo = req.body.motivo || null;
+    const montoRecibido = req.body.monto_recibido ? Number(req.body.monto_recibido) : null;
     await pago.update({
       estado: 'rechazado',
       pasarela_estado: 'RECHAZADO',
-      metadata: { ...metadata, rejected_by_admin_id: req.user.id, rejected_at: new Date().toISOString(), retry_after_minutes: 10 },
+      metadata: {
+        ...metadata,
+        rejected_by_admin_id: req.user.id,
+        rejected_at: new Date().toISOString(),
+        retry_after_minutes: 10,
+        motivo_rechazo: motivo,
+        monto_recibido: montoRecibido,
+      },
     });
     if (metadata.reference) await PaymentIntent.update({ status: 'PAYMENT_DECLINED' }, { where: { reference: metadata.reference } }).catch(() => {});
     await trato.update({
       estado: 'activo',
-      metadata: { ...(trato.metadata || {}), payment_status: 'PAGO_RECHAZADO', retry_payment_after: new Date(Date.now() + 10 * 60 * 1000).toISOString() },
+      metadata: {
+        ...(trato.metadata || {}),
+        payment_status: 'PAGO_RECHAZADO',
+        retry_payment_after: new Date(Date.now() + 10 * 60 * 1000).toISOString(),
+        ultimo_rechazo_motivo: motivo,
+      },
     });
     await AuditLog.create({
       user_id: req.user.id,
       action: 'MANUAL_PAYMENT_REJECTED',
       entity_type: 'deal',
       entity_id: trato.id,
-      metadata: { pago_id: pago.id, transaction_ref: pago.pasarela_ref, retry_after_minutes: 10 },
+      metadata: { pago_id: pago.id, transaction_ref: pago.pasarela_ref, retry_after_minutes: 10, motivo, monto_recibido: montoRecibido },
     }).catch(() => {});
     const { notificar } = require('../services/notificacionService');
+    const cuerpoPush = motivo
+      ? `Pago no verificado para el trato ${trato.codigo}: ${motivo}. Podrás intentarlo de nuevo en 10 minutos.`
+      : `No pudimos verificar el pago del trato ${trato.codigo}. Podrás intentarlo de nuevo en 10 minutos.`;
     await notificar(trato.comprador_id, 'pago_rechazado', {
       titulo: 'Pago no verificado',
-      cuerpo: `No pudimos verificar el pago del trato ${trato.codigo}. Podrás intentarlo de nuevo en 10 minutos.`,
-      metadata: { trato_id: trato.id, pago_id: pago.id },
+      cuerpo: cuerpoPush,
+      metadata: { trato_id: trato.id, pago_id: pago.id, motivo },
     }).catch(() => {});
+    // Email al comprador con la razón del rechazo
+    try {
+      const { User } = require('../config/database');
+      const comprador = await User.findByPk(trato.comprador_id, { attributes: ['nombre', 'email'] });
+      if (comprador?.email) {
+        const { sendEmail } = require('../services/emailService');
+        await sendEmail(comprador.email, 'pago_rechazado', {
+          nombre: comprador.nombre || 'Usuario',
+          codigo: trato.codigo,
+          motivo,
+        });
+      }
+    } catch { /* email no bloquea el flujo */ }
     res.json({ success: true, data: { pago, trato }, message: 'Pago rechazado. Reintento en 10 minutos.' });
   } catch (err) { next(err); }
 });

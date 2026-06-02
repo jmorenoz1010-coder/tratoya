@@ -1586,6 +1586,9 @@ function PagosAdmin({ toast }) {
   const [releaseTarget, setReleaseTarget] = useState(null);
   const [releaseRef, setReleaseRef] = useState("");
   const [releaseReceipt, setReleaseReceipt] = useState(null);
+  const [rejectTarget, setRejectTarget] = useState(null);
+  const [rejectMotivo, setRejectMotivo] = useState("monto_incorrecto");
+  const [rejectMontoRecibido, setRejectMontoRecibido] = useState("");
 
   const load = useCallback((silent = false) => {
     if (!silent) setLoading(true);
@@ -1622,12 +1625,31 @@ function PagosAdmin({ toast }) {
     finally { setBusy(false); }
   };
 
-  const rechazar = async (p) => {
-    if (!confirm(`¿Marcar como fallido el pago del trato ${p.Trato?.codigo || ""}? El comprador deberá esperar 10 minutos.`)) return;
+  const rechazar = (p) => {
+    setRejectTarget(p);
+    setRejectMotivo("monto_incorrecto");
+    setRejectMontoRecibido("");
+  };
+
+  const confirmarRechazo = async () => {
+    const p = rejectTarget;
+    if (!p) return;
     setBusy(true);
     try {
-      await api.post(`/admin/pagos/${p.id}/rechazar`);
-      toast("Pago rechazado. Reintento bloqueado por 10 minutos.", "warn");
+      const motivoTexto = {
+        monto_incorrecto: rejectMontoRecibido
+          ? `Monto incorrecto — se esperaba ${fmt(p.monto)} pero llegó ${fmt(Number(rejectMontoRecibido))}`
+          : "Monto incorrecto — el valor no coincide",
+        no_encontrado: "Transferencia no encontrada en la cuenta",
+        referencia_invalida: "Referencia de pago inválida o no corresponde",
+        otro: "Revisión interna — ver notas del admin",
+      }[rejectMotivo] || rejectMotivo;
+      await api.post(`/admin/pagos/${p.id}/rechazar`, {
+        motivo: motivoTexto,
+        monto_recibido: rejectMontoRecibido ? Number(rejectMontoRecibido) : null,
+      });
+      toast("Pago rechazado. El comprador puede reintentar en 10 minutos.", "warn");
+      setRejectTarget(null);
       await load(true);
     } catch (e) { toast(e.message, "error"); }
     finally { setBusy(false); }
@@ -1723,6 +1745,72 @@ function PagosAdmin({ toast }) {
           </div>
         </div>
       )}
+      {rejectTarget && (
+        <div className="overlay">
+          <div className="modal" style={{ maxWidth: 480 }} onClick={(e) => e.stopPropagation()}>
+            <div className="modal-hd">
+              <div>
+                <h3>Rechazar pago</h3>
+                <p style={{ fontSize: 12, color: "var(--s500)" }}>{rejectTarget.Trato?.codigo} · {fmt(rejectTarget.monto)} esperado</p>
+              </div>
+              <button className="btn bg_ bsm" onClick={() => setRejectTarget(null)}>×</button>
+            </div>
+            <div className="modal-bd" style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+              {/* Resumen del pago */}
+              <div style={{ background: "var(--rdb)", border: "1.5px solid #f5cece", borderRadius: 10, padding: "12px 14px" }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: "var(--rd)", textTransform: "uppercase", letterSpacing: ".5px", marginBottom: 6 }}>Pago a rechazar</div>
+                <div style={{ fontFamily: "var(--mono, monospace)", fontSize: 13, fontWeight: 700 }}>{rejectTarget.Trato?.codigo} — {rejectTarget.Trato?.titulo}</div>
+                <div style={{ display: "flex", gap: 18, marginTop: 6, fontSize: 13 }}>
+                  <span>Esperado: <strong>{fmt(rejectTarget.monto)}</strong></span>
+                  {rejectTarget.pasarela_ref && <span>Ref: <code style={{ fontSize: 11 }}>{rejectTarget.pasarela_ref}</code></span>}
+                </div>
+              </div>
+
+              {/* Razón */}
+              <div className="fg" style={{ marginBottom: 0 }}>
+                <label className="fl">Razón del rechazo</label>
+                <select className="inp" value={rejectMotivo} onChange={(e) => setRejectMotivo(e.target.value)}>
+                  <option value="monto_incorrecto">Monto incorrecto (llegó diferente)</option>
+                  <option value="no_encontrado">Transferencia no encontrada</option>
+                  <option value="referencia_invalida">Referencia inválida / no corresponde</option>
+                  <option value="otro">Otro</option>
+                </select>
+              </div>
+
+              {/* Monto recibido (solo si monto incorrecto) */}
+              {rejectMotivo === "monto_incorrecto" && (
+                <div className="fg" style={{ marginBottom: 0 }}>
+                  <label className="fl">Monto que SÍ llegó (opcional, para notificar al comprador)</label>
+                  <input
+                    className="inp"
+                    type="number"
+                    placeholder={`Ej: ${Number(rejectTarget.monto) - 1000}`}
+                    value={rejectMontoRecibido}
+                    onChange={(e) => setRejectMontoRecibido(e.target.value)}
+                  />
+                  {rejectMontoRecibido && Number(rejectMontoRecibido) !== Number(rejectTarget.monto) && (
+                    <div style={{ fontSize: 11.5, color: "var(--or)", marginTop: 4, fontWeight: 600 }}>
+                      Diferencia: {fmt(Math.abs(Number(rejectTarget.monto) - Number(rejectMontoRecibido)))}
+                      {Number(rejectMontoRecibido) < Number(rejectTarget.monto) ? " de menos" : " de más"}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <div style={{ fontSize: 12.5, color: "var(--s600)", background: "var(--s50)", borderRadius: 8, padding: "10px 12px" }}>
+                ⚠ El comprador será notificado y podrá reintentar el pago en 10 minutos. El trato vuelve a estado "Activo".
+              </div>
+            </div>
+            <div className="modal-ft">
+              <button className="btn bg_" onClick={() => setRejectTarget(null)}>Cancelar</button>
+              <button className="btn brd" disabled={busy} onClick={confirmarRechazo}>
+                {busy ? <div className="spin" /> : "Confirmar rechazo"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {releaseTarget && (
         <div className="overlay">
           <div className="modal" style={{ maxWidth: 520 }} onClick={(e) => e.stopPropagation()}>
@@ -1840,17 +1928,45 @@ function PagosAdmin({ toast }) {
                 {selected.metadata?.release_receipt_url && <a href={selected.metadata.release_receipt_url} target="_blank" rel="noreferrer">Abrir comprobante de consignación al vendedor</a>}
                 {selected.metadata?.notes && <span>Nota comprador: {selected.metadata.notes}</span>}
               </div>
-              {selected.Trato?.metadata || selected.Trato ? (
-                selected.Trato?.estado && selected.Trato?.monto && selected.Trato?.monto_neto && (
-                  <div className="admin-flow-box" style={{ marginTop: 10 }}>
-                    <b>Valores de liberación</b>
-                    <span>Valor exacto al vendedor: {fmt(sellerAmount(selected))}.</span>
-                    <span>Ganancia libre TratoYA 4.5%: {fmt(freeGain(selected))}.</span>
-                    <span>IMP/4x1000 cubierto dentro de comisión: {fmt(coveredCosts(selected))}.</span>
-                    {selected.Trato?.metadata?.manual_payment?.commission_visible && <span>Comisión total cobrada: {fmt(selected.Trato.metadata.manual_payment.commission_visible)}.</span>}
+              {selected.Trato?.monto ? (() => {
+                const montoTrato = Number(selected.Trato.monto || 0);
+                const comisionTratoya = Math.round(montoTrato * 0.045);
+                const gmf4x1000 = Math.round(montoTrato * 0.004);  // 4x1000 al transferir al vendedor
+                const netaTratoya = comisionTratoya - gmf4x1000;
+                const vendedorRecibe = sellerAmount(selected);
+                return (
+                  <div style={{ marginTop: 10, background: "var(--cr)", border: "1.5px solid rgba(168,196,0,.3)", borderRadius: 10, padding: "13px 15px" }}>
+                    <div style={{ fontFamily: "Manrope", fontWeight: 800, fontSize: 12, color: "var(--g2)", marginBottom: 10, textTransform: "uppercase", letterSpacing: ".5px" }}>
+                      💰 Desglose de comisiones
+                    </div>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 6, fontSize: 12.5 }}>
+                      <div style={{ display: "flex", justifyContent: "space-between" }}>
+                        <span style={{ color: "var(--s600)" }}>Monto del trato</span>
+                        <strong>{fmt(montoTrato)}</strong>
+                      </div>
+                      <div style={{ display: "flex", justifyContent: "space-between" }}>
+                        <span style={{ color: "var(--s600)" }}>Comisión TratoYa (4.5%)</span>
+                        <strong style={{ color: "var(--g2)" }}>+ {fmt(comisionTratoya)}</strong>
+                      </div>
+                      <div style={{ display: "flex", justifyContent: "space-between", paddingTop: 5, borderTop: "1px dashed rgba(0,0,0,.1)", marginTop: 2 }}>
+                        <span style={{ color: "var(--s600)" }}>GMF 4x1000 al liberar (0.4%)</span>
+                        <strong style={{ color: "var(--or)" }}>− {fmt(gmf4x1000)}</strong>
+                      </div>
+                      <div style={{ display: "flex", justifyContent: "space-between", paddingTop: 6, borderTop: "2px solid rgba(168,196,0,.35)", marginTop: 2 }}>
+                        <span style={{ fontWeight: 800, color: "var(--n)" }}>TratoYa NETO</span>
+                        <strong style={{ fontFamily: "Manrope", fontSize: 14, color: "var(--g2)" }}>{fmt(netaTratoya)}</strong>
+                      </div>
+                      <div style={{ display: "flex", justifyContent: "space-between", paddingTop: 4 }}>
+                        <span style={{ color: "var(--s600)" }}>Vendedor recibe</span>
+                        <strong style={{ color: "var(--n)" }}>{fmt(vendedorRecibe)}</strong>
+                      </div>
+                    </div>
+                    <div style={{ fontSize: 11, color: "var(--s400)", marginTop: 8, lineHeight: 1.5 }}>
+                      El GMF 4x1000 es cobrado por el banco a TratoYa al momento de transferir al vendedor.
+                    </div>
                   </div>
-                )
-              ) : null}
+                );
+              })() : null}
             </div>
             <div className="modal-ft" style={{ flexWrap: "wrap" }}>
               {selected.tipo === "retencion" && selected.estado !== "aprobado" && <button className="btn bp" disabled={busy} onClick={() => confirmar(selected)}>Confirmar recibido</button>}
