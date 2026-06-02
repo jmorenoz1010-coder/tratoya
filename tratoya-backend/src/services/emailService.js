@@ -1,4 +1,5 @@
-const nodemailer = require('nodemailer');
+// nodemailer se carga de forma lazy dentro de getTransporter()
+// para que el backend NO crashee si el módulo no está disponible en el entorno
 const logger = require('../utils/logger');
 
 /* ═══════════════════════════════════════════════════════════════════
@@ -30,13 +31,20 @@ function getTransporter() {
     logger.warn('[EMAIL] SMTP no configurado — modo stub. Define SMTP_HOST/SMTP_USER/SMTP_PASS en .env');
     return null;
   }
-  _transporter = nodemailer.createTransport({
-    host: SMTP_HOST,
-    port: parseInt(process.env.SMTP_PORT || '587'),
-    secure: process.env.SMTP_PORT === '465',
-    auth: { user: SMTP_USER, pass: SMTP_PASS },
-  });
-  logger.info(`[EMAIL] Transporter activo → ${SMTP_HOST}:${process.env.SMTP_PORT || '587'}`);
+  try {
+    // require lazy para no crashear al arrancar si el módulo no está disponible
+    const nodemailer = require('nodemailer');
+    _transporter = nodemailer.createTransport({
+      host: SMTP_HOST,
+      port: parseInt(process.env.SMTP_PORT || '587'),
+      secure: process.env.SMTP_PORT === '465',
+      auth: { user: SMTP_USER, pass: SMTP_PASS },
+    });
+    logger.info(`[EMAIL] Transporter activo → ${SMTP_HOST}:${process.env.SMTP_PORT || '587'}`);
+  } catch (e) {
+    logger.warn(`[EMAIL] nodemailer no disponible (${e.message}) — modo stub`);
+    return null;
+  }
   return _transporter;
 }
 

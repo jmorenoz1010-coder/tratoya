@@ -52,7 +52,7 @@ const faqs = [
   ["¿Cómo funciona exactamente?",            "El comprador paga a TratoYa, no al vendedor. TratoYa retiene ese dinero hasta que el comprador confirme que recibió el producto o servicio. Solo entonces se libera el pago al vendedor."],
   ["¿Quién puede usar TratoYa?",             "Cualquier persona en Colombia. Compradores, vendedores, freelancers, emprendedores... si vas a hacer un negocio con alguien, TratoYa lo hace seguro."],
   ["¿Qué pasa si el vendedor no entrega?",   "Si el vendedor no entrega o entrega algo diferente, el comprador abre una disputa. TratoYa investiga y protege el dinero hasta resolver la situación."],
-  ["¿Cuánto cuesta usar TratoYa?",           "Registrarse es totalmente gratis. TratoYa cobra una pequeña comisión (4.5%) por transacción exitosa, visible antes de confirmar el trato. Sin costos ocultos."],
+  ["¿Cuánto cuesta usar TratoYa?",           "Registrarse es totalmente gratis. TratoYa cobra una comisión del 4.5% + IMP por transacción exitosa, visible antes de confirmar el trato. Sin costos ocultos ni sorpresas."],
   ["¿El dinero está seguro mientras TratoYa lo retiene?", "Sí. El dinero queda protegido en nuestra plataforma y no se mueve hasta que ambas partes cumplan lo acordado."],
   ["¿Qué pasa si hay una disputa?",          "Nuestro equipo revisa la evidencia, media entre las partes y toma una decisión para proteger a quien tiene la razón."],
 ];
@@ -484,7 +484,7 @@ function TratoCalculator({ register }) {
       {calc ? (
         <div className="ty-calc-result">
           <div className="ty-calc-row"><span>Valor acordado</span><strong>{fmtCOP(monto)}</strong></div>
-          <div className="ty-calc-row"><span>Comisión TratoYa (4.5%)</span><strong>{fmtCOP(calc.comision)}</strong></div>
+          <div className="ty-calc-row"><span>Comisión TratoYa (4.5% + IMP)</span><strong>{fmtCOP(calc.comision)}</strong></div>
           <div className="ty-calc-divider" />
           <div className="ty-calc-row ty-calc-highlight"><span>🛒 Comprador paga en total</span><strong>{fmtCOP(calc.totalPagar)}</strong></div>
           <div className="ty-calc-row ty-calc-highlight green"><span>📦 Vendedor recibe</span><strong>{fmtCOP(calc.vendedorRecibe)}</strong></div>
