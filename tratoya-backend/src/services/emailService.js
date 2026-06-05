@@ -50,7 +50,7 @@ function getTransporter() {
   return _transporter;
 }
 
-const FROM    = () => process.env.EMAIL_FROM || '"TratoYa" <noreply@tratoya.com>';
+const FROM    = () => process.env.EMAIL_FROM || '"TratoYa" <soporte@tratoya.com>';
 const APP_URL = () => process.env.FRONTEND_URL || 'https://tratoya.com';
 
 /* ── Layout base ─────────────────────────────────────────────────── */
