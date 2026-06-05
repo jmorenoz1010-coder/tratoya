@@ -717,7 +717,7 @@ tbody tr:hover td{background:var(--s50)}
   gap:20px;
   align-items:center;
 }
-.ty-hero-copy{animation:tyFadeUp .55s ease both}
+.ty-hero-copy{/* animation manejada por Framer Motion */}
 .ty-hero h1{
   margin:0;
   color:#fff;
@@ -2714,3 +2714,273 @@ tbody tr:hover td{background:var(--s50)}
   .wait-counter{width:100%;justify-content:space-between}
   .wait-admin-metrics{grid-template-columns:1fr}
 }
+
+/* ═══════════════════════════════════════════════════════════
+   TRATOYA — PREMIUM ANIMATION LAYER (Framer Motion upgrade)
+   Agrega efectos visuales sin tocar textos ni lógica.
+   ═══════════════════════════════════════════════════════════ */
+
+/* ── Desactiva las CSS-animations del hero que FM reemplaza ── */
+.ty-hero-copy { animation: none !important; }
+.ty-hero-photo,
+.ty-hero-visual img.ty-hero-photo { animation: none !important; }
+
+/* ── Navbar blur al hacer scroll ────────────────────────── */
+.ty-navbar--blur {
+  position: sticky;
+  top: 0;
+  z-index: 900;
+  backdrop-filter: blur(18px) saturate(1.4);
+  -webkit-backdrop-filter: blur(18px) saturate(1.4);
+  background: rgba(7, 24, 25, 0.72) !important;
+  border-bottom: 1px solid rgba(169, 235, 27, 0.1);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.28);
+  transition: background 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* ── Botones — glow y hover premium ─────────────────────── */
+.ty-button {
+  will-change: transform;
+}
+.ty-button:hover {
+  box-shadow: 0 20px 48px rgba(117, 205, 22, 0.42) !important;
+}
+
+/* ── Inputs calculadora — focus premium ──────────────────── */
+.ty-calc-input--pm,
+.ty-calc-input--premium {
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
+}
+.ty-calc-input--pm:focus,
+.ty-calc-input--premium:focus {
+  border-color: var(--ty-green);
+  box-shadow: 0 0 0 3px rgba(147, 211, 23, 0.18), 0 4px 16px rgba(0, 0, 0, 0.07);
+  transform: translateY(-1px);
+  outline: none;
+}
+.ty-calc-input--pm:hover:not(:focus),
+.ty-calc-input--premium:hover:not(:focus) {
+  border-color: rgba(147, 211, 23, 0.55);
+}
+
+/* ── Problema: card "Con TratoYa" con resalte verde ──────── */
+.ty-problem-item--highlight {
+  box-shadow: 0 0 0 1.5px rgba(158, 216, 25, 0.4), 0 10px 28px rgba(0, 0, 0, 0.16) !important;
+}
+
+/* ── Stat hover ──────────────────────────────────────────── */
+.ty-stat-hover {
+  transition: transform 0.2s ease;
+  cursor: default;
+}
+.ty-stat-hover:hover { transform: translateY(-3px); }
+
+/* ── Cards — hover con borde luminoso ────────────────────── */
+.ty-what-card,
+.ty-use-card-dark,
+.ty-testi-card,
+.ty-step-nu,
+.ty-role-nu,
+.ty-problem-item {
+  will-change: transform;
+}
+.ty-what-card:hover {
+  box-shadow: 0 14px 36px rgba(13, 32, 56, 0.1), 0 0 0 1.5px rgba(147, 211, 23, 0.25);
+}
+.ty-benefit:hover {
+  background: rgba(147, 211, 23, 0.04);
+}
+
+/* ── CTA final — breathing glow ──────────────────────────── */
+@keyframes ctaGlow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(147, 211, 23, 0); }
+  50%       { box-shadow: 0 0 36px 4px rgba(147, 211, 23, 0.22); }
+}
+.ty-cta-hero {
+  animation: ctaGlow 3.5s ease-in-out infinite;
+}
+
+/* ── Botón CTA principal ─────────────────────────────────── */
+.ty-cta-dark-btn {
+  will-change: transform;
+}
+
+/* ── FAQ — altura manejada por AnimatePresence FM ─────────── */
+.ty-faq-a {
+  max-height: none !important;   /* FM maneja el height */
+  overflow: hidden;
+}
+.ty-faq-toggle {
+  display: inline-block;
+  will-change: transform;
+}
+
+/* ── Flujo de custodia ───────────────────────────────────── */
+.ty-custody-flow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  margin: 32px auto 40px;
+  max-width: 520px;
+  padding: 22px 28px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  backdrop-filter: blur(10px);
+}
+.ty-cf-node {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  min-width: 68px;
+}
+.ty-cf-icon {
+  font-size: 28px;
+  line-height: 1;
+  display: block;
+}
+.ty-cf-label {
+  font-size: 11px;
+  font-weight: 800;
+  color: rgba(255, 255, 255, 0.65);
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+}
+.ty-cf-center .ty-cf-label { color: #dfff36; }
+.ty-cf-track {
+  flex: 1;
+  position: relative;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  min-width: 52px;
+}
+.ty-cf-line {
+  position: absolute;
+  left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, rgba(169,235,27,.22), rgba(169,235,27,.55), rgba(169,235,27,.22));
+  border-radius: 99px;
+}
+/* Dot animado con CSS keyframes */
+.ty-cf-dot--a,
+.ty-cf-dot--b {
+  position: absolute;
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: #dfff36;
+  box-shadow: 0 0 10px 3px rgba(223,255,54,.6);
+  top: 50%; transform: translateY(-50%);
+}
+@keyframes dotSlide {
+  0%   { left: 0%;   opacity: 0; }
+  10%  { opacity: 1; }
+  80%  { opacity: 1; }
+  100% { left: calc(100% - 8px); opacity: 0; }
+}
+.ty-cf-dot--a { animation: dotSlide 2s ease-in-out infinite; }
+.ty-cf-dot--b { animation: dotSlide 2s ease-in-out infinite; animation-delay: 2.2s; }
+/* Icono TratoYa pulsante */
+@keyframes cfPulse {
+  0%, 100% { transform: scale(1); }
+  50%       { transform: scale(1.14); filter: drop-shadow(0 0 8px rgba(223,255,54,.55)); }
+}
+.ty-cf-pulse { animation: cfPulse 2.4s ease-in-out infinite; display: inline-block; }
+
+@media (max-width: 520px) {
+  .ty-custody-flow { padding: 16px 10px; max-width: 100%; }
+  .ty-cf-label { font-size: 10px; }
+  .ty-cf-track { min-width: 28px; }
+}
+
+/* ── Floating mockup app ────────────────────────────────── */
+.ty-phone { will-change: transform; }
+
+/* ── Reduce motion: todas las animaciones FM se frenan via
+   MotionConfig reducedMotion="user" en el componente.
+   Este override cubre los pocos efectos CSS restantes.   ── */
+@media (prefers-reduced-motion: reduce) {
+  .ty-cta-hero       { animation: none !important; }
+  .ty-navbar--blur   { transition: none !important; }
+  .ty-calc-input--premium { transition: none !important; }
+  .ty-custody-flow * { animation: none !important; }
+}
+
+/* ── Password eye toggle ─────────────────────────────── */
+.auth-pass-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.auth-pass-wrap .inp {
+  width: 100%;
+  padding-right: 44px;
+}
+.auth-eye {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--s400);
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: color 0.15s;
+}
+.auth-eye:hover { color: var(--n); }
+.auth-eye svg { width: 18px; height: 18px; }
+
+/* ── Forgot password ────────────────────────────────── */
+.auth-forgot-link {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--g2);
+  font-size: 13px;
+  font-weight: 700;
+  padding: 6px 0 0;
+  text-align: right;
+  display: block;
+  width: 100%;
+  font-family: inherit;
+  transition: color 0.15s;
+}
+.auth-forgot-link:hover { color: var(--g); text-decoration: underline; }
+
+.auth-forgot-title { margin-bottom: 20px; }
+.auth-forgot-title h3 { margin: 0 0 6px; font-size: 18px; color: var(--n); }
+.auth-forgot-title p { margin: 0; font-size: 14px; color: var(--s600); }
+
+.auth-forgot-sent {
+  text-align: center;
+  padding: 16px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: center;
+}
+.auth-forgot-icon { font-size: 48px; line-height: 1; }
+.auth-forgot-sent h3 { margin: 0; font-size: 20px; color: var(--n); }
+.auth-forgot-sent p { margin: 0; font-size: 14px; color: var(--s600); line-height: 1.6; max-width: 320px; }
+
+.auth-error-msg {
+  background: var(--reb);
+  color: var(--re);
+  border-radius: 9px;
+  padding: 10px 14px;
+  font-size: 13.5px;
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+
+.auth-back { margin-bottom: 16px !important; }
+

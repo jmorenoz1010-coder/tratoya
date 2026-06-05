@@ -358,4 +358,55 @@ router.get('/me', require('../middleware/auth'), (req, res) => {
   res.json({ success: true, data: user });
 });
 
+// POST /api/auth/forgot-password
+router.post('/forgot-password', [
+  body('email').isEmail().normalizeEmail(),
+], async (req, res, next) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) return res.status(400).json({ success: false, message: 'Email inválido' });
+    const { email } = req.body;
+    // Always return 200 to avoid user enumeration
+    const user = await User.findOne({ where: { email: email.toLowerCase().trim(), is_active: true } });
+    if (user) {
+      // Token signed with JWT_SECRET + current password hash (invalidates when password changes)
+      const secret = process.env.JWT_SECRET + user.password_hash;
+      const token = jwt.sign({ id: user.id, sub: 'reset' }, secret, { expiresIn: '1h' });
+      const link = `${frontendUrl()}/reset-password?token=${encodeURIComponent(token)}&id=${user.id}`;
+      const { sendEmail } = require('../services/emailService');
+      await sendEmail(user.email, 'recuperar_contrasena', {
+        nombre: user.nombre || 'Usuario',
+        link,
+      });
+      logger.info(`[AUTH] Password reset requested for ${user.email}`);
+    }
+    res.json({ success: true, message: 'Si ese correo está registrado, recibirás un enlace para restablecer tu contraseña.' });
+  } catch (err) { next(err); }
+});
+
+// POST /api/auth/reset-password
+router.post('/reset-password', [
+  body('token').notEmpty(),
+  body('id').isUUID(),
+  body('password').isLength({ min: 6 }),
+], async (req, res, next) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) return res.status(400).json({ success: false, message: 'Datos inválidos' });
+    const { token, id, password } = req.body;
+    const user = await User.findByPk(id);
+    if (!user) return res.status(400).json({ success: false, message: 'Enlace inválido o expirado' });
+    try {
+      const secret = process.env.JWT_SECRET + user.password_hash;
+      jwt.verify(token, secret);
+    } catch {
+      return res.status(400).json({ success: false, message: 'El enlace expiró o ya fue usado. Solicita uno nuevo.' });
+    }
+    const hash = await bcrypt.hash(password, 12);
+    await user.update({ password_hash: hash, refresh_token: null });
+    logger.info(`[AUTH] Password reset completed for ${user.email}`);
+    res.json({ success: true, message: 'Contraseña actualizada. Ya puedes iniciar sesión.' });
+  } catch (err) { next(err); }
+});
+
 module.exports = router;

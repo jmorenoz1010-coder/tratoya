@@ -150,16 +150,25 @@ async function liberarPago(trato_id) {
       await usuario.update({ total_tratos: total, tratos_exitosos: exitosos, reputacion: reputacion.toFixed(2) });
     }
 
+    const netoFmt = parseFloat(trato.monto_neto).toLocaleString('es-CO');
+    const comprador = await User.findByPk(trato.comprador_id, { attributes: ['nombre'] });
+
     await notificar(trato.vendedor_id, 'pago_liberado', {
       titulo: '💰 ¡Tu pago fue liberado!',
-      cuerpo: `Recibirás $${parseFloat(trato.monto_neto).toLocaleString('es-CO')} COP en tu cuenta registrada.`,
+      cuerpo: `Recibirás $${netoFmt} COP en tu cuenta registrada.`,
       metadata: { trato_id, monto: trato.monto_neto },
+      email_template: 'entrega_confirmada_vendedor',
+      email_data: { codigo: trato.codigo, neto: `$${netoFmt} COP` },
+      wa_evento: 'entrega_confirmada_vendedor',
+      wa_params: { codigo: trato.codigo, neto: netoFmt },
     });
 
     await notificar(trato.comprador_id, 'trato_completado', {
       titulo: '✅ Trato completado',
       cuerpo: `El trato "${trato.titulo}" fue completado. ¡Deja tu reseña!`,
       metadata: { trato_id },
+      wa_evento: 'trato_completado',
+      wa_params: { codigo: trato.codigo },
     });
 
     logger.info(`[PAGO] Liberado $${trato.monto_neto} → trato ${trato.codigo}`);

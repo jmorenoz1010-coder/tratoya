@@ -22,6 +22,7 @@ process.on('unhandledRejection', (reason) => {
 const authRoutes     = require('./routes/auth');
 const tratoRoutes    = require('./routes/tratos');
 const allRoutes      = require('./routes/all-routes');
+const waitlistRoutes = require('./routes/waitlist');
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -64,6 +65,14 @@ app.use('/api/', rateLimit({
   message: { success: false, message: 'Demasiadas solicitudes. Espera un momento y vuelve a intentar.' }
 }));
 
+const waitlistRegistroLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 3,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, message: 'Demasiados registros desde esta IP. Intenta de nuevo en una hora.' },
+});
+
 // ── Body parsing ───────────────────────────────
 app.use('/api/webhooks', express.raw({ type: 'application/json' }));
 app.use(express.json({ limit: '10mb' }));
@@ -88,6 +97,8 @@ app.get('/health', (req, res) => {
 // ── Rutas API ──────────────────────────────────
 app.use('/api/auth',     authRoutes);
 app.use('/api/tratos',   tratoRoutes);
+app.use('/api/waitlist/registro', waitlistRegistroLimiter);
+app.use('/api/waitlist', waitlistRoutes);
 app.use('/api/users',    allRoutes.users);
 app.use('/api/payments', allRoutes.payments);
 app.use('/api/messages', allRoutes.messages);

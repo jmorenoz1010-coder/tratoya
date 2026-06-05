@@ -39,6 +39,8 @@ function getTransporter() {
       port: parseInt(process.env.SMTP_PORT || '587'),
       secure: process.env.SMTP_PORT === '465',
       auth: { user: SMTP_USER, pass: SMTP_PASS },
+      // Brevo usa cert de Sendinblue (nombre anterior) — ignorar mismatch de hostname
+      tls: { rejectUnauthorized: false },
     });
     logger.info(`[EMAIL] Transporter activo → ${SMTP_HOST}:${process.env.SMTP_PORT || '587'}`);
   } catch (e) {

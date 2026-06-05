@@ -2378,4 +2378,46 @@ webhooksRouter.post('/wompi-disabled', async (req, res) => {
   }
 });
 
+// ── WEBHOOK WhatsApp (Meta Cloud API) ────────────────────────
+// GET: verificación del webhook (Meta llama una sola vez)
+webhooksRouter.get('/whatsapp', (req, res) => {
+  try {
+    const { verificarWebhook } = require('../services/whatsappService');
+    return verificarWebhook(req, res);
+  } catch {
+    return res.status(200).send(req.query['hub.challenge'] || 'ok');
+  }
+});
+
+// POST: mensajes entrantes y status updates de Meta
+webhooksRouter.post('/whatsapp', (req, res) => {
+  // Responder 200 inmediatamente (Meta requiere < 5s)
+  res.status(200).send('EVENT_RECEIVED');
+
+  try {
+    const payload = Buffer.isBuffer(req.body)
+      ? JSON.parse(req.body.toString('utf8'))
+      : (req.body || {});
+
+    const { procesarMensajeEntrante } = require('../services/whatsappService');
+    const mensaje = procesarMensajeEntrante(payload);
+
+    if (mensaje) {
+      logger.info(`[WA:WEBHOOK] Mensaje de ${mensaje.de}: ${mensaje.texto?.slice(0, 80) || `[${mensaje.tipo}]`}`);
+      // Aquí puedes agregar lógica para procesar respuestas de usuarios
+      // Por ejemplo: si responden "CONFIRMAR" a un trato en curso
+    }
+
+    // Procesar actualizaciones de status (entregado, leído, etc.)
+    const statuses = payload?.entry?.[0]?.changes?.[0]?.value?.statuses;
+    if (statuses?.length) {
+      statuses.forEach(s => {
+        logger.debug(`[WA:STATUS] ${s.id} → ${s.status} para ${s.recipient_id}`);
+      });
+    }
+  } catch (err) {
+    logger.warn(`[WA:WEBHOOK] Error procesando: ${err.message}`);
+  }
+});
+
 module.exports.webhooks = webhooksRouter;

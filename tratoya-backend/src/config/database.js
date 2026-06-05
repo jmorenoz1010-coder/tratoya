@@ -87,6 +87,56 @@ async function ensureUserRegistrationColumns() {
   }
 }
 
+async function ensureWaitlistTables() {
+  try {
+    await sequelize.query(`CREATE EXTENSION IF NOT EXISTS pgcrypto;`);
+    await sequelize.query(`
+      DO $$
+      BEGIN
+        IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'waitlist_estado') THEN
+          CREATE TYPE waitlist_estado AS ENUM ('en_espera', 'fundador', 'activado');
+        END IF;
+      END
+      $$;
+    `);
+    await sequelize.query(`
+      CREATE TABLE IF NOT EXISTS waitlist (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        nombre VARCHAR(100) NOT NULL,
+        email VARCHAR(255) NOT NULL UNIQUE,
+        telefono VARCHAR(20),
+        ciudad VARCHAR(100),
+        posicion INTEGER UNIQUE,
+        referral_code VARCHAR(20) UNIQUE,
+        referred_by UUID REFERENCES waitlist(id) NULL,
+        referidos_count INTEGER DEFAULT 0,
+        posicion_ganada INTEGER DEFAULT 0,
+        estado waitlist_estado DEFAULT 'en_espera',
+        es_fundador BOOLEAN DEFAULT false,
+        activated_at TIMESTAMP NULL,
+        created_at TIMESTAMP DEFAULT NOW(),
+        ip_address VARCHAR(45)
+      );
+    `);
+    await sequelize.query(`
+      CREATE TABLE IF NOT EXISTS waitlist_eventos (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        waitlist_id UUID REFERENCES waitlist(id),
+        tipo VARCHAR(50),
+        descripcion TEXT,
+        created_at TIMESTAMP DEFAULT NOW()
+      );
+    `);
+    await sequelize.query(`CREATE INDEX IF NOT EXISTS waitlist_email_idx ON waitlist (LOWER(email));`);
+    await sequelize.query(`CREATE INDEX IF NOT EXISTS waitlist_referral_code_idx ON waitlist (referral_code);`);
+    await sequelize.query(`CREATE INDEX IF NOT EXISTS waitlist_created_at_idx ON waitlist (created_at);`);
+    await sequelize.query(`CREATE INDEX IF NOT EXISTS waitlist_ip_created_idx ON waitlist (ip_address, created_at);`);
+    await sequelize.query(`CREATE INDEX IF NOT EXISTS waitlist_eventos_waitlist_idx ON waitlist_eventos (waitlist_id, created_at);`);
+  } catch (e) {
+    console.warn('[DB] ensureWaitlistTables warning:', e.message);
+  }
+}
+
 async function connectDB() {
   await sequelize.authenticate();
   const isProductionRuntime = process.env.NODE_ENV === 'production' || process.env.VERCEL === '1';
@@ -102,6 +152,7 @@ async function connectDB() {
     await ensureBrebEnumValue();
     await ensureKycNivelValues();
     await ensureUserRegistrationColumns();
+    await ensureWaitlistTables();
   }
 
   if (shouldBootstrapDb && process.env.ADMIN_EMAIL && process.env.ADMIN_PASSWORD) {

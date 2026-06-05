@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
+import { motion, AnimatePresence, useInView } from "framer-motion";
 import { calcularComisionUI, fmt } from "../lib/utils";
 import logo from "../assets/tratoya-logo.png";
 import heroSecureBag from "../assets/hero-secure-bag.png";
@@ -57,11 +58,19 @@ const faqs = [
   ["¿Qué pasa si hay una disputa?",          "Nuestro equipo revisa la evidencia, media entre las partes y toma una decisión para proteger a quien tiene la razón."],
 ];
 
+/* ── FM variantes ────────────────────────────────────────── */
+const EASE   = [0.16, 1, 0.3, 1];
+const SPRING = [0.34, 1.56, 0.64, 1];
+const fadeUp    = { hidden: { opacity: 0, y: 28 }, show: { opacity: 1, y: 0, transition: { duration: 0.65, ease: EASE } } };
+const fromLeft  = { hidden: { opacity: 0, x: -44 }, show: { opacity: 1, x: 0, transition: { duration: 0.7, ease: EASE } } };
+const fromRight = { hidden: { opacity: 0, x:  44 }, show: { opacity: 1, x: 0, transition: { duration: 0.7, ease: EASE } } };
+const staggerV  = (d = 0.09, delay = 0) => ({ hidden: {}, show: { transition: { staggerChildren: d, delayChildren: delay } } });
+
 /* ── Scroll reveal hook ─────────────────────────────────── */
 function useReveal() {
   useEffect(() => {
     const obs = new IntersectionObserver(
-      (entries) => entries.forEach((e) => { if (e.isIntersecting) e.target.classList.add("ty-rv"); }),
+      (entries) => entries.forEach((e) => { if (e.isIntersecting) { e.target.classList.add("ty-rv"); obs.unobserve(e.target); } }),
       { threshold: 0.07, rootMargin: "0px 0px -44px 0px" }
     );
     document.querySelectorAll(".ty-r").forEach((el) => obs.observe(el));
@@ -73,6 +82,12 @@ function useReveal() {
 export default function Landing({ goAuth }) {
   useReveal();
   useEffect(() => { window.scrollTo(0, 0); }, []);
+  const [scrolled, setScrolled] = useState(false);
+  useEffect(() => {
+    const fn = () => setScrolled(window.scrollY > 70);
+    window.addEventListener("scroll", fn, { passive: true });
+    return () => window.removeEventListener("scroll", fn);
+  }, []);
 
   const register = () => goAuth("register");
   const login    = () => goAuth("login");
@@ -84,7 +99,12 @@ export default function Landing({ goAuth }) {
 
       {/* ── NAVBAR + HERO (bloque oscuro) ───────────────── */}
       <section className="ty-top-shell">
-        <header className="ty-navbar">
+        <motion.header
+          className={`ty-navbar${scrolled ? " ty-navbar--blur" : ""}`}
+          initial={{ opacity: 0, y: -18 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, ease: EASE }}
+        >
           <a className="ty-brand" href="/" aria-label="TratoYa inicio"><img src={logo} alt="TratoYa" /></a>
           <nav className="ty-nav" aria-label="Navegación">
             <a href="#como-funciona">Cómo funciona</a>
@@ -94,42 +114,62 @@ export default function Landing({ goAuth }) {
           </nav>
           <div className="ty-nav-actions">
             <button className="ty-link-btn" type="button" onClick={login}>Iniciar sesión</button>
-            <button className="ty-button ty-button-small" type="button" onClick={register}>Regístrate gratis</button>
+            <motion.button
+              className="ty-button ty-button-small" type="button" onClick={register}
+              whileHover={{ scale: 1.04, boxShadow: "0 20px 42px rgba(117,205,22,.44)" }}
+              whileTap={{ scale: 0.96 }}
+            >Regístrate gratis</motion.button>
           </div>
-        </header>
+        </motion.header>
 
         {/* HERO */}
         <section className="ty-hero">
-          <div className="ty-hero-copy">
-            <div className="ty-hero-badge ty-r">Pagos seguros entre personas ✓</div>
-            <h1 className="ty-r" style={{ "--td": ".1s" }}>
-              COMPRA Y VENDE<br />
-              CON <span>CONFIANZA</span>
-            </h1>
-            <p className="ty-r" style={{ "--td": ".22s" }}>
+          <motion.div
+            className="ty-hero-copy"
+            initial="hidden" animate="show"
+            variants={staggerV(0.1, 0.12)}
+          >
+            <motion.div className="ty-hero-badge" variants={fadeUp}>Pagos seguros entre personas ✓</motion.div>
+            <motion.h1 variants={fadeUp}>
+              COMPRA Y VENDE<br />CON <span>CONFIANZA</span>
+            </motion.h1>
+            <motion.p variants={fadeUp}>
               TratoYa cuida el dinero hasta que el producto o servicio sea entregado.
               Simple, seguro y sin riesgos para ambas partes.
-            </p>
-            <div className="ty-actions ty-r" style={{ "--td": ".32s" }}>
-              <button className="ty-button ty-button-large" type="button" onClick={register}>
+            </motion.p>
+            <motion.div className="ty-actions" variants={fadeUp}>
+              <motion.button
+                className="ty-button ty-button-large" type="button" onClick={register}
+                whileHover={{ scale: 1.03, boxShadow: "0 22px 48px rgba(117,205,22,.44)" }}
+                whileTap={{ scale: 0.96 }}
+              >
                 EMPIEZA GRATIS <span aria-hidden="true">›</span>
-              </button>
+              </motion.button>
               <a className="ty-play" href="#simula">⚡ Simula tu trato</a>
-            </div>
-          </div>
-          <div className="ty-hero-visual ty-r" style={{ "--td": ".18s" }} aria-hidden="true">
+            </motion.div>
+          </motion.div>
+          <motion.div
+            className="ty-hero-visual" aria-hidden="true"
+            initial={{ opacity: 0, scale: 0.92 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.8, delay: 0.2, ease: EASE }}
+          >
             <div className="ty-halo" />
-            <img className="ty-hero-photo" src={heroSecureBag} alt="" />
-          </div>
+            <motion.img
+              className="ty-hero-photo" src={heroSecureBag} alt=""
+              animate={{ y: [0, -12, 0] }}
+              transition={{ duration: 5.5, ease: "easeInOut", repeat: Infinity }}
+            />
+          </motion.div>
         </section>
 
         {/* STATS */}
-        <section className="ty-stats" aria-label="Métricas">
+        <section className="ty-stats ty-r" aria-label="Métricas">
           {stats.map(([icon, value, prefix, suffix, title, sub]) => (
-            <div className="ty-mini ty-stat-mini" key={title}>
+            <div className="ty-mini ty-stat-mini ty-stat-hover" key={title}>
               <LIcon name={icon} />
               <div>
-                <strong>{value == null ? title : <Counter value={value} prefix={prefix} suffix={suffix} />}</strong>
+                <strong>{value == null ? title : <CountUpMetric value={value} prefix={prefix} suffix={suffix} />}</strong>
                 <p>{value == null ? sub : title}</p>
               </div>
             </div>
@@ -441,11 +481,27 @@ function FAQAccordion({ faqs }) {
             aria-expanded={open === i}
           >
             <span>{q}</span>
-            <span className={`ty-faq-toggle${open === i ? " open" : ""}`}>+</span>
+            <motion.span
+              className={`ty-faq-toggle${open === i ? " open" : ""}`}
+              animate={{ rotate: open === i ? 45 : 0 }}
+              transition={{ duration: 0.26, ease: SPRING }}
+              style={{ display: "inline-block" }}
+            >+</motion.span>
           </button>
-          <div className={`ty-faq-a${open === i ? " open" : ""}`}>
-            <p>{a}</p>
-          </div>
+          <AnimatePresence initial={false}>
+            {open === i && (
+              <motion.div
+                key="body"
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: "auto", opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.32, ease: EASE }}
+                style={{ overflow: "hidden" }}
+              >
+                <div className="ty-faq-a open"><p>{a}</p></div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       ))}
     </div>
@@ -502,6 +558,7 @@ function TratoCalculator({ register }) {
   );
 }
 
+/* Counter original (mantenido para compatibilidad) */
 function Counter({ value, prefix = "", suffix = "" }) {
   const [current, setCurrent] = useState(0);
   useEffect(() => {
@@ -516,6 +573,40 @@ function Counter({ value, prefix = "", suffix = "" }) {
     return () => cancelAnimationFrame(frame);
   }, [value]);
   return <>{prefix}{Number.isInteger(value) ? Math.round(current) : current.toFixed(1)}{suffix}</>;
+}
+
+/* CountUpMetric — arranca solo cuando entra al viewport */
+function CountUpMetric({ value, prefix = "", suffix = "" }) {
+  const ref = useRef(null);
+  const isInView = useInView(ref, { once: true, margin: "-60px 0px" });
+  const [current, setCurrent] = useState(0);
+  useEffect(() => {
+    if (!isInView) return;
+    const duration = 1400, start = performance.now();
+    let frame;
+    const tick = (now) => {
+      const p = Math.min((now - start) / duration, 1);
+      setCurrent(value * (1 - Math.pow(1 - p, 3)));
+      if (p < 1) frame = requestAnimationFrame(tick);
+    };
+    frame = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(frame);
+  }, [isInView, value]);
+  return <span ref={ref}>{prefix}{Number.isInteger(value) ? Math.round(current) : current.toFixed(1)}{suffix}</span>;
+}
+
+/* SlideInCard — slide desde izquierda o derecha usando useInView */
+function SlideInCard({ children, dir = "left", className = "", style = {} }) {
+  const ref = useRef(null);
+  const isInView = useInView(ref, { once: true, margin: "-60px 0px" });
+  const v = dir === "left" ? fromLeft : fromRight;
+  return (
+    <motion.div
+      ref={ref} className={className} style={style}
+      variants={v} initial="hidden" animate={isInView ? "show" : "hidden"}
+      whileHover={{ y: -4, transition: { duration: 0.2 } }}
+    >{children}</motion.div>
+  );
 }
 
 function SocialIcon({ name }) {

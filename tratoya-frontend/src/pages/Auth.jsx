@@ -30,6 +30,12 @@ export default function Auth({ setSession, toast, initialMode = "login" }) {
   const [mode, setMode] = useState(initialMode === "register" ? "register" : "login");
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
+  const [showPass, setShowPass] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [forgotMode, setForgotMode] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState('');
+  const [forgotSent, setForgotSent] = useState(false);
+  const [forgotLoading, setForgotLoading] = useState(false);
   const [f, setF_] = useState({
     nombre: "",
     apellido: "",
@@ -105,6 +111,17 @@ export default function Auth({ setSession, toast, initialMode = "login" }) {
     if (window.history.length > 1) window.history.back();
     else window.location.href = "/";
   };
+  const forgotPassword = async (e) => {
+    e?.preventDefault();
+    if (!forgotEmail) { toast('Ingresa tu email', 'error'); return; }
+    setForgotLoading(true);
+    try {
+      await api.post('/auth/forgot-password', { email: forgotEmail });
+      setForgotSent(true);
+    } catch (err) { toast(err.message, 'error'); }
+    setForgotLoading(false);
+  };
+
   const socialLogin = (provider) => {
     const key = provider.toUpperCase();
     const configuredUrl = import.meta.env[`VITE_${key}_AUTH_URL`];
@@ -152,19 +169,57 @@ export default function Auth({ setSession, toast, initialMode = "login" }) {
           <div className="auth-divider"><span>o continúa con tu correo</span></div>
 
           {mode === "login" ? (
-            <form onSubmit={login}>
-              <div className="fg">
-                <label className="fl">Email</label>
-                <input className="inp" type="email" autoComplete="email" placeholder="tu@correo.com" value={f.email} onChange={(e) => sf("email", e.target.value)} />
+            forgotMode ? (
+              <div className="fi">
+                {forgotSent ? (
+                  <div className="auth-forgot-sent">
+                    <div className="auth-forgot-icon">✉️</div>
+                    <h3>Revisa tu correo</h3>
+                    <p>Si <strong>{forgotEmail}</strong> está registrado, recibirás el enlace en unos minutos.</p>
+                    <button type="button" className="btn bp blg auth-primary" onClick={() => { setForgotMode(false); setForgotSent(false); }}>
+                      Volver al inicio de sesión
+                    </button>
+                  </div>
+                ) : (
+                  <form onSubmit={forgotPassword}>
+                    <button type="button" className="btn bg_ bsm auth-back" onClick={() => setForgotMode(false)}>← Atrás</button>
+                    <div className="auth-forgot-title">
+                      <h3>¿Olvidaste tu contraseña?</h3>
+                      <p>Ingresa tu email y te enviamos un enlace para restablecerla.</p>
+                    </div>
+                    <div className="fg">
+                      <label className="fl">Email</label>
+                      <input className="inp" type="email" autoComplete="email" placeholder="tu@correo.com" value={forgotEmail} onChange={(e) => setForgotEmail(e.target.value)} />
+                    </div>
+                    <button type="submit" className="btn bp blg auth-primary" disabled={forgotLoading}>
+                      {forgotLoading ? <><div className="spin" /> Enviando...</> : 'Enviar enlace de recuperación'}
+                    </button>
+                  </form>
+                )}
               </div>
-              <div className="fg">
-                <label className="fl">Contraseña</label>
-                <input className="inp" type="password" autoComplete="current-password" placeholder="Tu contraseña" value={f.password} onChange={(e) => sf("password", e.target.value)} />
-              </div>
-              <button type="submit" className="btn bp blg auth-primary" disabled={loading}>
-                {loading ? <><div className="spin" /> Entrando...</> : "Iniciar sesión"}
-              </button>
-            </form>
+            ) : (
+              <form onSubmit={login}>
+                <div className="fg">
+                  <label className="fl">Email</label>
+                  <input className="inp" type="email" autoComplete="email" placeholder="tu@correo.com" value={f.email} onChange={(e) => sf("email", e.target.value)} />
+                </div>
+                <div className="fg">
+                  <label className="fl">Contraseña</label>
+                  <div className="auth-pass-wrap">
+                    <input className="inp" type={showPass ? "text" : "password"} autoComplete="current-password" placeholder="Tu contraseña" value={f.password} onChange={(e) => sf("password", e.target.value)} />
+                    <button type="button" className="auth-eye" onClick={() => setShowPass(v => !v)} aria-label={showPass ? "Ocultar contraseña" : "Mostrar contraseña"}>
+                      {showPass ? <EyeOffIcon /> : <EyeIcon />}
+                    </button>
+                  </div>
+                  <button type="button" className="auth-forgot-link" onClick={() => { setForgotMode(true); setForgotEmail(f.email); }}>
+                    ¿Olvidaste tu contraseña?
+                  </button>
+                </div>
+                <button type="submit" className="btn bp blg auth-primary" disabled={loading}>
+                  {loading ? <><div className="spin" /> Entrando...</> : "Iniciar sesión"}
+                </button>
+              </form>
+            )
           ) : (
             <>
               {step === 1 && (
@@ -210,7 +265,12 @@ export default function Auth({ setSession, toast, initialMode = "login" }) {
                   <button type="button" className="btn bg_ bsm auth-back" onClick={() => setStep(1)}>← Atrás</button>
                   <div className="fg">
                     <label className="fl">Contraseña *</label>
-                    <input className="inp" type="password" placeholder="Mínimo 6 caracteres" value={f.password} onChange={(e) => sf("password", e.target.value)} />
+                    <div className="auth-pass-wrap">
+                      <input className="inp" type={showPass ? "text" : "password"} placeholder="Mínimo 6 caracteres" value={f.password} onChange={(e) => sf("password", e.target.value)} />
+                      <button type="button" className="auth-eye" onClick={() => setShowPass(v => !v)} aria-label={showPass ? "Ocultar" : "Mostrar"}>
+                        {showPass ? <EyeOffIcon /> : <EyeIcon />}
+                      </button>
+                    </div>
                     <div className="auth-checks">
                       {checks.map(([k, label, ok]) => (
                         <div key={k} className={ok ? "ok" : ""}>
@@ -222,7 +282,12 @@ export default function Auth({ setSession, toast, initialMode = "login" }) {
                   </div>
                   <div className="fg">
                     <label className="fl">Confirmar contraseña *</label>
-                    <input className="inp" type="password" placeholder="Repite tu contraseña" value={f.confirm_password} onChange={(e) => sf("confirm_password", e.target.value)} />
+                    <div className="auth-pass-wrap">
+                      <input className="inp" type={showConfirm ? "text" : "password"} placeholder="Repite tu contraseña" value={f.confirm_password} onChange={(e) => sf("confirm_password", e.target.value)} />
+                      <button type="button" className="auth-eye" onClick={() => setShowConfirm(v => !v)} aria-label={showConfirm ? "Ocultar" : "Mostrar"}>
+                        {showConfirm ? <EyeOffIcon /> : <EyeIcon />}
+                      </button>
+                    </div>
                   </div>
                   <button type="button" className="btn bp blg auth-primary" disabled={!strongPasswordOk(f.password, f) || f.password !== f.confirm_password} onClick={() => setStep(3)}>
                     Continuar →
@@ -299,6 +364,24 @@ export default function Auth({ setSession, toast, initialMode = "login" }) {
         </div>
       </section>
     </div>
+  );
+}
+
+function EyeIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+      <circle cx="12" cy="12" r="3"/>
+    </svg>
+  );
+}
+function EyeOffIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
+      <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
+      <line x1="1" y1="1" x2="23" y2="23"/>
+    </svg>
   );
 }
 

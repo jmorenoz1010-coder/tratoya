@@ -14,6 +14,9 @@ const { generarCodigo } = require('../utils/helpers');
 const logger = require('../utils/logger');
 const PUBLIC_FRONTEND_URL = 'https://www.tratoya.com';
 
+const fmt = (n) => Number(n).toLocaleString('es-CO');
+const tratoLink = (link) => `${PUBLIC_FRONTEND_URL}/t/${link}`;
+
 // ── GET /api/tratos/public/:link ─────────────
 router.get('/public/:link', async (req, res, next) => {
   try {
@@ -47,10 +50,16 @@ router.put('/public/:link/activar', auth, async (req, res, next) => {
 
     await trato.update({ comprador_id: req.user.id, estado: 'activo', fecha_activado: new Date() });
 
+    // Obtener vendedor para email
+    const vendedor = await User.findByPk(trato.vendedor_id, { attributes: ['nombre'] });
     await notificar(trato.vendedor_id, 'trato_activado', {
       titulo: '¡Alguien aceptó tu trato!',
       cuerpo: `Tu trato "${trato.titulo}" fue aceptado. El comprador procederá al pago.`,
       metadata: { trato_id: trato.id },
+      email_template: 'trato_aceptado_vendedor',
+      email_data: { nombre: vendedor?.nombre, codigo: trato.codigo, titulo: trato.titulo, monto: fmt(trato.monto) },
+      wa_evento: 'trato_aceptado_vendedor',
+      wa_params: { codigo: trato.codigo, titulo: trato.titulo, monto: fmt(trato.monto) },
     });
 
     res.json({ success: true, message: 'Trato aceptado. Ya puedes proceder al pago.', data: trato });
@@ -156,6 +165,10 @@ router.post('/', kycRequired, [
         cuerpo: `${req.user.nombre} te envió "${titulo}". Revisa el trato para aceptarlo y pagar.`,
         accion_url: `/trato/${trato.id}`,
         metadata: { trato_id: trato.id, codigo },
+        email_template: 'trato_creado_contraparte',
+        email_data: { nombre: contraparte.nombre, codigo, titulo, monto: fmt(montoNumero), link: tratoLink(trato.link_compartir) },
+        wa_evento: 'trato_creado_contraparte',
+        wa_params: { nombre: contraparte.nombre, codigo, titulo, monto: fmt(montoNumero), link: tratoLink(trato.link_compartir) },
       });
     }
 
@@ -197,10 +210,15 @@ router.put('/:id/activar', async (req, res, next) => {
 
     await trato.update({ comprador_id: req.user.id, estado: 'activo', fecha_activado: new Date() });
 
+    const vendedorActivo = await User.findByPk(trato.vendedor_id, { attributes: ['nombre'] });
     await notificar(trato.vendedor_id, 'trato_activado', {
       titulo: '¡Alguien aceptó tu trato!',
       cuerpo: `Tu trato "${trato.titulo}" fue aceptado. El comprador procederá al pago.`,
       metadata: { trato_id: trato.id },
+      email_template: 'trato_aceptado_vendedor',
+      email_data: { nombre: vendedorActivo?.nombre, codigo: trato.codigo, titulo: trato.titulo, monto: fmt(trato.monto) },
+      wa_evento: 'trato_aceptado_vendedor',
+      wa_params: { codigo: trato.codigo, titulo: trato.titulo, monto: fmt(trato.monto) },
     });
 
     res.json({ success: true, message: 'Trato activado. El comprador puede proceder al pago.', data: trato });
@@ -283,12 +301,17 @@ router.post('/:id/registrar-guia', async (req, res, next) => {
       mensajeComprador = `Guía ${guia} (${transportadora}). Tienes ${trato.dias_inspeccion} días para confirmar.`;
     }
 
+    const compradorEntrega = await User.findByPk(trato.comprador_id, { attributes: ['nombre'] });
     await notificar(trato.comprador_id, 'trato_en_entrega', {
       titulo: '📦 ¡Tu compra está en camino!',
       cuerpo: mensajeComprador,
       metadata: { trato_id: trato.id, medio_envio, fecha_limite },
       sms_evento: 'guia_registrada_comprador',
       sms_params: { codigo: trato.codigo, guia: guia || medio_envio, transportadora: transportadora || medio_envio },
+      email_template: 'entrega_registrada_comprador',
+      email_data: { nombre: compradorEntrega?.nombre, codigo: trato.codigo },
+      wa_evento: 'entrega_registrada_comprador',
+      wa_params: { codigo: trato.codigo, detalle: mensajeComprador },
     });
 
     res.json({ success: true, message: 'Envío registrado', data: { medio_envio, fecha_limite } });
