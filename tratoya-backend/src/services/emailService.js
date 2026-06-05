@@ -53,15 +53,19 @@ function getTransporter() {
 const FROM    = () => process.env.EMAIL_FROM || '"TratoYa" <soporte@tratoya.com>';
 const APP_URL = () => process.env.FRONTEND_URL || 'https://tratoya.com';
 
+const LOGO_URL = () => `${(process.env.FRONTEND_URL || 'https://tratoya.com').replace(/\/$/, '')}/logo-email.png`;
+
 /* ── Layout base ─────────────────────────────────────────────────── */
 const wrap = (body) => `<!DOCTYPE html>
 <html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <style>
   body{margin:0;padding:0;background:#f4f6f8;font-family:'Helvetica Neue',Arial,sans-serif}
   .w{max-width:560px;margin:28px auto 48px;background:#fff;border-radius:14px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.09)}
-  .hd{background:linear-gradient(135deg,#071819 0%,#0b2927 100%);padding:26px 32px;text-align:center}
-  .brand{color:#dfff36;font-size:22px;font-weight:900;letter-spacing:-.5px}
-  .brand-sub{color:rgba(255,255,255,.48);font-size:11.5px;margin-top:3px}
+  .logo-bar{background:#ffffff;padding:18px 32px;text-align:center;border-bottom:1px solid #eef2f7}
+  .logo-bar a{display:inline-block;text-decoration:none}
+  .logo-bar img{height:64px;width:auto;display:block;margin:0 auto}
+  .hd{background:linear-gradient(135deg,#071819 0%,#0b2927 100%);padding:16px 32px 20px;text-align:center}
+  .brand-sub{color:rgba(255,255,255,.55);font-size:12px;margin:0;letter-spacing:.02em}
   .bd{padding:32px}
   .bd h2{color:#071819;font-size:20px;font-weight:800;margin:0 0 12px;line-height:1.25}
   .bd p{color:#4a5568;font-size:14.5px;line-height:1.7;margin:0 0 14px}
@@ -82,12 +86,16 @@ const wrap = (body) => `<!DOCTYPE html>
   .muted{font-size:12.5px!important;color:#9aa5b3!important}
 </style></head>
 <body><div class="w">
+  <div class="logo-bar">
+    <a href="${APP_URL()}" target="_blank">
+      <img src="${LOGO_URL()}" alt="TratoYa" />
+    </a>
+  </div>
   <div class="hd">
-    <div class="brand">TratoYa</div>
-    <div class="brand-sub">Pagos seguros entre personas</div>
+    <p class="brand-sub">Pagos seguros entre personas</p>
   </div>
   <div class="bd">${body}</div>
-  <div class="ft"><p>Mensaje automático de TratoYa. Dudas: soporte@tratoya.com</p></div>
+  <div class="ft"><p>Mensaje automático de TratoYa · <a href="mailto:soporte@tratoya.com" style="color:#4b8800">soporte@tratoya.com</a></p></div>
 </div></body></html>`;
 
 /* ── Templates ───────────────────────────────────────────────────── */
