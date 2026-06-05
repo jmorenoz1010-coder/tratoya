@@ -53,7 +53,19 @@ function getTransporter() {
 const FROM    = () => process.env.EMAIL_FROM || '"TratoYa" <soporte@tratoya.com>';
 const APP_URL = () => process.env.FRONTEND_URL || 'https://tratoya.com';
 
-const LOGO_URL = () => `${(process.env.FRONTEND_URL || 'https://tratoya.com').replace(/\/$/, '')}/logo-email.png`;
+// Logo incrustado como base64 (13 KB) — no depende de URLs externas
+let _logoB64 = null;
+function getLogoB64() {
+  if (_logoB64) return _logoB64;
+  try {
+    const path = require('path');
+    _logoB64 = require('fs').readFileSync(path.join(__dirname, '../assets/logo-email-b64.txt'), 'utf8').trim();
+  } catch {
+    // Fallback a URL pública si no hay base64
+    _logoB64 = `${(process.env.FRONTEND_URL || 'https://tratoya.com').replace(/\/$/, '')}/logo-email.png`;
+  }
+  return _logoB64;
+}
 
 /* ── Layout base ─────────────────────────────────────────────────── */
 const wrap = (body) => `<!DOCTYPE html>
@@ -88,7 +100,7 @@ const wrap = (body) => `<!DOCTYPE html>
 <body><div class="w">
   <div class="logo-bar">
     <a href="${APP_URL()}" target="_blank">
-      <img src="${LOGO_URL()}" alt="TratoYa" />
+      <img src="${getLogoB64()}" alt="TratoYa" />
     </a>
   </div>
   <div class="hd">
