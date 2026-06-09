@@ -302,9 +302,11 @@
 .ty-holo img {
   width: min(280px, 100%);
   height: auto;
+  min-height: 160px;
   display: block;
   margin: 0 auto;
   filter: drop-shadow(0 24px 40px rgba(0, 0, 0, 0.5));
+  transition: opacity 0.35s var(--ty-ease);
 }
 
 /* ── Flow steps (interactive) ────────────────────────────── */
@@ -363,6 +365,10 @@
 .ty-flow-stage {
   min-width: 0;
   overflow: hidden;
+  min-height: clamp(360px, 52vh, 480px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .ty-flow-arrow {

@@ -24,7 +24,8 @@ const COMMISSION_PAYERS = [
   { id: "compartida", label: "50 / 50" },
 ];
 
-const FLOW_AUTO_MS = 2000;
+const FLOW_AUTO_MS = 3000;
+const FLOW_ENTER_MS = 680;
 
 const slideVariants = {
   enter: (dir) => ({
@@ -54,6 +55,7 @@ export default function Landing({ goAuth }) {
   const [dir, setDir] = useState(1);
   const [flowStep, setFlowStep] = useState(0);
   const [flowDir, setFlowDir] = useState(1);
+  const [flowSlideReady, setFlowSlideReady] = useState(false);
   const [monto, setMonto] = useState("");
   const [quienComision, setQuienComision] = useState("comprador");
   const touchRef = useRef({ y: 0, t: 0 });
@@ -73,6 +75,13 @@ export default function Landing({ goAuth }) {
     window.scrollTo(0, 0);
     document.body.style.overflow = "hidden";
     return () => { document.body.style.overflow = ""; };
+  }, []);
+
+  useEffect(() => {
+    FLOW.forEach(({ img }) => {
+      const pre = new Image();
+      pre.src = img;
+    });
   }, []);
 
   useEffect(() => {
@@ -133,12 +142,29 @@ export default function Landing({ goAuth }) {
   }, []);
 
   useEffect(() => {
-    if (slide !== 2) return undefined;
+    if (slide !== 2) {
+      setFlowSlideReady(false);
+      return undefined;
+    }
+
+    setFlowStep(0);
+    setFlowDir(1);
+    flowPausedRef.current = true;
+    setFlowSlideReady(false);
+
+    const readyTimer = setTimeout(() => setFlowSlideReady(true), FLOW_ENTER_MS);
+    const unpauseTimer = setTimeout(() => { flowPausedRef.current = false; }, FLOW_AUTO_MS);
+
     const id = setInterval(() => {
       if (flowPausedRef.current) return;
       nextFlow();
     }, FLOW_AUTO_MS);
-    return () => clearInterval(id);
+
+    return () => {
+      clearTimeout(readyTimer);
+      clearTimeout(unpauseTimer);
+      clearInterval(id);
+    };
   }, [slide, nextFlow]);
 
   return (
@@ -255,17 +281,21 @@ export default function Landing({ goAuth }) {
                     ←
                   </button>
                   <div className="ty-flow-stage">
-                    <AnimatePresence mode="wait" custom={flowDir}>
+                    <AnimatePresence mode="wait" custom={flowDir} initial={false}>
                       <motion.div
                         key={flowStep}
                         className="ty-holo"
                         custom={flowDir}
-                        initial={{ opacity: 0, x: flowDir > 0 ? 56 : -56, scale: 0.96 }}
+                        initial={
+                          flowSlideReady
+                            ? { opacity: 0, x: flowDir > 0 ? 40 : -40, scale: 0.98 }
+                            : false
+                        }
                         animate={{ opacity: 1, x: 0, scale: 1 }}
-                        exit={{ opacity: 0, x: flowDir > 0 ? -56 : 56, scale: 0.98 }}
-                        transition={{ duration: 0.45, ease: EASE }}
+                        exit={{ opacity: 0, x: flowDir > 0 ? -40 : 40, scale: 0.98 }}
+                        transition={{ duration: 0.55, ease: EASE }}
                       >
-                        <img src={flow.img} alt="" />
+                        <img src={flow.img} alt="" decoding="async" />
                         <h3 className="ty-flow-title ty-text-pulse">{flow.title}</h3>
                         <p className="ty-flow-desc ty-text-pulse ty-text-pulse--delay">{flow.desc}</p>
                       </motion.div>
