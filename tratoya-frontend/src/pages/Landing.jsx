@@ -397,7 +397,7 @@ export default function Landing({ goAuth }) {
 const PAYMENT_BRANDS = [
   { name: "Nequi", src: "/brand-nequi.svg", cls: "ty-pay-logo--nequi" },
   { name: "Bancolombia", src: "/brand-bancolombia.svg", cls: "ty-pay-logo--bancolombia" },
-  { name: "Davivienda", src: "/brand-davivienda.svg", cls: "ty-pay-logo--davivienda" },
+  { name: "Davivienda", src: "/brand-davivienda.png", cls: "ty-pay-logo--davivienda" },
   { name: "PSE — Pagos Seguros en Línea", src: "/brand-pse.png", cls: "ty-pay-logo--pse" },
 ];
 
