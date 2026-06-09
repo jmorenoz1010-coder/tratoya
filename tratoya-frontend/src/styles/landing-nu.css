@@ -302,7 +302,8 @@
 .ty-holo img {
   width: min(280px, 100%);
   height: auto;
-  min-height: 160px;
+  max-height: 220px;
+  object-fit: contain;
   display: block;
   margin: 0 auto;
   filter: drop-shadow(0 24px 40px rgba(0, 0, 0, 0.5));
@@ -365,14 +366,15 @@
 .ty-flow-stage {
   position: relative;
   min-width: 0;
-  overflow: hidden;
-  min-height: clamp(360px, 52vh, 480px);
+  width: 100%;
+  overflow: visible;
+  min-height: 0;
   touch-action: pan-y;
 }
 
 .ty-holo--flow {
-  position: absolute;
-  inset: 0;
+  position: relative;
+  width: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -855,6 +857,14 @@
 
 /* ── Responsive ──────────────────────────────────────────── */
 @media (max-width: 860px) {
+  .ty-viewport {
+    align-items: flex-start;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-top: 72px;
+    padding-bottom: 92px;
+  }
+
   .ty-slide--split {
     grid-template-columns: 1fr;
     text-align: center;
@@ -911,18 +921,44 @@
 
   .ty-flow-carousel {
     grid-template-columns: auto 1fr auto;
-    gap: 8px;
+    gap: 6px;
     max-width: 100%;
+    width: 100%;
   }
 
   .ty-flow-arrow {
-    width: 44px;
-    height: 44px;
-    font-size: 24px;
+    width: 40px;
+    height: 40px;
+    font-size: 22px;
+    align-self: center;
   }
 
   .ty-flow-stage {
-    min-height: clamp(320px, 48vh, 420px);
+    min-height: 0;
+    overflow: visible;
+  }
+
+  .ty-holo--flow {
+    padding: 16px 12px 18px;
+  }
+
+  .ty-holo--flow img {
+    width: min(200px, 72vw);
+    max-height: 160px;
+    min-height: 0;
+  }
+
+  .ty-flow-title {
+    font-size: clamp(20px, 6vw, 28px);
+  }
+
+  .ty-flow-desc {
+    font-size: 14px;
+    padding: 0 4px;
+  }
+
+  .ty-flow-tabs {
+    margin-bottom: 16px;
   }
 
   .ty-commission-pickers__opts {

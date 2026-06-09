@@ -318,7 +318,7 @@ export default function Landing({ goAuth }) {
                     onTouchStart={onFlowTouchStart}
                     onTouchEnd={onFlowTouchEnd}
                   >
-                    <AnimatePresence mode="sync" initial={false}>
+                    <AnimatePresence mode="wait" initial={false}>
                       <motion.div
                         key={flowStep}
                         className="ty-holo ty-holo--flow"
