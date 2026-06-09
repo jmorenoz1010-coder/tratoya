@@ -233,41 +233,6 @@ export default function Auth({ setSession, toast, initialMode = "login" }) {
       </motion.button>
 
       <div className="auth-layout">
-        <aside className="auth-hero">
-          <div className="auth-orbit-ring" aria-hidden="true" />
-          <motion.div
-            className="auth-hero__main"
-            variants={stagger}
-            initial="hidden"
-            animate="show"
-          >
-            <motion.a className="auth-logo-link" href="/" aria-label="Ir al inicio" variants={fadeUp}>
-              <img src={logo} alt="TratoYa" />
-            </motion.a>
-            <motion.p className="auth-kicker auth-text-pulse" variants={fadeUp}>Intermediario de pagos</motion.p>
-            <motion.h1 className="auth-mega auth-text-pulse" variants={fadeUp}>
-              Tu pago<br /><span>seguro.</span>
-            </motion.h1>
-            <motion.p className="auth-hero__sub auth-text-pulse auth-text-pulse--delay" variants={fadeUp}>
-              Protegemos tu dinero hasta que ambas partes cumplan.
-            </motion.p>
-          </motion.div>
-
-          <motion.div
-            className="auth-trust-pills"
-            variants={stagger}
-            initial="hidden"
-            animate="show"
-          >
-            {TRUST.map(({ label, icon: Icon }) => (
-              <motion.span className="auth-trust-pill" key={label} variants={fadeUp}>
-                <span className="auth-trust-pill__ico" aria-hidden="true"><Icon /></span>
-                {label}
-              </motion.span>
-            ))}
-          </motion.div>
-        </aside>
-
         <section className="auth-panel">
           <motion.div
             className="auth-glass-card"
@@ -297,40 +262,10 @@ export default function Auth({ setSession, toast, initialMode = "login" }) {
                 {forgotMode
                   ? (forgotSent ? "Te enviamos el enlace si el email está registrado" : "Te mandamos un enlace para restablecer tu contraseña")
                   : mode === "login"
-                    ? "Entra en segundos — Google, Apple o correo"
-                    : "Empieza a hacer tratos seguros hoy"}
+                    ? "Ingresa con tu correo y contraseña"
+                    : "Completa el formulario para empezar"}
               </p>
             </div>
-
-            {!forgotMode && (
-              <motion.div
-                className="auth-social-stack"
-                initial={{ opacity: 0, y: 16 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2, duration: 0.45, ease: EASE }}
-              >
-                <motion.button
-                  type="button"
-                  className="auth-social-btn"
-                  onClick={() => socialLogin("Google")}
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                >
-                  <ProviderIcon name="google" /> Google
-                </motion.button>
-                <motion.button
-                  type="button"
-                  className="auth-social-btn"
-                  onClick={() => socialLogin("Apple")}
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                >
-                  <ProviderIcon name="apple" /> Apple
-                </motion.button>
-              </motion.div>
-            )}
-
-            {!forgotMode && <div className="auth-divider"><span>o con tu correo</span></div>}
 
             {mode === "register" && !forgotMode && (
               <div className="auth-step-dots" aria-hidden="true">
@@ -580,6 +515,37 @@ export default function Auth({ setSession, toast, initialMode = "login" }) {
             </AnimatePresence>
 
             {!forgotMode && (
+              <>
+                <div className="auth-divider"><span>o continúa con</span></div>
+                <motion.div
+                  className="auth-social-stack auth-social-stack--bottom"
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.15, duration: 0.45, ease: EASE }}
+                >
+                  <motion.button
+                    type="button"
+                    className="auth-social-btn"
+                    onClick={() => socialLogin("Google")}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    <ProviderIcon name="google" /> Google
+                  </motion.button>
+                  <motion.button
+                    type="button"
+                    className="auth-social-btn"
+                    onClick={() => socialLogin("Apple")}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    <ProviderIcon name="apple" /> Apple
+                  </motion.button>
+                </motion.div>
+              </>
+            )}
+
+            {!forgotMode && (
               <p className="auth-switch">
                 {mode === "login" ? "¿Sin cuenta? " : "¿Ya tienes cuenta? "}
                 <button type="button" onClick={switchMode}>
@@ -589,6 +555,48 @@ export default function Auth({ setSession, toast, initialMode = "login" }) {
             )}
           </motion.div>
         </section>
+
+        <aside className="auth-hero auth-hero--right">
+          <div className="auth-orbit-ring" aria-hidden="true" />
+          <motion.a
+            className="auth-logo-link auth-logo-link--right"
+            href="/"
+            aria-label="Ir al inicio"
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.55, ease: EASE }}
+          >
+            <img src={logo} alt="TratoYa" />
+          </motion.a>
+          <motion.div
+            className="auth-hero__main"
+            variants={stagger}
+            initial="hidden"
+            animate="show"
+          >
+            <motion.p className="auth-kicker auth-text-pulse" variants={fadeUp}>Intermediario de pagos</motion.p>
+            <motion.h1 className="auth-mega auth-text-pulse" variants={fadeUp}>
+              Tu pago<br /><span>seguro.</span>
+            </motion.h1>
+            <motion.p className="auth-hero__sub auth-text-pulse auth-text-pulse--delay" variants={fadeUp}>
+              Protegemos tu dinero hasta que ambas partes cumplan.
+            </motion.p>
+          </motion.div>
+
+          <motion.div
+            className="auth-trust-pills"
+            variants={stagger}
+            initial="hidden"
+            animate="show"
+          >
+            {TRUST.map(({ label, icon: Icon }) => (
+              <motion.span className="auth-trust-pill" key={label} variants={fadeUp}>
+                <span className="auth-trust-pill__ico" aria-hidden="true"><Icon /></span>
+                {label}
+              </motion.span>
+            ))}
+          </motion.div>
+        </aside>
       </div>
     </div>
   );

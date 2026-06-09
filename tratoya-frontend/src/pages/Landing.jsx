@@ -9,13 +9,55 @@ import stepPaymentRelease from "../assets/step-payment-release.png";
 import "../styles/landing-nu.css";
 
 const EASE = [0.22, 1, 0.36, 1];
-const TOTAL = 5;
+const TOTAL = 8;
+const FLOW_SLIDE = 3;
 
 const FLOW = [
-  { n: "01", title: "Acuerdan", desc: "Precio y condiciones. Un link. Listo.", img: stepPaymentProtected },
-  { n: "02", title: "Paga", desc: "Paga fácil por Nequi, PSE o Bancolombia. El dinero va a TratoYa, no al vendedor.", img: stepServiceDelivery },
-  { n: "03", title: "Entrega", desc: "Con el pago asegurado, se cumple el trato.", img: stepConfirmation },
-  { n: "04", title: "Cobra", desc: "Confirmada la entrega → dinero liberado.", img: stepPaymentRelease },
+  { n: "01", title: "Acuerdan el trato", desc: "Precio, condiciones y plazos. Un link compartido. Listo.", img: stepPaymentProtected },
+  { n: "02", title: "El comprador paga", desc: "Nequi, PSE, Bancolombia o Davivienda. El dinero va a TratoYa, no al vendedor.", img: stepServiceDelivery },
+  { n: "03", title: "Se entrega", desc: "Con el pago asegurado, el vendedor cumple lo acordado.", img: stepConfirmation },
+  { n: "04", title: "Se libera el pago", desc: "El comprador confirma → TratoYa transfiere al vendedor.", img: stepPaymentRelease },
+];
+
+const WHAT_IS = [
+  { icon: "🛡️", title: "Intermediario de pagos", body: "Retenemos el dinero hasta que ambos cumplan lo acordado." },
+  { icon: "⚖️", title: "Neutral y seguro", body: "Más confiable que transferir directo a un desconocido." },
+  { icon: "📱", title: "100% digital", body: "Crea, paga y cobra un trato en minutos desde el celular." },
+];
+
+const PROBLEM_BAD = [
+  { e: "😟", t: "Pagar directo", d: "Cruzas los dedos. Sin respaldo si algo falla." },
+  { e: "🚨", t: "Riesgo real", d: "Bloqueos inesperados, dinero retenido y disputas sin intermediario." },
+];
+
+const PROBLEM_GOOD = [
+  { e: "✅", t: "Con TratoYa", d: "El dinero queda protegido hasta confirmar la entrega." },
+  { e: "🤝", t: "Ambos ganan", d: "Comprador seguro. Vendedor cobra al cumplir." },
+];
+
+const TRANSFER_BRANDS = [
+  { name: "Nequi", src: "/brand-nequi.svg", cls: "ty-pay-logo--nequi" },
+  { name: "Bancolombia", src: "/brand-bancolombia.svg", cls: "ty-pay-logo--bancolombia" },
+  { name: "PSE", src: "/brand-pse.png", cls: "ty-pay-logo--pse" },
+];
+
+const SAFETY = [
+  { icon: "🔒", title: "Dinero protegido", body: "No se mueve hasta que ambos cumplan." },
+  { icon: "⚖️", title: "Disputas mediadas", body: "Revisamos evidencia y resolvemos en hasta 72 horas." },
+  { icon: "👤", title: "Soporte humano", body: "Personas reales te acompañan si algo sale mal." },
+];
+
+const MINI_FAQ = [
+  ["¿Y si el vendedor no entrega?", "Abres una disputa. TratoYa retiene el dinero hasta resolver."],
+  ["¿El dinero está seguro?", "Sí. Queda en custodia y no se libera sin confirmación."],
+  ["¿Cuánto cuesta?", "4.5% + IMP por trato exitoso. Sin costos ocultos."],
+];
+
+const EARLY_PERKS = [
+  "Cuenta gratis, sin tarjeta",
+  "Primer trato en minutos",
+  "Acceso anticipado al lanzamiento",
+  "Historial y reputación desde el día uno",
 ];
 
 const COMMISSION_PAYERS = [
@@ -24,7 +66,7 @@ const COMMISSION_PAYERS = [
   { id: "compartida", label: "50 / 50" },
 ];
 
-const FLOW_AUTO_MS = 3000;
+const FLOW_AUTO_MS = 3200;
 const FLOW_ENTER_MS = 680;
 const FLOW_FADE = { duration: 0.75, ease: [0.4, 0, 0.2, 1] };
 
@@ -63,14 +105,18 @@ export default function Landing({ goAuth }) {
   const flowTouchRef = useRef({ x: 0, y: 0 });
   const wheelLock = useRef(false);
   const flowManualRef = useRef(false);
+  const flowManualTimerRef = useRef(null);
 
   const register = () => goAuth("register");
   const login = () => goAuth("login");
 
   const go = useCallback((next) => {
-    if (next < 0 || next >= TOTAL) return;
-    setDir(next > slide ? 1 : -1);
-    setSlide(next);
+    let target = next;
+    if (next >= TOTAL) target = 0;
+    if (next < 0) target = TOTAL - 1;
+    const forward = slide < target || (slide === TOTAL - 1 && target === 0);
+    setDir(forward ? 1 : -1);
+    setSlide(target);
   }, [slide]);
 
   useEffect(() => {
@@ -119,16 +165,20 @@ export default function Landing({ goAuth }) {
 
   const onTouchEnd = (e) => {
     const dy = touchRef.current.y - e.changedTouches[0].clientY;
-    if (Math.abs(dy) > 50) go(dy > 0 ? slide + 1 : slide - 1);
+    if (Math.abs(dy) < 50) return;
+    go(dy > 0 ? slide + 1 : slide - 1);
   };
 
   const amount = Number(monto.replace(/\D/g, "")) || 0;
   const calc = amount >= 50000 ? calcularComisionUI(amount, quienComision) : null;
-  const flow = FLOW[flowStep];
-
   const enableFlowManual = useCallback(() => {
     flowManualRef.current = true;
     setFlowManual(true);
+    if (flowManualTimerRef.current) clearTimeout(flowManualTimerRef.current);
+    flowManualTimerRef.current = setTimeout(() => {
+      flowManualRef.current = false;
+      setFlowManual(false);
+    }, FLOW_AUTO_MS);
   }, []);
 
   const setFlow = useCallback((next) => {
@@ -171,7 +221,7 @@ export default function Landing({ goAuth }) {
   };
 
   useEffect(() => {
-    if (slide !== 2) {
+    if (slide !== FLOW_SLIDE) {
       setFlowSlideReady(false);
       setFlowManual(false);
       flowManualRef.current = false;
@@ -197,6 +247,7 @@ export default function Landing({ goAuth }) {
       clearTimeout(readyTimer);
       clearTimeout(startTimer);
       if (intervalId) clearInterval(intervalId);
+      if (flowManualTimerRef.current) clearTimeout(flowManualTimerRef.current);
     };
   }, [slide, nextFlow]);
 
@@ -239,17 +290,17 @@ export default function Landing({ goAuth }) {
       <div className="ty-viewport">
         <AnimatePresence mode="wait" custom={dir}>
           {slide === 0 && (
-            <SlideWrap key="s0" dir={dir}>
-              <div className="ty-slide">
+            <SlideWrap key="s0" dir={dir} fullBleed>
+              <div className="ty-slide ty-slide--hero">
                 <p className="ty-kicker ty-text-pulse">Intermediario de pagos</p>
-                <h1 className="ty-mega ty-text-pulse">
+                <h1 className="ty-mega ty-mega--hero ty-text-pulse">
                   Compra y vende<br /><span>sin miedo.</span>
                 </h1>
-                <p className="ty-sub ty-text-pulse ty-text-pulse--delay">
-                  TratoYa retiene el dinero hasta que el trato se cumple. Nadie pierde.
+                <HeroShowcase />
+                <p className="ty-sub ty-sub--hero ty-text-pulse ty-text-pulse--delay">
+                  TratoYa retiene el dinero hasta que el trato se cumple.
                 </p>
-                <PaymentMethods />
-                <div className="ty-cta-stack">
+                <div className="ty-cta-stack ty-cta-stack--hero">
                   <motion.button
                     className="ty-neon-btn ty-cta-mega"
                     type="button"
@@ -267,21 +318,15 @@ export default function Landing({ goAuth }) {
           {slide === 1 && (
             <SlideWrap key="s1" dir={dir}>
               <div className="ty-slide">
-                <p className="ty-kicker ty-text-pulse">El problema</p>
+                <p className="ty-kicker ty-text-pulse">Qué es TratoYa</p>
                 <h2 className="ty-mega ty-text-pulse">
-                  Pagar directo<br /><span>es un riesgo.</span>
+                  Tu trato,<br /><span>protegido.</span>
                 </h2>
-                <p className="ty-sub ty-text-pulse ty-text-pulse--delay">Estafas, no-shows, disputas sin respaldo. La confianza no basta.</p>
-                <div className="ty-shield-viz">
-                  <ShieldNode label="Comprador" icon={<BuyerIcon />} />
-                  <span className="ty-shield-arrow" aria-hidden="true">→</span>
-                  <ShieldNode label="TratoYa" logoSrc={logo} core />
-                  <span className="ty-shield-arrow" aria-hidden="true">→</span>
-                  <ShieldNode label="Vendedor" icon={<SellerIcon />} />
-                </div>
-                <p className="ty-sub" style={{ marginTop: 28, color: "var(--ty-neon)", fontWeight: 800 }}>
-                  El dinero solo se mueve cuando ambos cumplen.
+                <p className="ty-sub ty-text-pulse ty-text-pulse--delay">
+                  Plataforma colombiana que custodia el pago entre comprador y vendedor.
                 </p>
+                <InfoGrid items={WHAT_IS} />
+                <TransferBrands />
               </div>
             </SlideWrap>
           )}
@@ -289,7 +334,32 @@ export default function Landing({ goAuth }) {
           {slide === 2 && (
             <SlideWrap key="s2" dir={dir}>
               <div className="ty-slide">
+                <p className="ty-kicker ty-text-pulse">El problema</p>
+                <h2 className="ty-mega ty-text-pulse">
+                  Pagar directo<br /><span>es un riesgo.</span>
+                </h2>
+                <p className="ty-sub ty-text-pulse ty-text-pulse--delay">
+                  La confianza no basta cuando hay dinero de por medio.
+                </p>
+                <ContrastGrid bad={PROBLEM_BAD} good={PROBLEM_GOOD} />
+                <div className="ty-shield-viz">
+                  <ShieldNode label="Comprador" icon={<BuyerIcon />} />
+                  <span className="ty-shield-arrow" aria-hidden="true">→</span>
+                  <ShieldNode label="TratoYa" logoSrc={logo} core />
+                  <span className="ty-shield-arrow" aria-hidden="true">→</span>
+                  <ShieldNode label="Vendedor" icon={<SellerIcon />} />
+                </div>
+              </div>
+            </SlideWrap>
+          )}
+
+          {slide === 3 && (
+            <SlideWrap key="s3" dir={dir}>
+              <div className="ty-slide">
                 <p className="ty-kicker ty-text-pulse">Cómo funciona</p>
+                <h2 className="ty-mega ty-mega--compact ty-text-pulse">
+                  4 pasos.<br /><span>Un trato seguro.</span>
+                </h2>
                 <div className="ty-flow-tabs" role="tablist" aria-label="Pasos del flujo">
                   {FLOW.map((s, i) => (
                     <button
@@ -327,9 +397,9 @@ export default function Landing({ goAuth }) {
                         exit={{ opacity: 0 }}
                         transition={FLOW_FADE}
                       >
-                        <img src={flow.img} alt="" decoding="async" />
-                        <h3 className="ty-flow-title ty-text-pulse">{flow.title}</h3>
-                        <p className="ty-flow-desc ty-text-pulse ty-text-pulse--delay">{flow.desc}</p>
+                        <img src={FLOW[flowStep].img} alt="" decoding="async" />
+                        <h3 className="ty-flow-title ty-text-pulse">{FLOW[flowStep].title}</h3>
+                        <p className="ty-flow-desc ty-text-pulse ty-text-pulse--delay">{FLOW[flowStep].desc}</p>
                       </motion.div>
                     </AnimatePresence>
                   </div>
@@ -346,10 +416,28 @@ export default function Landing({ goAuth }) {
             </SlideWrap>
           )}
 
-          {slide === 3 && (
-            <SlideWrap key="s3" dir={dir}>
-              <div className="ty-slide">
-                <p className="ty-kicker ty-text-pulse">Transparente</p>
+          {slide === 4 && (
+            <SlideWrap key="s4" dir={dir}>
+              <div className="ty-slide ty-slide--compact">
+                <p className="ty-kicker ty-text-pulse">Si algo sale mal</p>
+                <h2 className="ty-mega ty-mega--compact ty-text-pulse">
+                  No estás<br /><span>solo.</span>
+                </h2>
+                <p className="ty-sub ty-text-pulse ty-text-pulse--delay">
+                  Tu dinero queda protegido mientras resolvemos.
+                </p>
+                <InfoGrid items={SAFETY} columns={3} />
+                <MiniFaq items={MINI_FAQ} />
+              </div>
+            </SlideWrap>
+          )}
+
+          {slide === 5 && (
+            <SlideWrap key="s5" dir={dir}>
+              <div className="ty-slide ty-slide--compact">
+                <p className="ty-kicker ty-kicker--bolt ty-text-pulse">
+                  <span aria-hidden="true">⚡</span> Simula tu trato
+                </p>
                 <h2 className="ty-mega ty-text-pulse">
                   <span>4.5%</span> + IMP.
                 </h2>
@@ -399,14 +487,42 @@ export default function Landing({ goAuth }) {
             </SlideWrap>
           )}
 
-          {slide === 4 && (
-            <SlideWrap key="s4" dir={dir}>
+          {slide === 6 && (
+            <SlideWrap key="s6" dir={dir}>
+              <div className="ty-slide">
+                <p className="ty-kicker ty-text-pulse">Antes del lanzamiento</p>
+                <h2 className="ty-mega ty-text-pulse">
+                  Regístrate<br /><span>ahora.</span>
+                </h2>
+                <p className="ty-sub ty-text-pulse ty-text-pulse--delay">
+                  Sé de los primeros en usar pagos protegidos entre personas en Colombia.
+                </p>
+                <EarlyList items={EARLY_PERKS} />
+                <div className="ty-cta-stack">
+                  <motion.button
+                    className="ty-neon-btn ty-cta-mega"
+                    type="button"
+                    onClick={register}
+                    whileHover={{ scale: 1.04 }}
+                    whileTap={{ scale: 0.96 }}
+                  >
+                    Crear cuenta gratis →
+                  </motion.button>
+                </div>
+              </div>
+            </SlideWrap>
+          )}
+
+          {slide === 7 && (
+            <SlideWrap key="s7" dir={dir}>
               <div className="ty-slide">
                 <p className="ty-kicker ty-text-pulse">Listo para tu primer trato</p>
                 <h2 className="ty-mega ty-text-pulse">
                   Haz el negocio.<br /><span>Nosotros cuidamos.</span>
                 </h2>
-                <p className="ty-sub ty-text-pulse ty-text-pulse--delay">Registro gratis. Primer trato en minutos.</p>
+                <p className="ty-sub ty-text-pulse ty-text-pulse--delay">
+                  Registro gratis. Tu primer trato en minutos.
+                </p>
                 <div className="ty-cta-stack">
                   <motion.button
                     className="ty-neon-btn ty-cta-mega"
@@ -434,7 +550,6 @@ export default function Landing({ goAuth }) {
           type="button"
           className="ty-arrow"
           aria-label="Anterior"
-          disabled={slide === 0}
           onClick={() => go(slide - 1)}
         >
           ↑
@@ -446,7 +561,6 @@ export default function Landing({ goAuth }) {
           type="button"
           className="ty-arrow"
           aria-label="Siguiente"
-          disabled={slide === TOTAL - 1}
           onClick={() => go(slide + 1)}
         >
           ↓
@@ -456,29 +570,142 @@ export default function Landing({ goAuth }) {
   );
 }
 
-const PAYMENT_BRANDS = [
-  { name: "Nequi", src: "/brand-nequi.svg", cls: "ty-pay-logo--nequi" },
-  { name: "Bancolombia", src: "/brand-bancolombia.svg", cls: "ty-pay-logo--bancolombia" },
-  { name: "Davivienda", src: "/brand-davivienda.png", cls: "ty-pay-logo--davivienda" },
-  { name: "PSE — Pagos Seguros en Línea", src: "/brand-pse.png", cls: "ty-pay-logo--pse" },
-];
-
-function PaymentMethods() {
-  const track = [...PAYMENT_BRANDS, ...PAYMENT_BRANDS];
-
+function TransferBrands() {
   return (
-    <div className="ty-pay-methods">
-      <p className="ty-pay-methods__title">Paga fácil con</p>
-      <div className="ty-pay-marquee" aria-label="Métodos de pago disponibles">
-        <div className="ty-pay-marquee__track">
-          {track.map(({ name, src, cls }, i) => (
-            <div className={`ty-pay-logo ${cls}`} key={`${name}-${i}`}>
-              <img src={src} alt={name} loading="lazy" />
+    <motion.div
+      className="ty-transfer-block"
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.35, duration: 0.5, ease: EASE }}
+    >
+      <p className="ty-transfer-block__title">
+        Tan fácil como transferir a las cuentas oficiales de TratoYa
+      </p>
+      <div className="ty-transfer-block__logos" aria-label="Métodos de pago de TratoYa">
+        {TRANSFER_BRANDS.map(({ name, src, cls }) => (
+          <div className={`ty-pay-logo ${cls}`} key={name}>
+            <img src={src} alt={name} loading="lazy" />
+          </div>
+        ))}
+      </div>
+    </motion.div>
+  );
+}
+
+function HeroShowcase() {
+  return (
+    <motion.div
+      className="ty-hero-showcase"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.2, duration: 0.65, ease: EASE }}
+    >
+      <div className="ty-hero-showcase__glow" aria-hidden="true" />
+      <img
+        src="/hero-app-mockup.png"
+        alt="App TratoYa: tratos activos, dinero protegido y pagos seguros"
+        loading="eager"
+        decoding="async"
+      />
+    </motion.div>
+  );
+}
+
+function InfoGrid({ items, columns = 3 }) {
+  return (
+    <div className={`ty-info-grid ty-info-grid--${columns}`}>
+      {items.map((item, i) => (
+        <motion.div
+          key={item.title}
+          className="ty-info-card"
+          initial={{ opacity: 0, y: 18 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.12 + i * 0.08, duration: 0.5, ease: EASE }}
+        >
+          <span className="ty-info-card__ico" aria-hidden="true">{item.icon}</span>
+          <h3>{item.title}</h3>
+          <p>{item.body}</p>
+        </motion.div>
+      ))}
+    </div>
+  );
+}
+
+function ContrastGrid({ bad, good }) {
+  return (
+    <div className="ty-contrast-grid">
+      <div className="ty-contrast-col">
+        {bad.map((item, i) => (
+          <motion.div
+            key={item.t}
+            className="ty-contrast-card ty-contrast-card--bad"
+            initial={{ opacity: 0, x: -16 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.1 + i * 0.08, duration: 0.45, ease: EASE }}
+          >
+            <span aria-hidden="true">{item.e}</span>
+            <div>
+              <strong>{item.t}</strong>
+              <p>{item.d}</p>
             </div>
-          ))}
-        </div>
+          </motion.div>
+        ))}
+      </div>
+      <div className="ty-contrast-col">
+        {good.map((item, i) => (
+          <motion.div
+            key={item.t}
+            className="ty-contrast-card ty-contrast-card--good"
+            initial={{ opacity: 0, x: 16 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.1 + i * 0.08, duration: 0.45, ease: EASE }}
+          >
+            <span aria-hidden="true">{item.e}</span>
+            <div>
+              <strong>{item.t}</strong>
+              <p>{item.d}</p>
+            </div>
+          </motion.div>
+        ))}
       </div>
     </div>
+  );
+}
+
+function MiniFaq({ items }) {
+  return (
+    <div className="ty-mini-faq">
+      {items.map(([q, a], i) => (
+        <motion.div
+          key={q}
+          className="ty-mini-faq__item"
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 + i * 0.07, duration: 0.45, ease: EASE }}
+        >
+          <strong>{q}</strong>
+          <p>{a}</p>
+        </motion.div>
+      ))}
+    </div>
+  );
+}
+
+function EarlyList({ items }) {
+  return (
+    <ul className="ty-early-list">
+      {items.map((item, i) => (
+        <motion.li
+          key={item}
+          initial={{ opacity: 0, x: -12 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.14 + i * 0.07, duration: 0.45, ease: EASE }}
+        >
+          <span className="ty-check">✓</span>
+          {item}
+        </motion.li>
+      ))}
+    </ul>
   );
 }
 
@@ -501,32 +728,31 @@ function ShieldNode({ label, icon, logoSrc, core = false }) {
 
 function BuyerIcon() {
   return (
-    <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <circle cx="20" cy="20" r="20" fill="#1a4a6e" />
-      <circle cx="20" cy="14.5" r="6" fill="#7ec8ff" />
-      <path d="M9 33c0-6 4.9-10 11-10s11 4 11 10" fill="#5eb8ff" />
+    <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <rect x="4" y="4" width="32" height="32" rx="16" fill="rgba(158,216,25,0.14)" />
+      <circle cx="20" cy="15" r="4.5" stroke="#9ed819" strokeWidth="2" />
+      <path d="M12 29c0-4.5 3.6-7.5 8-7.5s8 3 8 7.5" stroke="#9ed819" strokeWidth="2" strokeLinecap="round" />
+      <path d="M25 22l3.5 3.5L33 21" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }
 
 function SellerIcon() {
   return (
-    <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <circle cx="20" cy="20" r="20" fill="#5c3a10" />
-      <circle cx="15" cy="14" r="4.5" fill="#ffcc80" />
-      <path d="M8 30c0-4.5 3.2-7.5 7-7.5s7 3 7 7.5" fill="#ffb74d" />
-      <path d="M24 22h9l-1.5 9H18.5L17 22h7z" fill="#f4a340" stroke="#fff3e0" strokeWidth="1" />
-      <path d="M24 22l1.8-5.5h5.4L33 22" fill="#e87828" />
-      <circle cx="27.5" cy="29" r="1.2" fill="#fff" />
-      <circle cx="31.5" cy="29" r="1.2" fill="#fff" />
+    <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <rect x="4" y="4" width="32" height="32" rx="16" fill="rgba(158,216,25,0.14)" />
+      <path d="M13 17h14l-1.4 11H14.4L13 17z" stroke="#9ed819" strokeWidth="2" strokeLinejoin="round" />
+      <path d="M13 17l2-5h10l2 5" stroke="#fff" strokeWidth="1.8" strokeLinejoin="round" />
+      <path d="M18 21h4" stroke="#9ed819" strokeWidth="2" strokeLinecap="round" />
     </svg>
   );
 }
 
-function SlideWrap({ children, dir }) {
+function SlideWrap({ children, dir, fullBleed = false }) {
   return (
     <motion.div
-      style={{ width: "min(1080px, 100%)" }}
+      className={fullBleed ? "ty-slide-wrap--bleed" : undefined}
+      style={{ width: fullBleed ? "100%" : "min(1080px, 100%)" }}
       custom={dir}
       variants={slideVariants}
       initial="enter"
