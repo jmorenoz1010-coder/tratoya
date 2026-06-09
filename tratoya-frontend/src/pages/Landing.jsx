@@ -1,638 +1,331 @@
-import { useEffect, useState, useRef } from "react";
-import { motion, AnimatePresence, useInView } from "framer-motion";
+import { useEffect, useState, useRef, useCallback } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { calcularComisionUI, fmt } from "../lib/utils";
 import logo from "../assets/tratoya-logo.png";
-import heroSecureBag from "../assets/hero-secure-bag.png";
 import stepPaymentProtected from "../assets/step-payment-protected.png";
 import stepServiceDelivery from "../assets/step-service-delivery.png";
 import stepConfirmation from "../assets/step-confirmation.png";
 import stepPaymentRelease from "../assets/step-payment-release.png";
-import whyModelFemale from "../assets/why-model-female.png";
-import mobileDashboardPreview from "../assets/mobile-dashboard-preview.svg";
-import googlePlayBadge from "../assets/store-google-play.svg";
-import appStoreBadge from "../assets/store-app-store.svg";
+import "../styles/landing-nu.css";
 
-/* ── Datos ──────────────────────────────────────────────── */
-const stats = [
-  ["users",   50,   "+", "K",  "Usuarios activos"],
-  ["bolt",    100,  "+", "K",  "Transacciones"],
-  ["shield",  99.8, "",  "%",  "Tratos exitosos"],
-  ["support", null, "",  "",   "Soporte", "en cada paso"],
+const EASE = [0.22, 1, 0.36, 1];
+const TOTAL = 5;
+
+const FLOW = [
+  { n: "01", title: "Acuerdan", desc: "Precio y condiciones. Un link. Listo.", img: stepPaymentProtected },
+  { n: "02", title: "Paga", desc: "El dinero va a TratoYa, no al vendedor.", img: stepServiceDelivery },
+  { n: "03", title: "Entrega", desc: "Con el pago asegurado, se cumple el trato.", img: stepConfirmation },
+  { n: "04", title: "Cobra", desc: "Confirmada la entrega → dinero liberado.", img: stepPaymentRelease },
 ];
 
-const steps = [
-  { img: stepPaymentProtected,  n: "01", title: "Acuerdan el trato",     body: "Comprador y vendedor definen el precio, las condiciones y crean el trato en TratoYa." },
-  { img: stepServiceDelivery,   n: "02", title: "El comprador paga",     body: "El comprador transfiere a TratoYa, no al vendedor directamente. El dinero queda protegido." },
-  { img: stepConfirmation,      n: "03", title: "El vendedor entrega",   body: "Con el pago asegurado, el vendedor entrega el producto o realiza el servicio." },
-  { img: stepPaymentRelease,    n: "04", title: "Se libera el dinero",   body: "El comprador confirma que recibió lo acordado y TratoYa transfiere el pago al vendedor." },
-];
+const slideVariants = {
+  enter: (dir) => ({
+    opacity: 0,
+    y: dir > 0 ? 80 : -80,
+    scale: 0.94,
+    filter: "blur(8px)",
+  }),
+  center: {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    filter: "blur(0px)",
+    transition: { duration: 0.65, ease: EASE },
+  },
+  exit: (dir) => ({
+    opacity: 0,
+    y: dir > 0 ? -60 : 60,
+    scale: 0.97,
+    filter: "blur(6px)",
+    transition: { duration: 0.45, ease: EASE },
+  }),
+};
 
-const benefits = [
-  { ico: "🛡️", title: "Nadie pierde dinero",    body: "El pago solo se libera cuando el comprador confirma que recibió lo que pagó." },
-  { ico: "⚡", title: "Resolución rápida",       body: "Si algo sale mal, nuestro equipo interviene y media entre las partes." },
-  { ico: "📋", title: "Cero letra pequeña",      body: "Sin cobros ocultos. Todo queda registrado y acordado desde el principio." },
-  { ico: "💬", title: "Soporte humano real",     body: "Personas reales que te acompañan si tienes dudas o algún problema." },
-];
-
-const useCases = [
-  { e: "📱", t: "Celulares y electrónicos",   d: "Compra o vende equipos sin miedo a estafas o productos dañados." },
-  { e: "💼", t: "Servicios freelance",         d: "Acuerda el trabajo, el cliente paga y tú recibes al entregar." },
-  { e: "🚗", t: "Vehículos y motos",          d: "Negocios de alto valor con el dinero protegido desde el inicio." },
-  { e: "🏠", t: "Remodelaciones",             d: "Paga por avance. El contratista cobra al completar cada etapa." },
-  { e: "👗", t: "Moda y accesorios",          d: "Garantía de que recibes exactamente lo que acordaste." },
-  { e: "🛠️", t: "Cualquier servicio",          d: "Si dos personas acuerdan un precio, TratoYa lo hace seguro." },
-];
-
-const testimonials = [
-  { name: "Carlos M.", role: "Comprador", text: "Compré un celular de alto valor. Pagué y no solté el dinero hasta tener el equipo en mis manos. Así sí se puede confiar." },
-  { name: "María R.",  role: "Vendedora",  text: "Mis clientes se sienten seguros pagando por TratoYa y yo recibo mi plata en el momento en que confirman. Sin demoras." },
-  { name: "Juan P.",   role: "Emprendedor",text: "Usé TratoYa para pagar a un freelance. Todo quedó acordado desde el principio y el proceso fue impecable." },
-];
-
-const faqs = [
-  ["¿Cómo funciona exactamente?",            "El comprador paga a TratoYa, no al vendedor. TratoYa retiene ese dinero hasta que el comprador confirme que recibió el producto o servicio. Solo entonces se libera el pago al vendedor."],
-  ["¿Quién puede usar TratoYa?",             "Cualquier persona en Colombia. Compradores, vendedores, freelancers, emprendedores... si vas a hacer un negocio con alguien, TratoYa lo hace seguro."],
-  ["¿Qué pasa si el vendedor no entrega?",   "Si el vendedor no entrega o entrega algo diferente, el comprador abre una disputa. TratoYa investiga y protege el dinero hasta resolver la situación."],
-  ["¿Cuánto cuesta usar TratoYa?",           "Registrarse es totalmente gratis. TratoYa cobra una comisión del 4.5% + IMP por transacción exitosa, visible antes de confirmar el trato. Sin costos ocultos ni sorpresas."],
-  ["¿El dinero está seguro mientras TratoYa lo retiene?", "Sí. El dinero queda protegido en nuestra plataforma y no se mueve hasta que ambas partes cumplan lo acordado."],
-  ["¿Qué pasa si hay una disputa?",          "Nuestro equipo revisa la evidencia, media entre las partes y toma una decisión para proteger a quien tiene la razón."],
-];
-
-/* ── FM variantes ────────────────────────────────────────── */
-const EASE   = [0.16, 1, 0.3, 1];
-const SPRING = [0.34, 1.56, 0.64, 1];
-const fadeUp    = { hidden: { opacity: 0, y: 28 }, show: { opacity: 1, y: 0, transition: { duration: 0.65, ease: EASE } } };
-const fromLeft  = { hidden: { opacity: 0, x: -44 }, show: { opacity: 1, x: 0, transition: { duration: 0.7, ease: EASE } } };
-const fromRight = { hidden: { opacity: 0, x:  44 }, show: { opacity: 1, x: 0, transition: { duration: 0.7, ease: EASE } } };
-const staggerV  = (d = 0.09, delay = 0) => ({ hidden: {}, show: { transition: { staggerChildren: d, delayChildren: delay } } });
-
-/* ── Scroll reveal hook ─────────────────────────────────── */
-function useReveal() {
-  useEffect(() => {
-    const obs = new IntersectionObserver(
-      (entries) => entries.forEach((e) => { if (e.isIntersecting) { e.target.classList.add("ty-rv"); obs.unobserve(e.target); } }),
-      { threshold: 0.07, rootMargin: "0px 0px -44px 0px" }
-    );
-    document.querySelectorAll(".ty-r").forEach((el) => obs.observe(el));
-    return () => obs.disconnect();
-  }, []);
-}
-
-/* ── Componente principal ───────────────────────────────── */
 export default function Landing({ goAuth }) {
-  useReveal();
-  useEffect(() => { window.scrollTo(0, 0); }, []);
-  const [scrolled, setScrolled] = useState(false);
-  useEffect(() => {
-    const fn = () => setScrolled(window.scrollY > 70);
-    window.addEventListener("scroll", fn, { passive: true });
-    return () => window.removeEventListener("scroll", fn);
-  }, []);
+  const [slide, setSlide] = useState(0);
+  const [dir, setDir] = useState(1);
+  const [flowStep, setFlowStep] = useState(0);
+  const [monto, setMonto] = useState("");
+  const touchRef = useRef({ y: 0, t: 0 });
+  const wheelLock = useRef(false);
 
   const register = () => goAuth("register");
-  const login    = () => goAuth("login");
-  const goBack   = () => { if (window.history.length > 1) window.history.back(); else window.location.href = "/"; };
+  const login = () => goAuth("login");
+
+  const go = useCallback((next) => {
+    if (next < 0 || next >= TOTAL) return;
+    setDir(next > slide ? 1 : -1);
+    setSlide(next);
+  }, [slide]);
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = ""; };
+  }, []);
+
+  useEffect(() => {
+    const onKey = (e) => {
+      if (e.key === "ArrowDown" || e.key === "ArrowRight" || e.key === " ") {
+        e.preventDefault();
+        go(slide + 1);
+      }
+      if (e.key === "ArrowUp" || e.key === "ArrowLeft") {
+        e.preventDefault();
+        go(slide - 1);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [slide, go]);
+
+  useEffect(() => {
+    const onWheel = (e) => {
+      if (wheelLock.current) return;
+      if (Math.abs(e.deltaY) < 30) return;
+      wheelLock.current = true;
+      go(e.deltaY > 0 ? slide + 1 : slide - 1);
+      setTimeout(() => { wheelLock.current = false; }, 700);
+    };
+    window.addEventListener("wheel", onWheel, { passive: true });
+    return () => window.removeEventListener("wheel", onWheel);
+  }, [slide, go]);
+
+  const onTouchStart = (e) => {
+    touchRef.current = { y: e.touches[0].clientY, t: Date.now() };
+  };
+
+  const onTouchEnd = (e) => {
+    const dy = touchRef.current.y - e.changedTouches[0].clientY;
+    if (Math.abs(dy) > 50) go(dy > 0 ? slide + 1 : slide - 1);
+  };
+
+  const amount = Number(monto.replace(/\D/g, "")) || 0;
+  const calc = amount >= 50000 ? calcularComisionUI(amount, "comprador") : null;
+  const flow = FLOW[flowStep];
 
   return (
-    <main className="ty-landing" id="inicio">
-      <button className="public-back" type="button" onClick={goBack} aria-label="Volver">←</button>
-
-      {/* ── NAVBAR + HERO (bloque oscuro) ───────────────── */}
-      <section className="ty-top-shell">
-        <motion.header
-          className={`ty-navbar${scrolled ? " ty-navbar--blur" : ""}`}
-          initial={{ opacity: 0, y: -18 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, ease: EASE }}
-        >
-          <a className="ty-brand" href="/" aria-label="TratoYa inicio"><img src={logo} alt="TratoYa" /></a>
-          <nav className="ty-nav" aria-label="Navegación">
-            <a href="#como-funciona">Cómo funciona</a>
-            <a href="#para-quien">Para quién</a>
-            <a href="#simula">Simulador</a>
-            <a href="#faq">Preguntas</a>
-          </nav>
-          <div className="ty-nav-actions">
-            <button className="ty-link-btn" type="button" onClick={login}>Iniciar sesión</button>
-            <motion.button
-              className="ty-button ty-button-small" type="button" onClick={register}
-              whileHover={{ scale: 1.04, boxShadow: "0 20px 42px rgba(117,205,22,.44)" }}
-              whileTap={{ scale: 0.96 }}
-            >Regístrate gratis</motion.button>
-          </div>
-        </motion.header>
-
-        {/* HERO */}
-        <section className="ty-hero">
-          <motion.div
-            className="ty-hero-copy"
-            initial="hidden" animate="show"
-            variants={staggerV(0.1, 0.12)}
-          >
-            <motion.div className="ty-hero-badge" variants={fadeUp}>Pagos seguros entre personas ✓</motion.div>
-            <motion.h1 variants={fadeUp}>
-              COMPRA Y VENDE<br />CON <span>CONFIANZA</span>
-            </motion.h1>
-            <motion.p variants={fadeUp}>
-              TratoYa cuida el dinero hasta que el producto o servicio sea entregado.
-              Simple, seguro y sin riesgos para ambas partes.
-            </motion.p>
-            <motion.div className="ty-actions" variants={fadeUp}>
-              <motion.button
-                className="ty-button ty-button-large" type="button" onClick={register}
-                whileHover={{ scale: 1.03, boxShadow: "0 22px 48px rgba(117,205,22,.44)" }}
-                whileTap={{ scale: 0.96 }}
-              >
-                EMPIEZA GRATIS <span aria-hidden="true">›</span>
-              </motion.button>
-              <a className="ty-play" href="#simula">⚡ Simula tu trato</a>
-            </motion.div>
-          </motion.div>
-          <motion.div
-            className="ty-hero-visual" aria-hidden="true"
-            initial={{ opacity: 0, scale: 0.92 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.8, delay: 0.2, ease: EASE }}
-          >
-            <div className="ty-halo" />
-            <motion.img
-              className="ty-hero-photo" src={heroSecureBag} alt=""
-              animate={{ y: [0, -12, 0] }}
-              transition={{ duration: 5.5, ease: "easeInOut", repeat: Infinity }}
-            />
-          </motion.div>
-        </section>
-
-        {/* STATS */}
-        <section className="ty-stats ty-r" aria-label="Métricas">
-          {stats.map(([icon, value, prefix, suffix, title, sub]) => (
-            <div className="ty-mini ty-stat-mini ty-stat-hover" key={title}>
-              <LIcon name={icon} />
-              <div>
-                <strong>{value == null ? title : <CountUpMetric value={value} prefix={prefix} suffix={suffix} />}</strong>
-                <p>{value == null ? sub : title}</p>
-              </div>
-            </div>
-          ))}
-        </section>
-      </section>
-
-      {/* ── ¿QUÉ ES TRATOYA? (blanco limpio) ─────────────── */}
-      <section className="ty-sec ty-sec-white" id="que-es">
-        <div className="ty-sec-inner">
-          <p className="ty-eyebrow ty-r">EN POCAS PALABRAS</p>
-          <h2 className="ty-headline ty-r" style={{ "--td": ".08s" }}>
-            ¿Qué es <span style={{ color: "var(--ty-green-2)" }}>TratoYa?</span>
-          </h2>
-          <p className="ty-body-lg ty-r" style={{ "--td": ".16s", maxWidth: 580 }}>
-            TratoYa es una plataforma donde el comprador paga,
-            <strong> TratoYa retiene el dinero</strong>, y solo lo libera cuando
-            el producto o servicio fue entregado correctamente.
-            Nadie pierde.
-          </p>
-          <div className="ty-what-cards">
-            {[
-              { e: "🛒", t: "Si eres comprador",  d: "Pagas y tu dinero no llega al vendedor hasta que confirmes que recibiste lo acordado." },
-              { e: "📦", t: "Si eres vendedor",   d: "Sabes que el dinero ya está reservado antes de entregar. Al confirmar la entrega, cobras." },
-              { e: "⚖️", t: "Si hay un problema", d: "TratoYa actúa como árbitro neutral, revisa la situación y protege a quien tiene la razón." },
-            ].map(({ e, t, d }, i) => (
-              <div className={`ty-what-card ty-r`} key={t} style={{ "--td": `${i * 0.1}s` }}>
-                <span className="ty-what-ico">{e}</span>
-                <strong>{t}</strong>
-                <p>{d}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── CÓMO FUNCIONA (oscuro) ────────────────────────── */}
-      <section className="ty-sec ty-sec-dark" id="como-funciona">
-        <div className="ty-sec-inner">
-          <p className="ty-eyebrow ty-r" style={{ color: "rgba(169,235,27,.55)" }}>4 PASOS SIMPLES</p>
-          <h2 className="ty-headline ty-r" style={{ "--td": ".08s", color: "#fff" }}>
-            Así funciona <span style={{ color: "#dfff36" }}>TratoYa</span>
-          </h2>
-          <div className="ty-steps-nu">
-            {steps.map(({ img, n, title, body }, i) => (
-              <div className={`ty-step-nu ty-r`} key={title} style={{ "--td": `${i * 0.12}s` }}>
-                <div className="ty-step-nu-num">{n}</div>
-                <div className="ty-step-nu-img">
-                  <img src={img} alt={title} loading="lazy" />
-                </div>
-                <div className="ty-step-nu-body">
-                  <h3>{title}</h3>
-                  <p>{body}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── PARA COMPRADORES Y VENDEDORES (verde profundo) ── */}
-      <section className="ty-sec ty-sec-deep" id="para-quien">
-        <div className="ty-sec-inner">
-          <p className="ty-eyebrow ty-r" style={{ color: "rgba(169,235,27,.55)" }}>DISEÑADO PARA AMBOS</p>
-          <h2 className="ty-headline ty-r" style={{ "--td": ".08s", color: "#fff" }}>
-            Para compradores<br />y <span style={{ color: "#9ed819" }}>vendedores</span>
-          </h2>
-          <div className="ty-two-col" style={{ marginTop: 36 }}>
-            {[
-              {
-                ico: "🛒", title: "Para compradores", accent: "#dfff36",
-                items: [
-                  "Pagas y tu dinero queda protegido, no va directo al vendedor",
-                  "Si el producto no llega o no es lo acordado, no pierdes el dinero",
-                  "Confirmas la entrega antes de liberar el pago",
-                  "Puedes abrir una disputa si algo sale mal",
-                  "Historial de todos tus tratos en un solo lugar",
-                ],
-                cta: "Comprar con seguridad",
-              },
-              {
-                ico: "📦", title: "Para vendedores", accent: "#9ed819",
-                items: [
-                  "El comprador ya pagó antes de que entregues. Cero riesgo de no cobrar",
-                  "El dinero se libera en cuanto el comprador confirma la entrega",
-                  "Comparte un link del trato para que te paguen fácil",
-                  "Respaldo ante cualquier disputa injustificada",
-                  "Construyes reputación como vendedor confiable",
-                ],
-                cta: "Vender con garantía",
-              },
-            ].map(({ ico, title, accent, items, cta }, i) => (
-              <div className={`ty-role-nu ty-r`} key={title} style={{ "--td": `${i * 0.14}s`, "--ac": accent }}>
-                <div className="ty-role-nu-head">
-                  <span>{ico}</span>
-                  <h3>{title}</h3>
-                </div>
-                <ul>
-                  {items.map((it) => (
-                    <li key={it}><span className="ty-check">✓</span>{it}</li>
-                  ))}
-                </ul>
-                <button className="ty-button ty-role-btn" type="button" onClick={register}>{cta} →</button>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── SIMULADOR (claro, alto contraste) ─────────────── */}
-      <section className="ty-sec ty-sec-light" id="simula">
-        <div className="ty-sec-inner" style={{ textAlign: "center" }}>
-          <p className="ty-eyebrow ty-r">SIN SORPRESAS</p>
-          <h2 className="ty-headline ty-r" style={{ "--td": ".08s" }}>
-            ¿Cuánto cobra <span style={{ color: "var(--ty-green-2)" }}>TratoYa?</span>
-          </h2>
-          <p className="ty-r" style={{ "--td": ".16s", maxWidth: 480, margin: "0 auto 32px", fontSize: 17, color: "var(--ty-muted)" }}>
-            Ingresa el valor de tu trato y ve exactamente cuánto paga cada parte.
-          </p>
-          <TratoCalculator register={register} />
-        </div>
-      </section>
-
-      {/* ── USOS FRECUENTES (oscuro, carrusel) ─────────────── */}
-      <section className="ty-sec ty-sec-teal" id="usos">
-        <div className="ty-sec-inner">
-          <p className="ty-eyebrow ty-r" style={{ color: "rgba(169,235,27,.55)" }}>PARA QUÉ SE USA</p>
-          <h2 className="ty-headline ty-r" style={{ "--td": ".08s", color: "#fff" }}>
-            Usos <span style={{ color: "#9ed819" }}>frecuentes</span>
-          </h2>
-          <p className="ty-r" style={{ "--td": ".16s", color: "rgba(255,255,255,.6)", fontSize: 16, marginBottom: 32 }}>
-            Si acuerdas un precio con alguien, TratoYa lo hace seguro.
-          </p>
-          {/* Carrusel en mobile, grid en desktop */}
-          <div className="ty-use-carousel ty-r" style={{ "--td": ".2s" }}>
-            {useCases.map(({ e, t, d }) => (
-              <div className="ty-use-card-dark" key={t}>
-                <span className="ty-use-ico">{e}</span>
-                <strong>{t}</strong>
-                <p>{d}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── POR QUÉ TRATOYA (blanco) ─────────────────────── */}
-      <section className="ty-why" id="ventajas">
-        <div className="ty-person">
-          <img src={whyModelFemale} alt="Usuaria revisando un trato seguro" />
-        </div>
-        <div className="ty-why-content" id="seguridad">
-          <h2 className="ty-r">¿POR QUÉ ELEGIR <span>TRATOYA?</span></h2>
-          <div className="ty-benefit-grid">
-            {benefits.map(({ ico, title, body }, i) => (
-              <article className={`ty-benefit ty-r`} key={title} style={{ "--td": `${i * 0.1}s` }}>
-                <span style={{ fontSize: 26, marginBottom: 8, display: "block" }}>{ico}</span>
-                <h3>{title}</h3>
-                <p>{body}</p>
-              </article>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── EL PROBLEMA QUE RESOLVEMOS (oscuro split) ───────── */}
-      <section className="ty-sec ty-sec-dark">
-        <div className="ty-sec-inner">
-          <p className="ty-eyebrow ty-r" style={{ color: "rgba(169,235,27,.55)" }}>EL PROBLEMA</p>
-          <h2 className="ty-headline ty-r" style={{ "--td": ".08s", color: "#fff" }}>
-            Hacer negocios online<br /><span style={{ color: "#dfff36" }}>debería ser seguro</span>
-          </h2>
-          <div className="ty-problem-grid">
-            <div className="ty-problem-side">
-              {[
-                { e: "😟", t: "Sin TratoYa", d: "Pagas y cruzas los dedos. O entregas y esperas que te paguen. La confianza no puede ser el único mecanismo." },
-                { e: "🚨", t: "El riesgo es real", d: "Las estafas en compras entre personas son el problema más común en el comercio digital. Le pasa a cualquiera." },
-              ].map(({ e, t, d }) => (
-                <div className="ty-problem-item bad ty-r" key={t}>
-                  <span>{e}</span>
-                  <div><strong>{t}</strong><p>{d}</p></div>
-                </div>
-              ))}
-            </div>
-            <div className="ty-problem-side">
-              {[
-                { e: "✅", t: "Con TratoYa", d: "El dinero queda en manos de TratoYa, no del vendedor. Se libera solo cuando el comprador confirma que recibió lo que pagó." },
-                { e: "🤝", t: "Ambos ganan", d: "El comprador tiene certeza de que no pierde. El vendedor tiene certeza de que cobra. Así se hacen buenos negocios." },
-              ].map(({ e, t, d }) => (
-                <div className="ty-problem-item good ty-r" key={t}>
-                  <span>{e}</span>
-                  <div><strong>{t}</strong><p>{d}</p></div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ── TESTIMONIOS (profundo, carrusel) ─────────────────── */}
-      <section className="ty-sec ty-sec-deep">
-        <div className="ty-sec-inner">
-          <div className="ty-title-row ty-r">
-            <h2 style={{ color: "#fff" }}>LO QUE DICEN<br /><span style={{ color: "#9ed819" }}>NUESTROS USUARIOS</span></h2>
-            <p style={{ color: "#9ed819" }}>★★★★★ <small style={{ color: "rgba(255,255,255,.5)", fontWeight: 600 }}>4.9/5 · 2,000+ reseñas</small></p>
-          </div>
-          <div className="ty-testi-carousel ty-r" style={{ "--td": ".14s" }}>
-            {testimonials.map(({ name, role, text }, i) => (
-              <article className="ty-testi-card" key={name}>
-                <div className="ty-avatar" aria-hidden="true">{i + 1}</div>
-                <span className="ty-quote">"</span>
-                <p style={{ color: "rgba(255,255,255,.85)" }}>{text}</p>
-                <strong style={{ color: "#fff" }}>{name}</strong>
-                <small style={{ color: "rgba(255,255,255,.45)" }}>{role}</small>
-              </article>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── CTA PRINCIPAL (lima → máximo impacto) ──────────── */}
-      <section className="ty-sec ty-sec-lime ty-cta-hero">
-        <div className="ty-sec-inner" style={{ textAlign: "center" }}>
-          <p className="ty-eyebrow ty-r" style={{ color: "rgba(7,24,25,.5)" }}>EMPIEZA HOY</p>
-          <h2 className="ty-display ty-r" style={{ "--td": ".08s", color: "#071819", lineHeight: 1.04 }}>
-            Haz tu próximo<br />negocio sin miedo.
-          </h2>
-          <p className="ty-r" style={{ "--td": ".18s", fontSize: 19, color: "rgba(7,24,25,.7)", margin: "18px auto 32px", maxWidth: 480 }}>
-            Regístrate gratis y crea tu primer trato en minutos.
-          </p>
-          <button className="ty-cta-dark-btn ty-r" style={{ "--td": ".26s" }} type="button" onClick={register}>
-            CREAR MI CUENTA GRATIS →
-          </button>
-        </div>
-      </section>
-
-      {/* ── DESCARGA ──────────────────────────────────────────── */}
-      <section className="ty-download">
-        <div>
-          <h2>Lleva tus negocios<br />al <span>siguiente nivel</span></h2>
-          <p>Descarga la app y disfruta de pagos seguros en cualquier lugar.</p>
-        </div>
-        <div className="ty-phone" aria-hidden="true">
-          <img className="ty-phone-dashboard" src={mobileDashboardPreview} alt="" />
-        </div>
-        <div className="ty-store-buttons">
-          <span>APP DISPONIBLE PRÓXIMAMENTE:</span>
-          <button type="button" aria-label="Google Play próximamente"><img src={googlePlayBadge} alt="Google Play" /></button>
-          <button type="button" aria-label="App Store próximamente"><img src={appStoreBadge} alt="App Store" /></button>
-        </div>
-      </section>
-
-      {/* ── FAQ (blanco, accordion) ───────────────────────────── */}
-      <section className="ty-sec ty-sec-white" id="faq">
-        <div className="ty-sec-inner" style={{ maxWidth: 720, margin: "0 auto" }}>
-          <p className="ty-eyebrow ty-r">RESOLVEMOS TUS DUDAS</p>
-          <h2 className="ty-headline ty-r" style={{ "--td": ".08s", marginBottom: 36 }}>
-            Preguntas <span style={{ color: "var(--ty-green-2)" }}>frecuentes</span>
-          </h2>
-          <FAQAccordion faqs={faqs} />
-        </div>
-      </section>
-
-      {/* ── FOOTER ────────────────────────────────────────────── */}
-      <footer className="ty-footer">
-        <div className="ty-footer-brand">
-          <img src={logo} alt="TratoYa" />
-          <p>Plataforma de intermediación segura donde el dinero solo se libera cuando ambas partes cumplen lo acordado.</p>
-          <div className="ty-socials" aria-label="Redes sociales">
-            <a href="https://www.facebook.com/share/18wsfkfi5c/?mibextid=wwXIfr" target="_blank" rel="noreferrer" aria-label="Facebook"><SocialIcon name="facebook" /></a>
-            <a href="https://www.instagram.com/tratoya?igsh=MW5ncTJmMTk5NDhpOQ==" target="_blank" rel="noreferrer" aria-label="Instagram"><SocialIcon name="instagram" /></a>
-          </div>
-        </div>
-        <div>
-          <h4>Navegar</h4>
-          <a href="#como-funciona">Cómo funciona</a>
-          <a href="#para-quien">Para compradores y vendedores</a>
-          <a href="#simula">Simulador</a>
-          <a href="#faq">Preguntas frecuentes</a>
-        </div>
-        <div>
-          <h4>Legal</h4>
-          <a href="/legal/terminos">Términos y condiciones</a>
-          <a href="/legal/privacidad">Política de privacidad</a>
-          <a href="/legal/cookies">Política de cookies</a>
-        </div>
-        <div>
-          <h4>¿Necesitas ayuda?</h4>
-          <a>soporte@tratoya.com</a>
-          <a>Lun – Vie: 9:00 a.m. – 6:00 p.m.</a>
-        </div>
-        <p className="ty-copy">© 2026 TratoYa. Todos los derechos reservados.</p>
-      </footer>
-    </main>
-  );
-}
-
-/* ── Sub-componentes ─────────────────────────────────────── */
-
-function FAQAccordion({ faqs }) {
-  const [open, setOpen] = useState(null);
-  return (
-    <div className="ty-faq-list">
-      {faqs.map(([q, a], i) => (
-        <div className="ty-faq-item ty-r" key={q} style={{ "--td": `${i * 0.06}s` }}>
-          <button
-            className={`ty-faq-q${open === i ? " open" : ""}`}
-            onClick={() => setOpen(open === i ? null : i)}
-            aria-expanded={open === i}
-          >
-            <span>{q}</span>
-            <motion.span
-              className={`ty-faq-toggle${open === i ? " open" : ""}`}
-              animate={{ rotate: open === i ? 45 : 0 }}
-              transition={{ duration: 0.26, ease: SPRING }}
-              style={{ display: "inline-block" }}
-            >+</motion.span>
-          </button>
-          <AnimatePresence initial={false}>
-            {open === i && (
-              <motion.div
-                key="body"
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: "auto", opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                transition={{ duration: 0.32, ease: EASE }}
-                style={{ overflow: "hidden" }}
-              >
-                <div className="ty-faq-a open"><p>{a}</p></div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function TratoCalculator({ register }) {
-  const [rawMonto, setRawMonto] = useState("");
-  const [quien, setQuien] = useState("comprador");
-  const monto = Number(String(rawMonto).replace(/\D/g, "")) || 0;
-  const calc = monto >= 50000 ? calcularComisionUI(monto, quien) : null;
-  const fmtCOP = (n) => (n ? fmt(n) : "—");
-
-  return (
-    <div className="ty-calc-box ty-r" style={{ "--td": ".12s" }}>
-      <div className="ty-calc-form">
-        <div className="ty-calc-field">
-          <label>Valor del trato (COP)</label>
-          <input
-            type="text" inputMode="numeric" className="ty-calc-input"
-            placeholder="Ej: 500.000"
-            value={rawMonto ? Number(rawMonto).toLocaleString("es-CO") : ""}
-            onChange={(e) => setRawMonto(e.target.value.replace(/\D/g, ""))}
-          />
-          {rawMonto && monto < 50000 && <span className="ty-calc-warn">Mínimo $50.000</span>}
-        </div>
-        <div className="ty-calc-field">
-          <label>¿Quién paga la comisión?</label>
-          <select className="ty-calc-input" value={quien} onChange={(e) => setQuien(e.target.value)}>
-            <option value="comprador">El comprador</option>
-            <option value="vendedor">El vendedor</option>
-            <option value="compartida">50% cada uno</option>
-          </select>
-        </div>
+    <div
+      className="ty-slide-app"
+      onTouchStart={onTouchStart}
+      onTouchEnd={onTouchEnd}
+    >
+      <div className="ty-ambient" aria-hidden="true">
+        <div className="ty-grid" />
+        <div className="ty-orb ty-orb--1" />
+        <div className="ty-orb ty-orb--2" />
+        <div className="ty-scanline" />
       </div>
-      {calc ? (
-        <div className="ty-calc-result">
-          <div className="ty-calc-row"><span>Valor acordado</span><strong>{fmtCOP(monto)}</strong></div>
-          <div className="ty-calc-row"><span>Comisión TratoYa (4.5% + IMP)</span><strong>{fmtCOP(calc.comision)}</strong></div>
-          <div className="ty-calc-divider" />
-          <div className="ty-calc-row ty-calc-highlight"><span>🛒 Comprador paga en total</span><strong>{fmtCOP(calc.totalPagar)}</strong></div>
-          <div className="ty-calc-row ty-calc-highlight green"><span>📦 Vendedor recibe</span><strong>{fmtCOP(calc.vendedorRecibe)}</strong></div>
-          <p className="ty-calc-note">TratoYa retiene el dinero hasta confirmar la entrega.</p>
-          <button className="ty-button" type="button" onClick={register} style={{ width: "100%", minHeight: 48, marginTop: 4, fontSize: 16 }}>
-            Crear un trato gratis →
-          </button>
+
+      <div className="ty-progress" style={{ width: `${((slide + 1) / TOTAL) * 100}%` }} />
+
+      <header className="ty-topbar">
+        <img src={logo} alt="TratoYa" />
+        <div className="ty-topbar__actions">
+          <button className="ty-ghost-btn" type="button" onClick={login}>Entrar</button>
+          <button className="ty-neon-btn" type="button" onClick={register}>Crear cuenta</button>
         </div>
-      ) : (
-        <div className="ty-calc-empty">
-          <span>💡</span> Ingresa el valor del trato para ver el desglose
-        </div>
-      )}
+      </header>
+
+      <nav className="ty-nav-rail" aria-label="Slides">
+        {Array.from({ length: TOTAL }, (_, i) => (
+          <button
+            key={i}
+            type="button"
+            className={`ty-nav-dot${slide === i ? " active" : ""}`}
+            aria-label={`Slide ${i + 1}`}
+            aria-current={slide === i}
+            onClick={() => go(i)}
+          />
+        ))}
+      </nav>
+
+      <div className="ty-viewport">
+        <AnimatePresence mode="wait" custom={dir}>
+          {slide === 0 && (
+            <SlideWrap key="s0" dir={dir}>
+              <div className="ty-slide">
+                <p className="ty-kicker">Pagos seguros · Colombia</p>
+                <h1 className="ty-mega">
+                  Compra y vende<br /><span>sin miedo.</span>
+                </h1>
+                <p className="ty-sub">
+                  TratoYa retiene el dinero hasta que el trato se cumple. Nadie pierde.
+                </p>
+                <div className="ty-cta-stack">
+                  <motion.button
+                    className="ty-neon-btn ty-cta-mega"
+                    type="button"
+                    onClick={register}
+                    whileHover={{ scale: 1.04 }}
+                    whileTap={{ scale: 0.96 }}
+                  >
+                    Empezar gratis →
+                  </motion.button>
+                </div>
+              </div>
+            </SlideWrap>
+          )}
+
+          {slide === 1 && (
+            <SlideWrap key="s1" dir={dir}>
+              <div className="ty-slide">
+                <p className="ty-kicker">El problema</p>
+                <h2 className="ty-mega">
+                  Pagar directo<br /><span>es un riesgo.</span>
+                </h2>
+                <p className="ty-sub">Estafas, no-shows, disputas sin respaldo. La confianza no basta.</p>
+                <div className="ty-shield-viz">
+                  <span className="ty-shield-node">Comprador</span>
+                  <span className="ty-shield-arrow">→</span>
+                  <span className="ty-shield-node ty-shield-node--core">TratoYa</span>
+                  <span className="ty-shield-arrow">→</span>
+                  <span className="ty-shield-node">Vendedor</span>
+                </div>
+                <p className="ty-sub" style={{ marginTop: 28, color: "var(--ty-neon)", fontWeight: 800 }}>
+                  El dinero solo se mueve cuando ambos cumplen.
+                </p>
+              </div>
+            </SlideWrap>
+          )}
+
+          {slide === 2 && (
+            <SlideWrap key="s2" dir={dir}>
+              <div className="ty-slide">
+                <p className="ty-kicker">Cómo funciona</p>
+                <div className="ty-flow-tabs" role="tablist">
+                  {FLOW.map((s, i) => (
+                    <button
+                      key={s.n}
+                      type="button"
+                      role="tab"
+                      aria-selected={flowStep === i}
+                      className={`ty-flow-tab${flowStep === i ? " active" : ""}`}
+                      onClick={() => setFlowStep(i)}
+                    >
+                      {s.n}
+                    </button>
+                  ))}
+                </div>
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={flowStep}
+                    className="ty-holo"
+                    initial={{ opacity: 0, y: 20, scale: 0.96 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -16, scale: 0.98 }}
+                    transition={{ duration: 0.4, ease: EASE }}
+                  >
+                    <img src={flow.img} alt="" />
+                    <h3 className="ty-flow-title">{flow.title}</h3>
+                    <p className="ty-flow-desc">{flow.desc}</p>
+                  </motion.div>
+                </AnimatePresence>
+              </div>
+            </SlideWrap>
+          )}
+
+          {slide === 3 && (
+            <SlideWrap key="s3" dir={dir}>
+              <div className="ty-slide">
+                <p className="ty-kicker">Transparente</p>
+                <h2 className="ty-mega">
+                  <span>4.5%</span> + IMP.
+                </h2>
+                <p className="ty-sub">Sin sorpresas. Simula tu trato ahora.</p>
+                <div className="ty-mini-calc">
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    placeholder="$ 500.000"
+                    value={monto ? Number(monto).toLocaleString("es-CO") : ""}
+                    onChange={(e) => setMonto(e.target.value.replace(/\D/g, ""))}
+                  />
+                  {calc && (
+                    <motion.div
+                      className="ty-calc-out"
+                      initial={{ opacity: 0, y: 12 }}
+                      animate={{ opacity: 1, y: 0 }}
+                    >
+                      <div><span>Comprador paga</span><strong>{fmt(calc.totalPagar)}</strong></div>
+                      <div><span>Vendedor recibe</span><strong>{fmt(calc.vendedorRecibe)}</strong></div>
+                    </motion.div>
+                  )}
+                </div>
+              </div>
+            </SlideWrap>
+          )}
+
+          {slide === 4 && (
+            <SlideWrap key="s4" dir={dir}>
+              <div className="ty-slide">
+                <p className="ty-kicker">Listo para tu primer trato</p>
+                <h2 className="ty-mega">
+                  Haz el negocio.<br /><span>Nosotros cuidamos.</span>
+                </h2>
+                <p className="ty-sub">Registro gratis. Primer trato en minutos.</p>
+                <div className="ty-cta-stack">
+                  <motion.button
+                    className="ty-neon-btn ty-cta-mega"
+                    type="button"
+                    onClick={register}
+                    whileHover={{ scale: 1.04, boxShadow: "0 0 60px rgba(223,255,54,0.55)" }}
+                    whileTap={{ scale: 0.96 }}
+                  >
+                    Crear cuenta gratis →
+                  </motion.button>
+                  <div className="ty-cta-links">
+                    <a href="/legal/terminos">Términos</a>
+                    <a href="/legal/privacidad">Privacidad</a>
+                    <a href="mailto:soporte@tratoya.com">Soporte</a>
+                  </div>
+                </div>
+              </div>
+            </SlideWrap>
+          )}
+        </AnimatePresence>
+      </div>
+
+      <p className="ty-hint">Scroll · swipe · flechas</p>
+
+      <div className="ty-nav-arrows">
+        <button
+          type="button"
+          className="ty-arrow"
+          aria-label="Anterior"
+          disabled={slide === 0}
+          onClick={() => go(slide - 1)}
+        >
+          ↑
+        </button>
+        <span className="ty-slide-counter">
+          <em>{String(slide + 1).padStart(2, "0")}</em> / {String(TOTAL).padStart(2, "0")}
+        </span>
+        <button
+          type="button"
+          className="ty-arrow"
+          aria-label="Siguiente"
+          disabled={slide === TOTAL - 1}
+          onClick={() => go(slide + 1)}
+        >
+          ↓
+        </button>
+      </div>
     </div>
   );
 }
 
-/* Counter original (mantenido para compatibilidad) */
-function Counter({ value, prefix = "", suffix = "" }) {
-  const [current, setCurrent] = useState(0);
-  useEffect(() => {
-    const duration = 1400, start = performance.now();
-    let frame;
-    const tick = (now) => {
-      const p = Math.min((now - start) / duration, 1);
-      setCurrent(value * (1 - Math.pow(1 - p, 3)));
-      if (p < 1) frame = requestAnimationFrame(tick);
-    };
-    frame = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(frame);
-  }, [value]);
-  return <>{prefix}{Number.isInteger(value) ? Math.round(current) : current.toFixed(1)}{suffix}</>;
-}
-
-/* CountUpMetric — arranca solo cuando entra al viewport */
-function CountUpMetric({ value, prefix = "", suffix = "" }) {
-  const ref = useRef(null);
-  const isInView = useInView(ref, { once: true, margin: "-60px 0px" });
-  const [current, setCurrent] = useState(0);
-  useEffect(() => {
-    if (!isInView) return;
-    const duration = 1400, start = performance.now();
-    let frame;
-    const tick = (now) => {
-      const p = Math.min((now - start) / duration, 1);
-      setCurrent(value * (1 - Math.pow(1 - p, 3)));
-      if (p < 1) frame = requestAnimationFrame(tick);
-    };
-    frame = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(frame);
-  }, [isInView, value]);
-  return <span ref={ref}>{prefix}{Number.isInteger(value) ? Math.round(current) : current.toFixed(1)}{suffix}</span>;
-}
-
-/* SlideInCard — slide desde izquierda o derecha usando useInView */
-function SlideInCard({ children, dir = "left", className = "", style = {} }) {
-  const ref = useRef(null);
-  const isInView = useInView(ref, { once: true, margin: "-60px 0px" });
-  const v = dir === "left" ? fromLeft : fromRight;
+function SlideWrap({ children, dir }) {
   return (
     <motion.div
-      ref={ref} className={className} style={style}
-      variants={v} initial="hidden" animate={isInView ? "show" : "hidden"}
-      whileHover={{ y: -4, transition: { duration: 0.2 } }}
-    >{children}</motion.div>
-  );
-}
-
-function SocialIcon({ name }) {
-  const paths = {
-    facebook: <path d="M29 15h5V7h-6c-7 0-11 4-11 11v5h-6v8h6v17h9V31h7l1-8h-8v-4c0-2 1-4 3-4Z" />,
-    instagram: <><rect x="8" y="8" width="32" height="32" rx="10" /><circle cx="24" cy="24" r="8" /><circle cx="33" cy="15" r="2" /></>,
-  };
-  return (
-    <svg className="ty-social-icon" viewBox="0 0 48 48" aria-hidden="true">
-      <g fill={name === "facebook" ? "currentColor" : "none"} stroke="currentColor" strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round">
-        {paths[name]}
-      </g>
-    </svg>
-  );
-}
-
-function LIcon({ name }) {
-  const paths = {
-    shield:  <><path d="M24 5 39 11v11c0 10-6.4 17-15 21-8.6-4-15-11-15-21V11L24 5Z" /><path d="m17 24 5 5 10-12" /></>,
-    bolt:    <path d="M27 3 10 27h13l-3 18 18-26H25L27 3Z" />,
-    support: <><path d="M10 28v-5a14 14 0 0 1 28 0v5" /><path d="M10 28h7v10h-7zM31 28h7v10h-7z" /><path d="M31 39c-2 2-5 3-9 3" /></>,
-    users:   <><path d="M18 22a7 7 0 1 0 0-14 7 7 0 0 0 0 14ZM34 23a6 6 0 1 0 0-12 6 6 0 0 0 0 12Z" /><path d="M5 40c1-8 6-13 13-13s12 5 13 13M26 31c2-3 5-5 9-5 5 0 9 4 10 11" /></>,
-  };
-  return (
-    <svg className="ty-icon" fill="none" viewBox="0 0 48 48" aria-hidden="true">
-      <g stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">{paths[name]}</g>
-    </svg>
+      style={{ width: "min(1080px, 100%)" }}
+      custom={dir}
+      variants={slideVariants}
+      initial="enter"
+      animate="center"
+      exit="exit"
+    >
+      {children}
+    </motion.div>
   );
 }
