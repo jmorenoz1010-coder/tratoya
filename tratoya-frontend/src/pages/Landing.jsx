@@ -26,6 +26,7 @@ const COMMISSION_PAYERS = [
 
 const FLOW_AUTO_MS = 3000;
 const FLOW_ENTER_MS = 680;
+const FLOW_FADE = { duration: 0.75, ease: [0.4, 0, 0.2, 1] };
 
 const slideVariants = {
   enter: (dir) => ({
@@ -54,13 +55,14 @@ export default function Landing({ goAuth }) {
   const [slide, setSlide] = useState(0);
   const [dir, setDir] = useState(1);
   const [flowStep, setFlowStep] = useState(0);
-  const [flowDir, setFlowDir] = useState(1);
   const [flowSlideReady, setFlowSlideReady] = useState(false);
+  const [flowManual, setFlowManual] = useState(false);
   const [monto, setMonto] = useState("");
   const [quienComision, setQuienComision] = useState("comprador");
   const touchRef = useRef({ y: 0, t: 0 });
+  const flowTouchRef = useRef({ x: 0, y: 0 });
   const wheelLock = useRef(false);
-  const flowPausedRef = useRef(false);
+  const flowManualRef = useRef(false);
 
   const register = () => goAuth("register");
   const login = () => goAuth("login");
@@ -124,46 +126,77 @@ export default function Landing({ goAuth }) {
   const calc = amount >= 50000 ? calcularComisionUI(amount, quienComision) : null;
   const flow = FLOW[flowStep];
 
+  const enableFlowManual = useCallback(() => {
+    flowManualRef.current = true;
+    setFlowManual(true);
+  }, []);
+
   const setFlow = useCallback((next) => {
-    setFlowDir(next > flowStep ? 1 : -1);
+    if (next === flowStep) return;
     setFlowStep(next);
-    flowPausedRef.current = true;
-    setTimeout(() => { flowPausedRef.current = false; }, FLOW_AUTO_MS * 3);
-  }, [flowStep]);
+    enableFlowManual();
+  }, [flowStep, enableFlowManual]);
 
   const nextFlow = useCallback(() => {
-    setFlowDir(1);
     setFlowStep((s) => (s + 1) % FLOW.length);
   }, []);
 
   const prevFlow = useCallback(() => {
-    setFlowDir(-1);
     setFlowStep((s) => (s - 1 + FLOW.length) % FLOW.length);
   }, []);
+
+  const nextFlowManual = useCallback(() => {
+    enableFlowManual();
+    nextFlow();
+  }, [enableFlowManual, nextFlow]);
+
+  const prevFlowManual = useCallback(() => {
+    enableFlowManual();
+    prevFlow();
+  }, [enableFlowManual, prevFlow]);
+
+  const onFlowTouchStart = (e) => {
+    flowTouchRef.current = {
+      x: e.touches[0].clientX,
+      y: e.touches[0].clientY,
+    };
+  };
+
+  const onFlowTouchEnd = (e) => {
+    const dx = flowTouchRef.current.x - e.changedTouches[0].clientX;
+    const dy = flowTouchRef.current.y - e.changedTouches[0].clientY;
+    if (Math.abs(dx) < 48 || Math.abs(dx) < Math.abs(dy)) return;
+    if (dx > 0) nextFlowManual();
+    else prevFlowManual();
+  };
 
   useEffect(() => {
     if (slide !== 2) {
       setFlowSlideReady(false);
+      setFlowManual(false);
+      flowManualRef.current = false;
       return undefined;
     }
 
     setFlowStep(0);
-    setFlowDir(1);
-    flowPausedRef.current = true;
     setFlowSlideReady(false);
+    setFlowManual(false);
+    flowManualRef.current = false;
 
     const readyTimer = setTimeout(() => setFlowSlideReady(true), FLOW_ENTER_MS);
-    const unpauseTimer = setTimeout(() => { flowPausedRef.current = false; }, FLOW_AUTO_MS);
 
-    const id = setInterval(() => {
-      if (flowPausedRef.current) return;
-      nextFlow();
+    let intervalId;
+    const startTimer = setTimeout(() => {
+      intervalId = setInterval(() => {
+        if (flowManualRef.current) return;
+        nextFlow();
+      }, FLOW_AUTO_MS);
     }, FLOW_AUTO_MS);
 
     return () => {
       clearTimeout(readyTimer);
-      clearTimeout(unpauseTimer);
-      clearInterval(id);
+      clearTimeout(startTimer);
+      if (intervalId) clearInterval(intervalId);
     };
   }, [slide, nextFlow]);
 
@@ -271,29 +304,28 @@ export default function Landing({ goAuth }) {
                     </button>
                   ))}
                 </div>
-                <div className="ty-flow-carousel">
+                <div className={`ty-flow-carousel${flowManual ? " ty-flow-carousel--manual" : ""}`}>
                   <button
                     type="button"
-                    className="ty-flow-arrow"
+                    className="ty-flow-arrow ty-flow-arrow--prev"
                     aria-label="Paso anterior"
-                    onClick={() => { flowPausedRef.current = true; prevFlow(); }}
+                    onClick={prevFlowManual}
                   >
-                    ←
+                    <span aria-hidden="true">‹</span>
                   </button>
-                  <div className="ty-flow-stage">
-                    <AnimatePresence mode="wait" custom={flowDir} initial={false}>
+                  <div
+                    className="ty-flow-stage"
+                    onTouchStart={onFlowTouchStart}
+                    onTouchEnd={onFlowTouchEnd}
+                  >
+                    <AnimatePresence mode="sync" initial={false}>
                       <motion.div
                         key={flowStep}
-                        className="ty-holo"
-                        custom={flowDir}
-                        initial={
-                          flowSlideReady
-                            ? { opacity: 0, x: flowDir > 0 ? 40 : -40, scale: 0.98 }
-                            : false
-                        }
-                        animate={{ opacity: 1, x: 0, scale: 1 }}
-                        exit={{ opacity: 0, x: flowDir > 0 ? -40 : 40, scale: 0.98 }}
-                        transition={{ duration: 0.55, ease: EASE }}
+                        className="ty-holo ty-holo--flow"
+                        initial={flowSlideReady ? { opacity: 0 } : false}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={FLOW_FADE}
                       >
                         <img src={flow.img} alt="" decoding="async" />
                         <h3 className="ty-flow-title ty-text-pulse">{flow.title}</h3>
@@ -303,11 +335,11 @@ export default function Landing({ goAuth }) {
                   </div>
                   <button
                     type="button"
-                    className="ty-flow-arrow"
+                    className="ty-flow-arrow ty-flow-arrow--next"
                     aria-label="Paso siguiente"
-                    onClick={() => { flowPausedRef.current = true; nextFlow(); }}
+                    onClick={nextFlowManual}
                   >
-                    →
+                    <span aria-hidden="true">›</span>
                   </button>
                 </div>
               </div>

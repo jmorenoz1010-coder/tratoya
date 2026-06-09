@@ -363,50 +363,75 @@
 }
 
 .ty-flow-stage {
+  position: relative;
   min-width: 0;
   overflow: hidden;
   min-height: clamp(360px, 52vh, 480px);
+  touch-action: pan-y;
+}
+
+.ty-holo--flow {
+  position: absolute;
+  inset: 0;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  will-change: opacity;
 }
 
 .ty-flow-arrow {
-  width: 48px;
-  height: 48px;
+  width: 52px;
+  height: 52px;
   border-radius: 50%;
-  background: var(--ty-glass);
-  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.22);
   color: #fff;
-  font-size: 22px;
+  font-size: 28px;
   line-height: 1;
   display: grid;
   place-items: center;
   backdrop-filter: blur(12px);
-  transition: all 0.2s var(--ty-ease);
+  transition: border-color 0.25s var(--ty-ease), color 0.25s var(--ty-ease), box-shadow 0.25s var(--ty-ease), transform 0.25s var(--ty-ease);
   flex-shrink: 0;
-  animation: tyArrowHint 2.4s ease-in-out infinite;
+  cursor: pointer;
 }
 
-.ty-flow-arrow:hover {
+.ty-flow-arrow span {
+  display: block;
+  margin-top: -2px;
+  font-weight: 300;
+}
+
+.ty-flow-arrow:hover,
+.ty-flow-arrow:focus-visible {
   border-color: var(--ty-neon);
   color: var(--ty-neon);
-  box-shadow: 0 0 24px rgba(158, 216, 25, 0.24);
-  animation: none;
+  box-shadow: 0 0 24px rgba(158, 216, 25, 0.28);
+  transform: scale(1.06);
+}
+
+.ty-flow-carousel:not(.ty-flow-carousel--manual) .ty-flow-arrow--next {
+  animation: tyArrowHint 2.8s ease-in-out infinite;
+}
+
+.ty-flow-carousel:not(.ty-flow-carousel--manual) .ty-flow-arrow--prev {
+  animation: tyArrowHintLeft 2.8s ease-in-out infinite;
+}
+
+.ty-flow-carousel--manual .ty-flow-arrow {
+  border-color: rgba(158, 216, 25, 0.45);
+  box-shadow: 0 0 18px rgba(158, 216, 25, 0.18);
 }
 
 @keyframes tyArrowHint {
-  0%, 100% { transform: translateX(0); opacity: 0.85; }
-  50% { transform: translateX(3px); opacity: 1; }
-}
-
-.ty-flow-carousel .ty-flow-arrow:first-child {
-  animation-name: tyArrowHintLeft;
+  0%, 100% { transform: translateX(0); opacity: 0.9; }
+  50% { transform: translateX(4px); opacity: 1; }
 }
 
 @keyframes tyArrowHintLeft {
-  0%, 100% { transform: translateX(0); opacity: 0.85; }
-  50% { transform: translateX(-3px); opacity: 1; }
+  0%, 100% { transform: translateX(0); opacity: 0.9; }
+  50% { transform: translateX(-4px); opacity: 1; }
 }
 
 /* ── Shield visual (slide 2) ─────────────────────────────── */
@@ -885,12 +910,19 @@
   }
 
   .ty-flow-carousel {
-    grid-template-columns: 1fr;
-    gap: 12px;
+    grid-template-columns: auto 1fr auto;
+    gap: 8px;
+    max-width: 100%;
   }
 
   .ty-flow-arrow {
-    display: none;
+    width: 44px;
+    height: 44px;
+    font-size: 24px;
+  }
+
+  .ty-flow-stage {
+    min-height: clamp(320px, 48vh, 420px);
   }
 
   .ty-commission-pickers__opts {
