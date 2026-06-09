@@ -7,10 +7,12 @@
 .ty-slide-app {
   --ty-void: #030a0b;
   --ty-deep: #071819;
-  --ty-neon: #dfff36;
-  --ty-glow: #9ed819;
+  /* Verde del logo TratoYa (no amarillo/lima) */
+  --ty-neon: #9ed819;
+  --ty-glow: #4ba51c;
+  --ty-green-bright: #93d317;
   --ty-glass: rgba(255, 255, 255, 0.04);
-  --ty-border: rgba(223, 255, 54, 0.18);
+  --ty-border: rgba(158, 216, 25, 0.28);
   --ty-ease: cubic-bezier(0.22, 1, 0.36, 1);
   position: fixed;
   inset: 0;
@@ -33,6 +35,15 @@
   border: 0;
 }
 
+/* Anula navy global de main.css — textos en blanco */
+.ty-slide-app h1,
+.ty-slide-app h2,
+.ty-slide-app h3,
+.ty-slide-app h4,
+.ty-slide-app .ty-flow-title {
+  color: #ffffff !important;
+}
+
 /* ── Ambient background ──────────────────────────────────── */
 .ty-ambient {
   position: absolute;
@@ -45,8 +56,8 @@
   position: absolute;
   inset: -50%;
   background-image:
-    linear-gradient(rgba(223, 255, 54, 0.04) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(223, 255, 54, 0.04) 1px, transparent 1px);
+    linear-gradient(rgba(158, 216, 25, 0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(158, 216, 25, 0.06) 1px, transparent 1px);
   background-size: 64px 64px;
   transform: perspective(500px) rotateX(58deg);
   animation: tyGridDrift 28s linear infinite;
@@ -115,7 +126,7 @@
 .ty-topbar img {
   width: 64px;
   height: auto;
-  filter: drop-shadow(0 0 20px rgba(223, 255, 54, 0.25));
+  filter: drop-shadow(0 0 20px rgba(158, 216, 25, 0.35));
 }
 
 .ty-topbar__actions {
@@ -136,20 +147,20 @@
 .ty-neon-btn {
   padding: 11px 20px;
   border-radius: 999px;
-  background: var(--ty-neon);
-  color: var(--ty-deep);
+  background: linear-gradient(135deg, var(--ty-green-bright) 0%, var(--ty-neon) 55%, var(--ty-glow) 100%);
+  color: #ffffff;
   font-family: "Space Grotesk", sans-serif;
   font-weight: 700;
   font-size: 13px;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  box-shadow: 0 0 32px rgba(223, 255, 54, 0.35);
+  box-shadow: 0 0 32px rgba(158, 216, 25, 0.38);
   transition: transform 0.2s var(--ty-ease), box-shadow 0.2s;
 }
 
 .ty-neon-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 0 48px rgba(223, 255, 54, 0.5);
+  box-shadow: 0 0 48px rgba(158, 216, 25, 0.52);
 }
 
 /* ── Slide viewport ──────────────────────────────────────── */
@@ -214,6 +225,25 @@
   50% { opacity: 0.35; }
 }
 
+@keyframes tyTextPulse {
+  0%, 100% {
+    opacity: 1;
+    filter: brightness(1);
+  }
+  50% {
+    opacity: 0.88;
+    filter: brightness(1.08);
+  }
+}
+
+.ty-text-pulse {
+  animation: tyTextPulse 3.2s ease-in-out infinite;
+}
+
+.ty-text-pulse--delay {
+  animation-delay: 0.6s;
+}
+
 .ty-mega {
   font-family: "Manrope", sans-serif;
   font-size: clamp(40px, 7.5vw, 88px);
@@ -221,14 +251,15 @@
   line-height: 0.95;
   letter-spacing: -0.04em;
   margin: 0;
+  color: #ffffff !important;
 }
 
 .ty-mega span,
 .ty-gradient {
-  background: linear-gradient(135deg, #fff 0%, var(--ty-neon) 55%, var(--ty-glow) 100%);
+  background: linear-gradient(135deg, var(--ty-green-bright) 0%, var(--ty-neon) 50%, var(--ty-glow) 100%);
   -webkit-background-clip: text;
   background-clip: text;
-  color: transparent;
+  color: transparent !important;
 }
 
 .ty-sub {
@@ -253,7 +284,7 @@
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
   box-shadow:
-    0 0 0 1px rgba(223, 255, 54, 0.06) inset,
+    0 0 0 1px rgba(158, 216, 25, 0.1) inset,
     0 32px 80px rgba(0, 0, 0, 0.45);
 }
 
@@ -299,10 +330,10 @@
 }
 
 .ty-flow-tab.active {
-  background: rgba(223, 255, 54, 0.15);
+  background: rgba(158, 216, 25, 0.18);
   border-color: var(--ty-neon);
   color: var(--ty-neon);
-  box-shadow: 0 0 28px rgba(223, 255, 54, 0.2);
+  box-shadow: 0 0 28px rgba(158, 216, 25, 0.28);
   transform: scale(1.06);
 }
 
@@ -320,6 +351,58 @@
   line-height: 1.5;
 }
 
+.ty-flow-carousel {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: clamp(8px, 2vw, 20px);
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.ty-flow-stage {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.ty-flow-arrow {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--ty-glass);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: #fff;
+  font-size: 22px;
+  line-height: 1;
+  display: grid;
+  place-items: center;
+  backdrop-filter: blur(12px);
+  transition: all 0.2s var(--ty-ease);
+  flex-shrink: 0;
+  animation: tyArrowHint 2.4s ease-in-out infinite;
+}
+
+.ty-flow-arrow:hover {
+  border-color: var(--ty-neon);
+  color: var(--ty-neon);
+  box-shadow: 0 0 24px rgba(158, 216, 25, 0.24);
+  animation: none;
+}
+
+@keyframes tyArrowHint {
+  0%, 100% { transform: translateX(0); opacity: 0.85; }
+  50% { transform: translateX(3px); opacity: 1; }
+}
+
+.ty-flow-carousel .ty-flow-arrow:first-child {
+  animation-name: tyArrowHintLeft;
+}
+
+@keyframes tyArrowHintLeft {
+  0%, 100% { transform: translateX(0); opacity: 0.85; }
+  50% { transform: translateX(-3px); opacity: 1; }
+}
+
 /* ── Shield visual (slide 2) ─────────────────────────────── */
 .ty-shield-viz {
   display: flex;
@@ -331,22 +414,64 @@
 }
 
 .ty-shield-node {
-  padding: 16px 20px;
-  border-radius: 16px;
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 6px 14px 6px 6px;
+  border-radius: 999px;
   background: var(--ty-glass);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   font-family: "Space Grotesk", sans-serif;
-  font-size: 13px;
-  font-weight: 600;
-  color: rgba(255, 255, 255, 0.8);
+  font-size: 12px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(10px);
+}
+
+.ty-shield-node__icon {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+  background: rgba(0, 0, 0, 0.22);
+}
+
+.ty-shield-node__icon svg,
+.ty-shield-node__icon img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+
+.ty-shield-node__icon svg {
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.25));
+}
+
+.ty-shield-node__label {
+  line-height: 1;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+  padding-right: 4px;
 }
 
 .ty-shield-node--core {
   border-color: var(--ty-neon);
   color: var(--ty-neon);
-  box-shadow: 0 0 40px rgba(223, 255, 54, 0.2);
-  font-size: 15px;
-  padding: 20px 28px;
+  box-shadow: 0 0 32px rgba(158, 216, 25, 0.28);
+  padding: 7px 16px 7px 7px;
+}
+
+.ty-shield-node--core .ty-shield-node__icon {
+  width: 42px;
+  height: 42px;
+  background: rgba(158, 216, 25, 0.12);
+  box-shadow: 0 0 16px rgba(158, 216, 25, 0.2);
 }
 
 .ty-shield-arrow {
@@ -379,7 +504,7 @@
 
 .ty-mini-calc input:focus {
   border-color: var(--ty-neon);
-  box-shadow: 0 0 0 3px rgba(223, 255, 54, 0.12);
+  box-shadow: 0 0 0 3px rgba(158, 216, 25, 0.18);
 }
 
 .ty-mini-calc input::placeholder {
@@ -391,7 +516,7 @@
   margin-top: 16px;
   padding: 20px;
   border-radius: 16px;
-  background: rgba(223, 255, 54, 0.08);
+  background: rgba(158, 216, 25, 0.1);
   border: 1px solid var(--ty-border);
   display: grid;
   gap: 8px;
@@ -408,6 +533,61 @@
   font-family: "Space Grotesk", sans-serif;
   color: var(--ty-neon);
   font-size: 16px;
+}
+
+.ty-calc-out__note {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.55);
+  padding-bottom: 8px;
+  margin-bottom: 4px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  text-align: center;
+}
+
+.ty-commission-pickers {
+  margin-top: 14px;
+}
+
+.ty-commission-pickers__label {
+  display: block;
+  margin-bottom: 8px;
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.ty-commission-pickers__opts {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.ty-commission-opt {
+  min-height: 42px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.65);
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  transition: all 0.2s var(--ty-ease);
+}
+
+.ty-commission-opt.active {
+  background: rgba(158, 216, 25, 0.16);
+  border-color: var(--ty-neon);
+  color: var(--ty-neon);
+  box-shadow: 0 0 20px rgba(158, 216, 25, 0.2);
+}
+
+.ty-commission-opt:hover:not(.active) {
+  border-color: rgba(255, 255, 255, 0.22);
+  color: #fff;
 }
 
 /* ── CTA slide ───────────────────────────────────────────── */
@@ -516,7 +696,7 @@
 .ty-arrow:hover:not(:disabled) {
   border-color: var(--ty-neon);
   color: var(--ty-neon);
-  box-shadow: 0 0 24px rgba(223, 255, 54, 0.15);
+  box-shadow: 0 0 24px rgba(158, 216, 25, 0.22);
 }
 
 .ty-arrow:disabled {
@@ -539,18 +719,97 @@
   color: var(--ty-neon);
 }
 
-.ty-hint {
-  position: fixed;
-  bottom: 88px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 150;
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 0.14em;
+/* ── Métodos de pago ─────────────────────────────────────── */
+.ty-pay-methods {
+  margin: 28px auto 0;
+  max-width: min(560px, 92vw);
+  width: 100%;
+  text-align: center;
+}
+
+.ty-pay-methods__title {
+  margin: 0 0 16px;
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.28);
-  pointer-events: none;
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.ty-pay-marquee {
+  overflow: hidden;
+  width: 100%;
+  mask-image: linear-gradient(90deg, transparent 0%, #000 10%, #000 90%, transparent 100%);
+  -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 10%, #000 90%, transparent 100%);
+}
+
+.ty-pay-marquee__track {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: max-content;
+  padding: 4px 0;
+  animation: tyPayMarquee 32s linear infinite;
+}
+
+.ty-pay-marquee:hover .ty-pay-marquee__track {
+  animation-play-state: paused;
+}
+
+@keyframes tyPayMarquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+.ty-pay-logo {
+  flex: 0 0 auto;
+  width: 112px;
+  height: 52px;
+  padding: 8px 12px;
+  border-radius: 16px;
+  background: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.14);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ty-pay-logo img {
+  display: block;
+  margin: 0 auto;
+  height: auto;
+  width: auto;
+  max-width: 100%;
+  max-height: 28px;
+  object-fit: contain;
+  object-position: center;
+}
+
+.ty-pay-logo--nequi img {
+  max-height: 24px;
+}
+
+.ty-pay-logo--bancolombia img {
+  max-height: 22px;
+}
+
+.ty-pay-logo--davivienda img {
+  max-height: 22px;
+}
+
+.ty-pay-logo--pse {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  padding: 4px 0;
+  min-width: auto;
+}
+
+.ty-pay-logo--pse img {
+  max-height: 52px;
+  max-width: 52px;
 }
 
 /* ── Responsive ──────────────────────────────────────────── */
@@ -597,12 +856,39 @@
     width: 42px;
     height: 42px;
   }
+
+  .ty-pay-logo {
+    width: 96px;
+    height: 46px;
+    padding: 6px 10px;
+  }
+
+  .ty-pay-logo--pse img {
+    max-height: 46px;
+    max-width: 46px;
+  }
+
+  .ty-flow-carousel {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .ty-flow-arrow {
+    display: none;
+  }
+
+  .ty-commission-pickers__opts {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .ty-grid,
   .ty-orb,
-  .ty-kicker::before {
+  .ty-kicker::before,
+  .ty-text-pulse,
+  .ty-flow-arrow,
+  .ty-pay-marquee__track {
     animation: none;
   }
 }

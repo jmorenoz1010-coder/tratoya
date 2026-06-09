@@ -13,10 +13,18 @@ const TOTAL = 5;
 
 const FLOW = [
   { n: "01", title: "Acuerdan", desc: "Precio y condiciones. Un link. Listo.", img: stepPaymentProtected },
-  { n: "02", title: "Paga", desc: "El dinero va a TratoYa, no al vendedor.", img: stepServiceDelivery },
+  { n: "02", title: "Paga", desc: "Paga fácil por Nequi, PSE o Bancolombia. El dinero va a TratoYa, no al vendedor.", img: stepServiceDelivery },
   { n: "03", title: "Entrega", desc: "Con el pago asegurado, se cumple el trato.", img: stepConfirmation },
   { n: "04", title: "Cobra", desc: "Confirmada la entrega → dinero liberado.", img: stepPaymentRelease },
 ];
+
+const COMMISSION_PAYERS = [
+  { id: "comprador", label: "Comprador" },
+  { id: "vendedor", label: "Vendedor" },
+  { id: "compartida", label: "50 / 50" },
+];
+
+const FLOW_AUTO_MS = 2000;
 
 const slideVariants = {
   enter: (dir) => ({
@@ -45,9 +53,12 @@ export default function Landing({ goAuth }) {
   const [slide, setSlide] = useState(0);
   const [dir, setDir] = useState(1);
   const [flowStep, setFlowStep] = useState(0);
+  const [flowDir, setFlowDir] = useState(1);
   const [monto, setMonto] = useState("");
+  const [quienComision, setQuienComision] = useState("comprador");
   const touchRef = useRef({ y: 0, t: 0 });
   const wheelLock = useRef(false);
+  const flowPausedRef = useRef(false);
 
   const register = () => goAuth("register");
   const login = () => goAuth("login");
@@ -101,8 +112,34 @@ export default function Landing({ goAuth }) {
   };
 
   const amount = Number(monto.replace(/\D/g, "")) || 0;
-  const calc = amount >= 50000 ? calcularComisionUI(amount, "comprador") : null;
+  const calc = amount >= 50000 ? calcularComisionUI(amount, quienComision) : null;
   const flow = FLOW[flowStep];
+
+  const setFlow = useCallback((next) => {
+    setFlowDir(next > flowStep ? 1 : -1);
+    setFlowStep(next);
+    flowPausedRef.current = true;
+    setTimeout(() => { flowPausedRef.current = false; }, FLOW_AUTO_MS * 3);
+  }, [flowStep]);
+
+  const nextFlow = useCallback(() => {
+    setFlowDir(1);
+    setFlowStep((s) => (s + 1) % FLOW.length);
+  }, []);
+
+  const prevFlow = useCallback(() => {
+    setFlowDir(-1);
+    setFlowStep((s) => (s - 1 + FLOW.length) % FLOW.length);
+  }, []);
+
+  useEffect(() => {
+    if (slide !== 2) return undefined;
+    const id = setInterval(() => {
+      if (flowPausedRef.current) return;
+      nextFlow();
+    }, FLOW_AUTO_MS);
+    return () => clearInterval(id);
+  }, [slide, nextFlow]);
 
   return (
     <div
@@ -145,13 +182,14 @@ export default function Landing({ goAuth }) {
           {slide === 0 && (
             <SlideWrap key="s0" dir={dir}>
               <div className="ty-slide">
-                <p className="ty-kicker">Pagos seguros · Colombia</p>
-                <h1 className="ty-mega">
+                <p className="ty-kicker ty-text-pulse">Intermediario de pagos</p>
+                <h1 className="ty-mega ty-text-pulse">
                   Compra y vende<br /><span>sin miedo.</span>
                 </h1>
-                <p className="ty-sub">
+                <p className="ty-sub ty-text-pulse ty-text-pulse--delay">
                   TratoYa retiene el dinero hasta que el trato se cumple. Nadie pierde.
                 </p>
+                <PaymentMethods />
                 <div className="ty-cta-stack">
                   <motion.button
                     className="ty-neon-btn ty-cta-mega"
@@ -170,17 +208,17 @@ export default function Landing({ goAuth }) {
           {slide === 1 && (
             <SlideWrap key="s1" dir={dir}>
               <div className="ty-slide">
-                <p className="ty-kicker">El problema</p>
-                <h2 className="ty-mega">
+                <p className="ty-kicker ty-text-pulse">El problema</p>
+                <h2 className="ty-mega ty-text-pulse">
                   Pagar directo<br /><span>es un riesgo.</span>
                 </h2>
-                <p className="ty-sub">Estafas, no-shows, disputas sin respaldo. La confianza no basta.</p>
+                <p className="ty-sub ty-text-pulse ty-text-pulse--delay">Estafas, no-shows, disputas sin respaldo. La confianza no basta.</p>
                 <div className="ty-shield-viz">
-                  <span className="ty-shield-node">Comprador</span>
-                  <span className="ty-shield-arrow">→</span>
-                  <span className="ty-shield-node ty-shield-node--core">TratoYa</span>
-                  <span className="ty-shield-arrow">→</span>
-                  <span className="ty-shield-node">Vendedor</span>
+                  <ShieldNode label="Comprador" icon={<BuyerIcon />} />
+                  <span className="ty-shield-arrow" aria-hidden="true">→</span>
+                  <ShieldNode label="TratoYa" logoSrc={logo} core />
+                  <span className="ty-shield-arrow" aria-hidden="true">→</span>
+                  <ShieldNode label="Vendedor" icon={<SellerIcon />} />
                 </div>
                 <p className="ty-sub" style={{ marginTop: 28, color: "var(--ty-neon)", fontWeight: 800 }}>
                   El dinero solo se mueve cuando ambos cumplen.
@@ -192,8 +230,8 @@ export default function Landing({ goAuth }) {
           {slide === 2 && (
             <SlideWrap key="s2" dir={dir}>
               <div className="ty-slide">
-                <p className="ty-kicker">Cómo funciona</p>
-                <div className="ty-flow-tabs" role="tablist">
+                <p className="ty-kicker ty-text-pulse">Cómo funciona</p>
+                <div className="ty-flow-tabs" role="tablist" aria-label="Pasos del flujo">
                   {FLOW.map((s, i) => (
                     <button
                       key={s.n}
@@ -201,26 +239,47 @@ export default function Landing({ goAuth }) {
                       role="tab"
                       aria-selected={flowStep === i}
                       className={`ty-flow-tab${flowStep === i ? " active" : ""}`}
-                      onClick={() => setFlowStep(i)}
+                      onClick={() => setFlow(i)}
                     >
                       {s.n}
                     </button>
                   ))}
                 </div>
-                <AnimatePresence mode="wait">
-                  <motion.div
-                    key={flowStep}
-                    className="ty-holo"
-                    initial={{ opacity: 0, y: 20, scale: 0.96 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: -16, scale: 0.98 }}
-                    transition={{ duration: 0.4, ease: EASE }}
+                <div className="ty-flow-carousel">
+                  <button
+                    type="button"
+                    className="ty-flow-arrow"
+                    aria-label="Paso anterior"
+                    onClick={() => { flowPausedRef.current = true; prevFlow(); }}
                   >
-                    <img src={flow.img} alt="" />
-                    <h3 className="ty-flow-title">{flow.title}</h3>
-                    <p className="ty-flow-desc">{flow.desc}</p>
-                  </motion.div>
-                </AnimatePresence>
+                    ←
+                  </button>
+                  <div className="ty-flow-stage">
+                    <AnimatePresence mode="wait" custom={flowDir}>
+                      <motion.div
+                        key={flowStep}
+                        className="ty-holo"
+                        custom={flowDir}
+                        initial={{ opacity: 0, x: flowDir > 0 ? 56 : -56, scale: 0.96 }}
+                        animate={{ opacity: 1, x: 0, scale: 1 }}
+                        exit={{ opacity: 0, x: flowDir > 0 ? -56 : 56, scale: 0.98 }}
+                        transition={{ duration: 0.45, ease: EASE }}
+                      >
+                        <img src={flow.img} alt="" />
+                        <h3 className="ty-flow-title ty-text-pulse">{flow.title}</h3>
+                        <p className="ty-flow-desc ty-text-pulse ty-text-pulse--delay">{flow.desc}</p>
+                      </motion.div>
+                    </AnimatePresence>
+                  </div>
+                  <button
+                    type="button"
+                    className="ty-flow-arrow"
+                    aria-label="Paso siguiente"
+                    onClick={() => { flowPausedRef.current = true; nextFlow(); }}
+                  >
+                    →
+                  </button>
+                </div>
               </div>
             </SlideWrap>
           )}
@@ -228,11 +287,11 @@ export default function Landing({ goAuth }) {
           {slide === 3 && (
             <SlideWrap key="s3" dir={dir}>
               <div className="ty-slide">
-                <p className="ty-kicker">Transparente</p>
-                <h2 className="ty-mega">
+                <p className="ty-kicker ty-text-pulse">Transparente</p>
+                <h2 className="ty-mega ty-text-pulse">
                   <span>4.5%</span> + IMP.
                 </h2>
-                <p className="ty-sub">Sin sorpresas. Simula tu trato ahora.</p>
+                <p className="ty-sub ty-text-pulse ty-text-pulse--delay">Sin sorpresas. Simula tu trato ahora.</p>
                 <div className="ty-mini-calc">
                   <input
                     type="text"
@@ -241,12 +300,34 @@ export default function Landing({ goAuth }) {
                     value={monto ? Number(monto).toLocaleString("es-CO") : ""}
                     onChange={(e) => setMonto(e.target.value.replace(/\D/g, ""))}
                   />
+                  <div className="ty-commission-pickers" role="group" aria-label="Quién paga la comisión">
+                    <span className="ty-commission-pickers__label">La comisión la paga</span>
+                    <div className="ty-commission-pickers__opts">
+                      {COMMISSION_PAYERS.map(({ id, label }) => (
+                        <button
+                          key={id}
+                          type="button"
+                          className={`ty-commission-opt${quienComision === id ? " active" : ""}`}
+                          aria-pressed={quienComision === id}
+                          onClick={() => setQuienComision(id)}
+                        >
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                   {calc && (
                     <motion.div
                       className="ty-calc-out"
                       initial={{ opacity: 0, y: 12 }}
                       animate={{ opacity: 1, y: 0 }}
+                      key={`${amount}-${quienComision}`}
                     >
+                      <div className="ty-calc-out__note">
+                        {quienComision === "comprador" && "Comisión incluida en lo que paga el comprador"}
+                        {quienComision === "vendedor" && "Comisión descontada de lo que recibe el vendedor"}
+                        {quienComision === "compartida" && "Comisión dividida 50% comprador · 50% vendedor"}
+                      </div>
                       <div><span>Comprador paga</span><strong>{fmt(calc.totalPagar)}</strong></div>
                       <div><span>Vendedor recibe</span><strong>{fmt(calc.vendedorRecibe)}</strong></div>
                     </motion.div>
@@ -259,17 +340,17 @@ export default function Landing({ goAuth }) {
           {slide === 4 && (
             <SlideWrap key="s4" dir={dir}>
               <div className="ty-slide">
-                <p className="ty-kicker">Listo para tu primer trato</p>
-                <h2 className="ty-mega">
+                <p className="ty-kicker ty-text-pulse">Listo para tu primer trato</p>
+                <h2 className="ty-mega ty-text-pulse">
                   Haz el negocio.<br /><span>Nosotros cuidamos.</span>
                 </h2>
-                <p className="ty-sub">Registro gratis. Primer trato en minutos.</p>
+                <p className="ty-sub ty-text-pulse ty-text-pulse--delay">Registro gratis. Primer trato en minutos.</p>
                 <div className="ty-cta-stack">
                   <motion.button
                     className="ty-neon-btn ty-cta-mega"
                     type="button"
                     onClick={register}
-                    whileHover={{ scale: 1.04, boxShadow: "0 0 60px rgba(223,255,54,0.55)" }}
+                    whileHover={{ scale: 1.04, boxShadow: "0 0 60px rgba(158,216,25,0.55)" }}
                     whileTap={{ scale: 0.96 }}
                   >
                     Crear cuenta gratis →
@@ -285,8 +366,6 @@ export default function Landing({ goAuth }) {
           )}
         </AnimatePresence>
       </div>
-
-      <p className="ty-hint">Scroll · swipe · flechas</p>
 
       <div className="ty-nav-arrows">
         <button
@@ -312,6 +391,73 @@ export default function Landing({ goAuth }) {
         </button>
       </div>
     </div>
+  );
+}
+
+const PAYMENT_BRANDS = [
+  { name: "Nequi", src: "/brand-nequi.svg", cls: "ty-pay-logo--nequi" },
+  { name: "Bancolombia", src: "/brand-bancolombia.svg", cls: "ty-pay-logo--bancolombia" },
+  { name: "Davivienda", src: "/brand-davivienda.svg", cls: "ty-pay-logo--davivienda" },
+  { name: "PSE — Pagos Seguros en Línea", src: "/brand-pse.png", cls: "ty-pay-logo--pse" },
+];
+
+function PaymentMethods() {
+  const track = [...PAYMENT_BRANDS, ...PAYMENT_BRANDS];
+
+  return (
+    <div className="ty-pay-methods">
+      <p className="ty-pay-methods__title">Paga fácil con</p>
+      <div className="ty-pay-marquee" aria-label="Métodos de pago disponibles">
+        <div className="ty-pay-marquee__track">
+          {track.map(({ name, src, cls }, i) => (
+            <div className={`ty-pay-logo ${cls}`} key={`${name}-${i}`}>
+              <img src={src} alt={name} loading="lazy" />
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ShieldNode({ label, icon, logoSrc, core = false }) {
+  return (
+    <motion.span
+      className={`ty-shield-node${core ? " ty-shield-node--core" : ""}`}
+      initial={{ opacity: 0, scale: 0.88 }}
+      animate={{ opacity: 1, scale: 1 }}
+      whileHover={{ scale: 1.04 }}
+      transition={{ duration: 0.4, ease: EASE }}
+    >
+      <span className="ty-shield-node__icon" aria-hidden="true">
+        {logoSrc ? <img src={logoSrc} alt="" /> : icon}
+      </span>
+      <span className="ty-shield-node__label">{label}</span>
+    </motion.span>
+  );
+}
+
+function BuyerIcon() {
+  return (
+    <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="20" cy="20" r="20" fill="#1a4a6e" />
+      <circle cx="20" cy="14.5" r="6" fill="#7ec8ff" />
+      <path d="M9 33c0-6 4.9-10 11-10s11 4 11 10" fill="#5eb8ff" />
+    </svg>
+  );
+}
+
+function SellerIcon() {
+  return (
+    <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="20" cy="20" r="20" fill="#5c3a10" />
+      <circle cx="15" cy="14" r="4.5" fill="#ffcc80" />
+      <path d="M8 30c0-4.5 3.2-7.5 7-7.5s7 3 7 7.5" fill="#ffb74d" />
+      <path d="M24 22h9l-1.5 9H18.5L17 22h7z" fill="#f4a340" stroke="#fff3e0" strokeWidth="1" />
+      <path d="M24 22l1.8-5.5h5.4L33 22" fill="#e87828" />
+      <circle cx="27.5" cy="29" r="1.2" fill="#fff" />
+      <circle cx="31.5" cy="29" r="1.2" fill="#fff" />
+    </svg>
   );
 }
 
