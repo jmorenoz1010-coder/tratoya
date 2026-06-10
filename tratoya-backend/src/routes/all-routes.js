@@ -1914,7 +1914,6 @@ adminRouter.post('/users/:id/revoke-sessions', requireSuperadmin, async (req, re
 });
 
 adminRouter.delete('/users/:id', async (req, res, next) => {
-  const transaction = await require('../config/database').sequelize.transaction();
   try {
     const {
       User: UserModel,
@@ -1927,21 +1926,17 @@ adminRouter.delete('/users/:id', async (req, res, next) => {
     const canDelete = req.user.email === 'admin@tratoya.com' || req.user.rol === 'superadmin';
 
     if (!canDelete) {
-      await transaction.rollback();
       return res.status(403).json({ success: false, message: 'Solo el administrador principal puede eliminar usuarios.' });
     }
     if (confirmationCode !== expectedCode) {
-      await transaction.rollback();
       return res.status(403).json({ success: false, message: 'Código de confirmación incorrecto.' });
     }
     if (req.user.id === req.params.id) {
-      await transaction.rollback();
       return res.status(400).json({ success: false, message: 'No puedes eliminar tu propia cuenta administrativa.' });
     }
 
-    const user = await UserModel.findByPk(req.params.id, { transaction });
+    const user = await UserModel.findByPk(req.params.id);
     if (!user) {
-      await transaction.rollback();
       return res.status(404).json({ success: false, message: 'Usuario no encontrado.' });
     }
     const activeDeals = await Trato.count({
@@ -1949,10 +1944,8 @@ adminRouter.delete('/users/:id', async (req, res, next) => {
         [Op.or]: [{ comprador_id: user.id }, { vendedor_id: user.id }],
         estado: { [Op.notIn]: ['completado', 'cancelado', 'expirado'] },
       },
-      transaction,
     });
     if (activeDeals > 0) {
-      await transaction.rollback();
       return res.status(409).json({
         success: false,
         message: `No puedes eliminar este usuario: tiene ${activeDeals} trato(s) activo(s). Resuélvelos primero.`,
@@ -1960,8 +1953,8 @@ adminRouter.delete('/users/:id', async (req, res, next) => {
     }
 
     await Promise.all([
-      CuentaModel.destroy({ where: { usuario_id: user.id }, transaction }),
-      NotificacionModel.destroy({ where: { usuario_id: user.id }, transaction }),
+      CuentaModel.destroy({ where: { usuario_id: user.id } }),
+      NotificacionModel.destroy({ where: { usuario_id: user.id } }),
     ]);
     await user.update({
       nombre: 'Usuario',
@@ -1975,12 +1968,10 @@ adminRouter.delete('/users/:id', async (req, res, next) => {
       refresh_token: null,
       is_active: false,
       is_blocked: true,
-    }, { transaction });
-    await user.destroy({ transaction });
-    await transaction.commit();
+    });
+    await user.destroy();
     res.json({ success: true, message: 'Usuario eliminado y datos personales anonimizados.' });
   } catch (err) {
-    await transaction.rollback();
     next(err);
   }
 });
