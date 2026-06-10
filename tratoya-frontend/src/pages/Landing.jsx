@@ -12,6 +12,17 @@ const EASE = [0.22, 1, 0.36, 1];
 const TOTAL = 8;
 const FLOW_SLIDE = 3;
 
+// Arranque de la secuencia cinematográfica del hero (1s tras cargar)
+const HERO_T = 1.0;
+// Trayectorias de las partículas de la detonación (determinísticas)
+const BOOM_PARTICLES = [
+  { x: -150, y: -84, s: 1 }, { x: 142, y: -66, s: 0.7 }, { x: -98, y: -120, s: 0.85 },
+  { x: 118, y: -116, s: 0.6 }, { x: -170, y: 12, s: 0.65 }, { x: 168, y: 24, s: 0.9 },
+  { x: -120, y: 84, s: 0.75 }, { x: 132, y: 92, s: 0.6 }, { x: -52, y: -150, s: 0.7 },
+  { x: 58, y: -142, s: 0.95 }, { x: -34, y: 118, s: 0.6 }, { x: 44, y: 128, s: 0.8 },
+  { x: -188, y: -40, s: 0.55 }, { x: 192, y: -28, s: 0.7 },
+];
+
 const FLOW = [
   { n: "01", title: "Acuerdan el trato", desc: "Precio, condiciones y plazos. Un link compartido. Listo.", img: stepPaymentProtected },
   { n: "02", title: "El comprador paga", desc: "Nequi, PSE, Bancolombia o Davivienda. El dinero va a TratoYa, no al vendedor.", img: stepServiceDelivery },
@@ -87,6 +98,7 @@ export default function Landing({ goAuth }) {
   const [slide, setSlide] = useState(0);
   const [dir, setDir] = useState(1);
   const [flowStep, setFlowStep] = useState(0);
+  const [flowDir, setFlowDir] = useState(1);
   const [flowSlideReady, setFlowSlideReady] = useState(false);
   const [flowManual, setFlowManual] = useState(false);
   const [monto, setMonto] = useState("");
@@ -181,17 +193,23 @@ export default function Landing({ goAuth }) {
     if (slide !== 5 || autoSimDoneRef.current) return undefined;
     const timers = autoSimTimersRef.current;
     setAutoSimRunning(true);
-    // Tecleo dígito a dígito (efecto máquina de escribir)
+    // Tecleo suave dígito a dígito (240ms por tecla)
+    const TYPE_MS = 240;
     AUTO_SIM_VALUE.split("").forEach((_, i) => {
-      timers.push(setTimeout(() => setMonto(AUTO_SIM_VALUE.slice(0, i + 1)), 900 + i * 160));
+      timers.push(setTimeout(() => setMonto(AUTO_SIM_VALUE.slice(0, i + 1)), 1200 + i * TYPE_MS));
     });
-    // Mantiene el desglose visible y luego limpia la barra
-    const typedAt = 900 + AUTO_SIM_VALUE.length * 160;
+    const typedAt = 1200 + AUTO_SIM_VALUE.length * TYPE_MS;
+    // Recorre los 3 escenarios de comisión, con pausa para leer cada uno
+    const SCENARIO_MS = 1900;
+    timers.push(setTimeout(() => setQuienComision("vendedor"), typedAt + SCENARIO_MS));
+    timers.push(setTimeout(() => setQuienComision("compartida"), typedAt + SCENARIO_MS * 2));
+    timers.push(setTimeout(() => setQuienComision("comprador"), typedAt + SCENARIO_MS * 3));
+    // Cierra: limpia la barra y le entrega el control al usuario
     timers.push(setTimeout(() => {
       setMonto("");
       autoSimDoneRef.current = true;
       setAutoSimRunning(false);
-    }, typedAt + 3000));
+    }, typedAt + SCENARIO_MS * 3 + 900));
     return () => {
       timers.forEach(clearTimeout);
       autoSimTimersRef.current = [];
@@ -211,15 +229,18 @@ export default function Landing({ goAuth }) {
 
   const setFlow = useCallback((next) => {
     if (next === flowStep) return;
+    setFlowDir(next > flowStep ? 1 : -1);
     setFlowStep(next);
     enableFlowManual();
   }, [flowStep, enableFlowManual]);
 
   const nextFlow = useCallback(() => {
+    setFlowDir(1);
     setFlowStep((s) => (s + 1) % FLOW.length);
   }, []);
 
   const prevFlow = useCallback(() => {
+    setFlowDir(-1);
     setFlowStep((s) => (s - 1 + FLOW.length) % FLOW.length);
   }, []);
 
@@ -320,21 +341,80 @@ export default function Landing({ goAuth }) {
           {slide === 0 && (
             <SlideWrap key="s0" dir={dir} fullBleed>
               <div className="ty-slide ty-slide--hero">
-                <p className="ty-kicker ty-text-pulse">Intermediario de pagos</p>
-                <h1 className="ty-mega ty-mega--hero ty-text-pulse">
-                  Compra y vende<br /><span>sin miedo.</span>
-                </h1>
+                <HeroBoom />
+
+                <motion.p
+                  className="ty-kicker"
+                  initial={{ opacity: 0, y: -16, letterSpacing: "0.55em" }}
+                  animate={{ opacity: 1, y: 0, letterSpacing: "0.18em" }}
+                  transition={{ delay: HERO_T + 1.85, duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+                >
+                  Intermediario de pagos
+                </motion.p>
+
+                {/* Titular con sacudida de cámara al impactar las palabras */}
+                <motion.h1
+                  className="ty-mega ty-mega--hero"
+                  animate={{ x: [0, -7, 6, -4, 2, 0], y: [0, 3, -2, 2, -1, 0] }}
+                  transition={{ delay: HERO_T + 0.5, duration: 0.5, ease: "easeOut" }}
+                >
+                  <span className="ty-heroline">
+                    {["Compra", "y", "vende"].map((w, i) => (
+                      <motion.span
+                        key={`${w}-${i}`}
+                        className="ty-zoomword"
+                        initial={{ opacity: 0, scale: 3.4, filter: "blur(18px)" }}
+                        animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
+                        transition={{ delay: HERO_T + 0.1 + i * 0.17, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+                      >
+                        {w}
+                      </motion.span>
+                    ))}
+                  </span>
+                  <br />
+                  <span className="ty-hero-accent">
+                    {"sin miedo.".split("").map((ch, i) => (
+                      <motion.span
+                        key={`ch-${i}`}
+                        className="ty-glitchletter"
+                        initial={{ opacity: 0, y: 28, skewX: -20, filter: "blur(9px)" }}
+                        animate={{ opacity: 1, y: 0, skewX: 0, filter: "blur(0px)" }}
+                        transition={{ delay: HERO_T + 0.82 + i * 0.05, duration: 0.36, ease: [0.16, 1, 0.3, 1] }}
+                      >
+                        {ch === " " ? " " : ch}
+                      </motion.span>
+                    ))}
+                    <motion.span
+                      className="ty-laser"
+                      aria-hidden="true"
+                      initial={{ scaleX: 0 }}
+                      animate={{ scaleX: 1 }}
+                      transition={{ delay: HERO_T + 1.4, duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
+                    />
+                  </span>
+                </motion.h1>
+
                 <HeroShowcase />
-                <p className="ty-sub ty-sub--hero ty-text-pulse ty-text-pulse--delay">
+
+                <motion.p
+                  className="ty-sub ty-sub--hero"
+                  initial={{ opacity: 0, y: 16, filter: "blur(6px)" }}
+                  animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+                  transition={{ delay: HERO_T + 1.75, duration: 0.5, ease: EASE }}
+                >
                   TratoYa retiene el dinero hasta que el trato se cumple.
-                </p>
+                </motion.p>
+
                 <div className="ty-cta-stack ty-cta-stack--hero">
                   <motion.button
-                    className="ty-neon-btn ty-cta-mega"
+                    className="ty-neon-btn ty-cta-mega ty-cta-finale"
                     type="button"
                     onClick={register}
-                    whileHover={{ scale: 1.04 }}
-                    whileTap={{ scale: 0.96 }}
+                    initial={{ opacity: 0, scale: 0.45, y: 24 }}
+                    animate={{ opacity: 1, scale: [0.45, 1.1, 1], y: 0 }}
+                    transition={{ delay: HERO_T + 1.95, duration: 0.55, times: [0, 0.7, 1], ease: [0.16, 1, 0.3, 1] }}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
                   >
                     Empezar gratis →
                   </motion.button>
@@ -353,7 +433,7 @@ export default function Landing({ goAuth }) {
                 <p className="ty-sub ty-text-pulse ty-text-pulse--delay">
                   Plataforma colombiana que custodia el pago entre comprador y vendedor.
                 </p>
-                <InfoGrid items={WHAT_IS} />
+                <OrbitShield />
                 <TransferBrands />
               </div>
             </SlideWrap>
@@ -395,6 +475,14 @@ export default function Landing({ goAuth }) {
                     </button>
                   ))}
                 </div>
+                <div className="ty-flow-progress" aria-hidden="true">
+                  <motion.span
+                    key={`prog-${flowStep}`}
+                    initial={{ scaleX: 0 }}
+                    animate={{ scaleX: 1 }}
+                    transition={{ duration: FLOW_AUTO_MS / 1000, ease: "linear" }}
+                  />
+                </div>
                 <div className={`ty-flow-carousel${flowManual ? " ty-flow-carousel--manual" : ""}`}>
                   <button
                     type="button"
@@ -413,14 +501,51 @@ export default function Landing({ goAuth }) {
                       <motion.div
                         key={flowStep}
                         className="ty-holo ty-holo--flow"
-                        initial={flowSlideReady ? { opacity: 0 } : false}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        transition={FLOW_FADE}
+                        initial={flowSlideReady
+                          ? { opacity: 0, x: flowDir > 0 ? 74 : -74, rotateY: flowDir > 0 ? 30 : -30, scale: 0.88, filter: "blur(8px)" }
+                          : false}
+                        animate={{ opacity: 1, x: 0, rotateY: 0, scale: 1, filter: "blur(0px)" }}
+                        exit={{ opacity: 0, x: flowDir > 0 ? -54 : 54, rotateY: flowDir > 0 ? -20 : 20, scale: 0.93, filter: "blur(6px)" }}
+                        transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
                       >
-                        <img src={FLOW[flowStep].img} alt="" decoding="async" />
-                        <h3 className="ty-flow-title ty-text-pulse">{FLOW[flowStep].title}</h3>
-                        <p className="ty-flow-desc ty-text-pulse ty-text-pulse--delay">{FLOW[flowStep].desc}</p>
+                        <motion.span
+                          className="ty-flow-stamp"
+                          aria-hidden="true"
+                          initial={{ opacity: 0, scale: 2.6, rotate: -16 }}
+                          animate={{ opacity: 1, scale: 1, rotate: -8 }}
+                          transition={{ delay: 0.22, duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+                        >
+                          {FLOW[flowStep].n}
+                        </motion.span>
+                        <motion.img
+                          src={FLOW[flowStep].img}
+                          alt=""
+                          decoding="async"
+                          initial={{ scale: 1.18, y: 10 }}
+                          animate={{ scale: 1, y: 0 }}
+                          transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+                        />
+                        <h3 className="ty-flow-title">
+                          {FLOW[flowStep].title.split(" ").map((w, i) => (
+                            <motion.span
+                              key={`${w}-${i}`}
+                              className="ty-zoomword"
+                              initial={{ opacity: 0, y: 16 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              transition={{ delay: 0.18 + i * 0.06, duration: 0.35, ease: EASE }}
+                            >
+                              {w}
+                            </motion.span>
+                          ))}
+                        </h3>
+                        <motion.p
+                          className="ty-flow-desc"
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: 0.32, duration: 0.4, ease: EASE }}
+                        >
+                          {FLOW[flowStep].desc}
+                        </motion.p>
                       </motion.div>
                     </AnimatePresence>
                   </div>
@@ -485,7 +610,10 @@ export default function Landing({ goAuth }) {
                           type="button"
                           className={`ty-commission-opt${quienComision === id ? " active" : ""}`}
                           aria-pressed={quienComision === id}
-                          onClick={() => setQuienComision(id)}
+                          onClick={() => {
+                            if (autoSimRunning) cancelAutoSim();
+                            setQuienComision(id);
+                          }}
                         >
                           {label}
                         </button>
@@ -548,28 +676,62 @@ export default function Landing({ goAuth }) {
                   aria-hidden="true"
                   initial={{ opacity: 0, scale: 0.2 }}
                   animate={{ opacity: [0, 0.55, 0], scale: [0.2, 1.6, 2.1] }}
-                  transition={{ delay: 0.95, duration: 1.1, ease: "easeOut" }}
+                  transition={{ delay: 1.25, duration: 1.1, ease: "easeOut" }}
                 />
+
+                {/* Logo 3D: reveal con rebote y flotación permanente */}
+                <motion.div
+                  className="ty-finale-logo"
+                  animate={{ y: [0, -9, 0] }}
+                  transition={{ delay: 1.3, duration: 3.4, repeat: Infinity, ease: "easeInOut" }}
+                >
+                  <motion.img
+                    src="/finale-icon.png"
+                    alt=""
+                    initial={{ opacity: 0, scale: 0.15, rotate: -22, filter: "blur(12px)" }}
+                    animate={{ opacity: 1, scale: [0.15, 1.14, 1], rotate: 0, filter: "blur(0px)" }}
+                    transition={{ delay: 0.1, duration: 0.75, times: [0, 0.68, 1], ease: [0.16, 1, 0.3, 1] }}
+                  />
+                  <motion.span
+                    className="ty-finale-logo__halo"
+                    aria-hidden="true"
+                    initial={{ opacity: 0, scale: 0.3 }}
+                    animate={{ opacity: [0, 0.8, 0], scale: [0.3, 1.7, 2.2] }}
+                    transition={{ delay: 0.55, duration: 1, ease: "easeOut" }}
+                  />
+                </motion.div>
 
                 <motion.p
                   className="ty-kicker"
                   initial={{ opacity: 0, letterSpacing: "0.6em" }}
                   animate={{ opacity: 1, letterSpacing: "0.18em" }}
-                  transition={{ delay: 0.15, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+                  transition={{ delay: 0.5, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
                 >
                   Listo para tu primer trato
                 </motion.p>
 
                 <h2 className="ty-mega ty-mega--finale">
-                  <WordZoom text="Haz el negocio." delay={0.35} />
+                  <WordZoom text="Haz el negocio." delay={0.65} />
                   <br />
                   <motion.span
                     className="ty-finale-accent"
                     initial={{ opacity: 0, scale: 3.2, filter: "blur(20px)" }}
                     animate={{ opacity: 1, scale: [3.2, 0.96, 1.04, 1], filter: "blur(0px)" }}
-                    transition={{ delay: 0.78, duration: 0.7, times: [0, 0.6, 0.82, 1], ease: [0.16, 1, 0.3, 1] }}
+                    transition={{ delay: 1.05, duration: 0.7, times: [0, 0.6, 0.82, 1], ease: [0.16, 1, 0.3, 1] }}
                   >
-                    Nosotros cuidamos.
+                    <motion.span
+                      animate={{
+                        "--fin-c": ["#dfff36", "#ffffff", "#dfff36"],
+                        textShadow: [
+                          "0 0 38px rgba(159,224,25,0.45)",
+                          "0 0 42px rgba(255,255,255,0.4)",
+                          "0 0 38px rgba(159,224,25,0.45)",
+                        ],
+                      }}
+                      transition={{ delay: 2.3, duration: 3.6, repeat: Infinity, ease: "easeInOut" }}
+                    >
+                      Nosotros cuidamos.
+                    </motion.span>
                   </motion.span>
                 </h2>
 
@@ -577,7 +739,7 @@ export default function Landing({ goAuth }) {
                   className="ty-sub"
                   initial={{ opacity: 0, y: 18, filter: "blur(6px)" }}
                   animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-                  transition={{ delay: 1.45, duration: 0.55, ease: EASE }}
+                  transition={{ delay: 1.7, duration: 0.55, ease: EASE }}
                 >
                   Registro gratis. Tu primer trato en minutos.
                 </motion.p>
@@ -599,7 +761,7 @@ export default function Landing({ goAuth }) {
                     className="ty-cta-links"
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
-                    transition={{ delay: 2.15, duration: 0.5 }}
+                    transition={{ delay: 2.4, duration: 0.5 }}
                   >
                     <a href="/legal/terminos">Términos</a>
                     <a href="/legal/privacidad">Privacidad</a>
@@ -663,9 +825,10 @@ function HeroShowcase() {
   return (
     <motion.div
       className="ty-hero-showcase"
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.2, duration: 0.65, ease: EASE }}
+      style={{ transformPerspective: 900 }}
+      initial={{ opacity: 0, y: 64, rotateX: 26, scale: 0.9 }}
+      animate={{ opacity: 1, y: 0, rotateX: 0, scale: 1 }}
+      transition={{ delay: HERO_T + 1.3, duration: 0.85, ease: [0.16, 1, 0.3, 1] }}
     >
       <div className="ty-hero-showcase__glow" aria-hidden="true" />
       <img
@@ -824,6 +987,77 @@ function RiskDemo() {
         </motion.div>
       </AnimatePresence>
     </div>
+  );
+}
+
+/* ── OrbitShield (slide 2): los 3 pilares orbitan el logo TratoYa.
+   Tocar un satélite lo fija y muestra su descripción; auto-rota. ── */
+const ORBIT_ROTATE_MS = 3400;
+
+function OrbitShield() {
+  const [active, setActive] = useState(0);
+  const pinRef = useRef(false);
+
+  useEffect(() => {
+    const id = setInterval(() => {
+      if (!pinRef.current) setActive((a) => (a + 1) % WHAT_IS.length);
+    }, ORBIT_ROTATE_MS);
+    return () => clearInterval(id);
+  }, []);
+
+  const pin = (i) => {
+    pinRef.current = true;
+    setActive(i);
+    setTimeout(() => { pinRef.current = false; }, 8000);
+  };
+
+  const item = WHAT_IS[active];
+
+  return (
+    <motion.div
+      className="ty-orbit"
+      initial={{ opacity: 0, scale: 0.85 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ delay: 0.25, duration: 0.6, ease: EASE }}
+    >
+      <div className="ty-orbit__stage" aria-hidden="true">
+        <span className="ty-orbit__ring" />
+        <span className="ty-orbit__ring ty-orbit__ring--2" />
+        <motion.span
+          className="ty-orbit__center"
+          animate={{ scale: [1, 1.07, 1] }}
+          transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }}
+        >
+          <img src={logo} alt="" />
+        </motion.span>
+        <div className="ty-orbit__spinner">
+          {WHAT_IS.map((it, i) => (
+            <button
+              key={it.title}
+              type="button"
+              tabIndex={-1}
+              className={`ty-orbit__sat ty-orbit__sat--${i}${active === i ? " active" : ""}`}
+              onClick={() => pin(i)}
+            >
+              <span className="ty-orbit__satin">{it.icon}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+      <AnimatePresence mode="wait" initial={false}>
+        <motion.div
+          key={item.title}
+          className="ty-orbit__caption"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -8 }}
+          transition={{ duration: 0.3, ease: EASE }}
+        >
+          <strong>{item.icon} {item.title}</strong>
+          <p>{item.body}</p>
+        </motion.div>
+      </AnimatePresence>
+    </motion.div>
   );
 }
 
@@ -1024,6 +1258,40 @@ function EarlyList({ items }) {
         );
       })}
     </ul>
+  );
+}
+
+/* ── HeroBoom: detonación de apertura — flash, 3 ondas expansivas
+   y 14 partículas que salen disparadas del centro del titular. ── */
+function HeroBoom() {
+  return (
+    <span className="ty-boom" aria-hidden="true">
+      <motion.span
+        className="ty-boom__flash"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: [0, 0.85, 0] }}
+        transition={{ delay: HERO_T, duration: 0.55, times: [0, 0.18, 1], ease: "easeOut" }}
+      />
+      {[0, 1, 2].map((i) => (
+        <motion.span
+          key={`ring-${i}`}
+          className="ty-boom__ring"
+          initial={{ opacity: 0, scale: 0.1 }}
+          animate={{ opacity: [0, 0.75, 0], scale: [0.1, 2.3 + i * 0.8] }}
+          transition={{ delay: HERO_T + i * 0.1, duration: 0.95, ease: "easeOut" }}
+        />
+      ))}
+      {BOOM_PARTICLES.map((p, i) => (
+        <motion.span
+          key={`p-${i}`}
+          className="ty-boom__p"
+          style={{ width: Math.round(7 * p.s), height: Math.round(7 * p.s) }}
+          initial={{ x: 0, y: 0, opacity: 0, scale: 1 }}
+          animate={{ x: p.x, y: p.y, opacity: [0, 1, 0], scale: [1, 1, 0.3] }}
+          transition={{ delay: HERO_T + 0.03, duration: 0.85 + (i % 3) * 0.18, ease: "easeOut" }}
+        />
+      ))}
+    </span>
   );
 }
 
