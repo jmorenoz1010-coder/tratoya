@@ -597,6 +597,17 @@ paymentsRouter.post('/manual/report', paymentUpload.single('receipt'), async (re
       metadata: { deal_id: trato.id, reference, transaction_ref: cleanRef, amount_cop: amountCop },
     });
 
+    const { notificar } = require('../services/notificacionService');
+    await notificar(trato.comprador_id, 'pago_reportado', {
+      titulo: 'Comprobante recibido',
+      cuerpo: `Recibimos el comprobante del trato ${trato.codigo}. Nuestro equipo validará el pago manualmente.`,
+      metadata: { trato_id: trato.id, payment_intent_id: intent.id },
+      email_template: 'pago_recibido_comprador',
+      email_data: { codigo: trato.codigo, titulo: trato.titulo, monto: Number(amountCop).toLocaleString('es-CO') },
+      wa_evento: 'pago_recibido_comprador',
+      wa_params: { codigo: trato.codigo, titulo: trato.titulo, monto: Number(amountCop).toLocaleString('es-CO') },
+    });
+
     res.json({
       success: true,
       ok: true,
@@ -1303,6 +1314,12 @@ adminRouter.post('/tratos/:id/liberar', paymentUpload.single('release_receipt'),
     const { Trato, Pago, User } = require('../config/database');
     const trato = await Trato.findByPk(req.params.id);
     if (!trato) return res.status(404).json({ success: false, message: 'Trato no encontrado' });
+    if (trato.estado !== 'confirmado') {
+      return res.status(409).json({
+        success: false,
+        message: 'Solo puedes liberar fondos cuando el comprador haya confirmado la entrega.',
+      });
+    }
     const referenciaLiberacion = String(req.body?.referencia_liberacion || req.body?.referencia || '').trim().slice(0, 120);
     let releaseReceiptUrl = null;
     if (req.file) {
@@ -1349,11 +1366,19 @@ adminRouter.post('/tratos/:id/liberar', paymentUpload.single('release_receipt'),
         titulo: 'Pago liberado',
         cuerpo: `El pago del trato ${trato.codigo} fue liberado. Se verá reflejado máximo en 1 hora.`,
         metadata: { trato_id: trato.id, referencia_liberacion: referenciaLiberacion || null, release_receipt_url: releaseReceiptUrl },
+        email_template: 'trato_completado',
+        email_data: { codigo: trato.codigo, titulo: trato.titulo },
+        wa_evento: 'trato_completado',
+        wa_params: { codigo: trato.codigo },
       },
       {
         titulo: 'Pago liberado a tu favor',
         cuerpo: `Liberamos los fondos del trato ${trato.codigo}. Se verá reflejado máximo en 1 hora.`,
         metadata: { trato_id: trato.id, referencia_liberacion: referenciaLiberacion || null, release_receipt_url: releaseReceiptUrl },
+        email_template: 'entrega_confirmada_vendedor',
+        email_data: { codigo: trato.codigo, neto: Number(trato.monto_neto || trato.monto).toLocaleString('es-CO') },
+        wa_evento: 'entrega_confirmada_vendedor',
+        wa_params: { codigo: trato.codigo, neto: Number(trato.monto_neto || trato.monto).toLocaleString('es-CO') },
       }
     ).catch(() => {});
     await actualizarReputacionUsuarios(trato, User).catch(() => {});
@@ -1366,6 +1391,9 @@ adminRouter.post('/pagos/:id/confirmar', async (req, res, next) => {
     const { Pago, Trato, PaymentIntent, LedgerEntry, AuditLog } = require('../config/database');
     const pago = await Pago.findByPk(req.params.id);
     if (!pago) return res.status(404).json({ success: false, message: 'Pago no encontrado' });
+    if (!['pendiente', 'procesando'].includes(pago.estado)) {
+      return res.status(409).json({ success: false, message: `Este pago ya está en estado ${pago.estado}.` });
+    }
     const trato = await Trato.findByPk(pago.trato_id);
     if (!trato) return res.status(404).json({ success: false, message: 'Trato no encontrado' });
     const metadata = pago.metadata || {};
@@ -1420,11 +1448,19 @@ adminRouter.post('/pagos/:id/confirmar', async (req, res, next) => {
         titulo: 'Pago confirmado',
         cuerpo: `Tu pago del trato ${trato.codigo} quedó confirmado y en custodia TratoYA.`,
         metadata: { trato_id: trato.id, pago_id: pago.id },
+        email_template: 'pago_confirmado_comprador',
+        email_data: { codigo: trato.codigo, titulo: trato.titulo },
+        wa_evento: 'pago_confirmado_comprador',
+        wa_params: { codigo: trato.codigo, titulo: trato.titulo },
       },
       {
         titulo: 'Pago confirmado, puedes entregar',
         cuerpo: `El pago del trato ${trato.codigo} está en custodia TratoYA. Puedes entregar con seguridad.`,
         metadata: { trato_id: trato.id, pago_id: pago.id },
+        email_template: 'pago_confirmado_vendedor',
+        email_data: { codigo: trato.codigo, titulo: trato.titulo },
+        wa_evento: 'pago_confirmado_vendedor',
+        wa_params: { codigo: trato.codigo, titulo: trato.titulo },
       }
     ).catch(() => {});
     res.json({ success: true, data: { pago, trato }, message: 'Pago confirmado y retenido' });
@@ -1436,6 +1472,9 @@ adminRouter.post('/pagos/:id/rechazar', async (req, res, next) => {
     const { Pago, Trato, PaymentIntent, AuditLog } = require('../config/database');
     const pago = await Pago.findByPk(req.params.id);
     if (!pago) return res.status(404).json({ success: false, message: 'Pago no encontrado' });
+    if (!['pendiente', 'procesando'].includes(pago.estado)) {
+      return res.status(409).json({ success: false, message: `Este pago ya está en estado ${pago.estado}.` });
+    }
     const trato = await Trato.findByPk(pago.trato_id);
     if (!trato) return res.status(404).json({ success: false, message: 'Trato no encontrado' });
     const metadata = pago.metadata || {};
@@ -1479,20 +1518,11 @@ adminRouter.post('/pagos/:id/rechazar', async (req, res, next) => {
       titulo: 'Pago no verificado',
       cuerpo: cuerpoPush,
       metadata: { trato_id: trato.id, pago_id: pago.id, motivo },
+      email_template: 'pago_rechazado',
+      email_data: { codigo: trato.codigo, motivo },
+      wa_evento: 'pago_rechazado',
+      wa_params: { codigo: trato.codigo, motivo },
     }).catch(() => {});
-    // Email al comprador con la razón del rechazo
-    try {
-      const { User } = require('../config/database');
-      const comprador = await User.findByPk(trato.comprador_id, { attributes: ['nombre', 'email'] });
-      if (comprador?.email) {
-        const { sendEmail } = require('../services/emailService');
-        await sendEmail(comprador.email, 'pago_rechazado', {
-          nombre: comprador.nombre || 'Usuario',
-          codigo: trato.codigo,
-          motivo,
-        });
-      }
-    } catch { /* email no bloquea el flujo */ }
     res.json({ success: true, data: { pago, trato }, message: 'Pago rechazado. Reintento en 10 minutos.' });
   } catch (err) { next(err); }
 });
@@ -1881,6 +1911,78 @@ adminRouter.post('/users/:id/revoke-sessions', requireSuperadmin, async (req, re
     await user.update({ refresh_token: null });
     res.json({ success: true, message: 'Sesiones revocadas' });
   } catch (err) { next(err); }
+});
+
+adminRouter.delete('/users/:id', async (req, res, next) => {
+  const transaction = await require('../config/database').sequelize.transaction();
+  try {
+    const {
+      User: UserModel,
+      Trato,
+      CuentaBancaria: CuentaModel,
+      Notificacion: NotificacionModel,
+    } = require('../config/database');
+    const confirmationCode = String(req.body?.confirmation_code || '');
+    const expectedCode = process.env.ADMIN_DELETE_USER_CODE || '071020';
+    const canDelete = req.user.email === 'admin@tratoya.com' || req.user.rol === 'superadmin';
+
+    if (!canDelete) {
+      await transaction.rollback();
+      return res.status(403).json({ success: false, message: 'Solo el administrador principal puede eliminar usuarios.' });
+    }
+    if (confirmationCode !== expectedCode) {
+      await transaction.rollback();
+      return res.status(403).json({ success: false, message: 'Código de confirmación incorrecto.' });
+    }
+    if (req.user.id === req.params.id) {
+      await transaction.rollback();
+      return res.status(400).json({ success: false, message: 'No puedes eliminar tu propia cuenta administrativa.' });
+    }
+
+    const user = await UserModel.findByPk(req.params.id, { transaction });
+    if (!user) {
+      await transaction.rollback();
+      return res.status(404).json({ success: false, message: 'Usuario no encontrado.' });
+    }
+    const activeDeals = await Trato.count({
+      where: {
+        [Op.or]: [{ comprador_id: user.id }, { vendedor_id: user.id }],
+        estado: { [Op.notIn]: ['completado', 'cancelado', 'expirado'] },
+      },
+      transaction,
+    });
+    if (activeDeals > 0) {
+      await transaction.rollback();
+      return res.status(409).json({
+        success: false,
+        message: `No puedes eliminar este usuario: tiene ${activeDeals} trato(s) activo(s). Resuélvelos primero.`,
+      });
+    }
+
+    await Promise.all([
+      CuentaModel.destroy({ where: { usuario_id: user.id }, transaction }),
+      NotificacionModel.destroy({ where: { usuario_id: user.id }, transaction }),
+    ]);
+    await user.update({
+      nombre: 'Usuario',
+      apellido: 'eliminado',
+      email: `eliminado+${user.id}@tratoya.invalid`,
+      usuario_unico: null,
+      telefono: null,
+      cedula: null,
+      ciudad: null,
+      foto_perfil: null,
+      refresh_token: null,
+      is_active: false,
+      is_blocked: true,
+    }, { transaction });
+    await user.destroy({ transaction });
+    await transaction.commit();
+    res.json({ success: true, message: 'Usuario eliminado y datos personales anonimizados.' });
+  } catch (err) {
+    await transaction.rollback();
+    next(err);
+  }
 });
 
 adminRouter.post('/notificaciones/masiva', async (req, res, next) => {

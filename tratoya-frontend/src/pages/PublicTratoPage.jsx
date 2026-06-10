@@ -3,6 +3,7 @@ import { api } from "../lib/api";
 import { ESTADO, calcularComisionUI, parseCopAmount } from "../lib/utils";
 import CommissionBreakdown from "../components/CommissionBreakdown";
 import ManualPaymentBox from "../components/ManualPaymentBox";
+import logo from "../assets/tratoya-logo.png";
 
 export default function PublicTratoPage({ link, session, goAuth, toast }) {
   const [trato, setTrato] = useState(null);
@@ -83,9 +84,10 @@ export default function PublicTratoPage({ link, session, goAuth, toast }) {
     <div className="land">
       <nav className="lnav">
         <div className="logo-row">
-          <button className="btn bg_ back-mini" style={{ color: "rgba(255,255,255,.72)" }} onClick={() => { window.location.href = "/"; }} title="Inicio">←</button>
-          <div style={{ width: 28, height: 28, background: "var(--g)", borderRadius: 7, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "Manrope", fontWeight: 800, fontSize: 14, color: "var(--n)" }}>T</div>
-          <span style={{ fontFamily: "Manrope", fontSize: 18, fontWeight: 800, color: "#fff" }}>Trato<span style={{ color: "var(--g)" }}>Ya</span></span>
+          <button className="public-checkout-back" onClick={() => { window.location.href = "/"; }} title="Volver al inicio" aria-label="Volver al inicio">←</button>
+          <button className="public-checkout-logo" onClick={() => { window.location.href = "/"; }} title="Ir al inicio">
+            <img src={logo} alt="TratoYA" />
+          </button>
         </div>
         {!session && (
           <div style={{ display: "flex", gap: 9 }}>

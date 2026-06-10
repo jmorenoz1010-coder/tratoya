@@ -28,7 +28,7 @@
 const logger = require('../utils/logger');
 
 const WA_API = 'https://graph.facebook.com/v21.0';
-const APP_URL = () => process.env.FRONTEND_URL || 'https://tratoya.com';
+const APP_URL = () => process.env.PUBLIC_FRONTEND_URL || process.env.FRONTEND_URL || 'https://tratoya.com';
 
 /* ── Config ─────────────────────────────────────────────────── */
 function getConfig() {
@@ -134,6 +134,37 @@ async function enviarTemplate(telefono, templateName, lang = 'es_CO', components
   }
 }
 
+const TEMPLATE_PARAM_KEYS = {
+  trato_creado_contraparte: ['nombre', 'titulo', 'monto', 'codigo', 'link'],
+  trato_aceptado_vendedor: ['nombre', 'titulo', 'codigo', 'monto', 'app_url'],
+  pago_recibido_comprador: ['nombre', 'titulo', 'codigo', 'monto', 'app_url'],
+  pago_confirmado_comprador: ['nombre', 'titulo', 'codigo', 'app_url'],
+  pago_confirmado_vendedor: ['nombre', 'titulo', 'codigo', 'app_url'],
+  pago_rechazado: ['nombre', 'codigo', 'motivo', 'app_url'],
+  entrega_registrada_comprador: ['nombre', 'codigo', 'detalle', 'app_url'],
+  entrega_confirmada_pendiente_pago: ['nombre', 'codigo', 'neto', 'app_url'],
+  entrega_confirmada_vendedor: ['nombre', 'codigo', 'neto', 'app_url'],
+  disputa_abierta: ['nombre', 'codigo', 'app_url'],
+  trato_completado: ['nombre', 'codigo', 'app_url'],
+};
+
+const TEMPLATE_NAMES = {
+  entrega_confirmada_pendiente_pago: 'tratoya_entrega_confirmada_vendedor',
+};
+
+function templateComponents(evento, params) {
+  const envKey = `WA_TEMPLATE_PARAMS_${evento.toUpperCase()}`;
+  const keys = String(process.env[envKey] || TEMPLATE_PARAM_KEYS[evento]?.join(',') || '')
+    .split(',')
+    .map((key) => key.trim())
+    .filter(Boolean);
+  if (!keys.length) return [];
+  return [{
+    type: 'body',
+    parameters: keys.map((key) => ({ type: 'text', text: String(key === 'app_url' ? APP_URL() : params[key] ?? '-') })),
+  }];
+}
+
 /* ══════════════════════════════════════════════════════════════
    PLANTILLAS DE MENSAJES (texto, dentro de ventana 24h)
    Formato: emoji + marca + línea separadora + contenido + CTA
@@ -171,6 +202,12 @@ const MENSAJES = {
   entrega_registrada_comprador: ({ nombre, codigo, detalle }) =>
     `📦 *TratoYa — ¡Tu compra está en camino!*\n\nHola ${nombre},\n\nEl vendedor del trato *${codigo}* registró la entrega.\n${detalle ? `\n${detalle}\n` : ''}\nCuando recibas el producto en perfecto estado, confírmalo en la app para que el vendedor reciba su pago.\n\n→ Confirmar entrega: ${APP_URL()}`,
 
+  entrega_confirmada_comprador: ({ nombre, codigo }) =>
+    `✅ *TratoYA — Entrega confirmada*\n\nHola ${nombre}, confirmaste la entrega del trato *${codigo}*.\n\nTratoYA realizará la consignación manual al vendedor y te notificará cuando el proceso finalice.\n\n→ ${APP_URL()}`,
+
+  entrega_confirmada_pendiente_pago: ({ nombre, codigo }) =>
+    `✅ *TratoYA — Entrega confirmada*\n\nHola ${nombre}, el comprador confirmó la entrega del trato *${codigo}*.\n\nEl pago quedó listo para consignación manual. Te notificaremos cuando los fondos hayan sido enviados.\n\n→ ${APP_URL()}`,
+
   entrega_confirmada_vendedor: ({ nombre, codigo, neto }) =>
     `🎉 *TratoYa — ¡Pago liberado!*\n\nHola ${nombre},\n\nEl comprador confirmó la entrega del trato *${codigo}*.\n\n💰 *Recibirás aprox. $${neto} COP*\nTiempo de acreditación: máx. 24 horas hábiles.\n\n→ ${APP_URL()}`,
 
@@ -198,6 +235,18 @@ async function notificarWA(evento, telefono, params = {}) {
     return { ok: false, razon: 'plantilla_no_encontrada' };
   }
   const texto = builder(params);
+  if (String(process.env.WA_USE_TEMPLATES).toLowerCase() === 'true') {
+    const prefix = process.env.WA_TEMPLATE_PREFIX || 'tratoya_';
+    const templateName = process.env[`WA_TEMPLATE_${evento.toUpperCase()}`] || TEMPLATE_NAMES[evento] || `${prefix}${evento}`;
+    const templateResult = await enviarTemplate(
+      telefono,
+      templateName,
+      process.env.WA_TEMPLATE_LANGUAGE || 'es_CO',
+      templateComponents(evento, params),
+    );
+    if (templateResult.ok) return templateResult;
+    logger.warn(`[WA] Falló template "${templateName}", intentando texto dentro de ventana de 24h`);
+  }
   return enviarTexto(telefono, texto);
 }
 

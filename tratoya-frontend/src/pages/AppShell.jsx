@@ -215,7 +215,7 @@ export default function AppShell({ session, setSession, toast }) {
     setFloatingNote(note);
     if (navigator.vibrate) try { navigator.vibrate(note?.tipo === "trato_completado" ? [45, 28, 45] : [35]); } catch {}
     playBubble();
-    setTimeout(() => setFloatingNote((n) => (n === note ? null : n)), 3000);
+    setTimeout(() => setFloatingNote((n) => (n === note ? null : n)), 4000);
   }, []);
 
   useEffect(() => {

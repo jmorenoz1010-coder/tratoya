@@ -330,10 +330,28 @@ router.post('/:id/confirmar', async (req, res, next) => {
 
     await trato.update({ estado: 'confirmado', fecha_confirmacion: new Date() });
 
-    const { liberarPago } = require('../services/pagoService');
-    liberarPago(trato.id).catch(err => logger.error('[TRATO] Error liberando pago:', err));
+    await Promise.all([
+      notificar(trato.vendedor_id, 'entrega_confirmada', {
+        titulo: 'Entrega confirmada',
+        cuerpo: `El comprador confirmó la entrega del trato ${trato.codigo}. TratoYA realizará la consignación manual.`,
+        metadata: { trato_id: trato.id },
+        email_template: 'entrega_confirmada_pendiente_pago',
+        email_data: { codigo: trato.codigo, titulo: trato.titulo },
+        wa_evento: 'entrega_confirmada_pendiente_pago',
+        wa_params: { codigo: trato.codigo, titulo: trato.titulo, neto: Number(trato.monto_neto || trato.monto).toLocaleString('es-CO') },
+      }),
+      notificar(trato.comprador_id, 'entrega_confirmada', {
+        titulo: 'Entrega confirmada',
+        cuerpo: `Confirmaste la entrega del trato ${trato.codigo}. El pago quedó listo para consignación al vendedor.`,
+        metadata: { trato_id: trato.id },
+        email_template: 'entrega_confirmada_comprador',
+        email_data: { codigo: trato.codigo, titulo: trato.titulo },
+        wa_evento: 'entrega_confirmada_comprador',
+        wa_params: { codigo: trato.codigo, titulo: trato.titulo },
+      }),
+    ]);
 
-    res.json({ success: true, message: 'Confirmado. El pago será liberado en las próximas horas.' });
+    res.json({ success: true, message: 'Entrega confirmada. TratoYA realizará la consignación manual al vendedor.' });
   } catch (err) { next(err); }
 });
 

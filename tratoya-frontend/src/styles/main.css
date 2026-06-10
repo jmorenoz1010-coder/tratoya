@@ -221,13 +221,17 @@ tbody tr:hover td{background:var(--s50)}
 .share-actions .share-copy{min-width:94px;padding-left:14px;padding-right:14px}
 
 /* ── Manual secure payment ───────────────────────────── */
-.secure-pay-btn{width:100%;border:0;border-radius:15px;background:linear-gradient(135deg,var(--n) 0%,#123861 100%);color:#fff;box-shadow:0 14px 34px rgba(7,25,47,.24);min-height:66px;padding:12px 16px;display:flex;align-items:center;gap:12px;cursor:pointer;text-align:left;transition:transform .18s,box-shadow .18s}
-.secure-pay-btn:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 18px 42px rgba(7,25,47,.28)}
+.secure-pay-btn{position:relative;overflow:hidden;width:100%;border:1px solid rgba(169,235,27,.42);border-radius:8px;background:linear-gradient(120deg,#071819 0%,#0c3130 58%,#133f35 100%);color:#fff;box-shadow:0 18px 38px rgba(7,25,47,.22);min-height:82px;padding:15px 18px;display:flex;align-items:center;gap:15px;cursor:pointer;text-align:left;transition:transform .18s,box-shadow .18s,border-color .18s}
+.secure-pay-btn::after{content:'';position:absolute;inset:-80% auto -80% -28%;width:28%;background:linear-gradient(90deg,transparent,rgba(210,255,76,.18),transparent);transform:rotate(18deg);transition:transform .55s ease}
+.secure-pay-btn:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 22px 48px rgba(7,25,47,.3);border-color:rgba(169,235,27,.8)}
+.secure-pay-btn:hover:not(:disabled)::after{transform:translateX(520%) rotate(18deg)}
 .secure-pay-btn:disabled{opacity:.55;cursor:not-allowed}
-.secure-pay-ico{width:42px;height:42px;border-radius:12px;background:var(--g);color:var(--n);display:flex;align-items:center;justify-content:center;font-size:21px;flex-shrink:0}
-.secure-pay-btn strong{display:block;font-family:'Manrope';font-size:15px;line-height:1.15}
-.secure-pay-btn small{display:flex;align-items:center;gap:7px;margin-top:7px;flex-wrap:wrap}
-.secure-pay-btn small img{height:24px;width:auto;border-radius:8px;background:#fff;box-shadow:0 4px 12px rgba(0,0,0,.14)}
+.secure-pay-ico{width:48px;height:48px;border-radius:50%;background:linear-gradient(145deg,#d9ff3f,var(--g));color:var(--n);display:flex;align-items:center;justify-content:center;font-size:23px;font-weight:900;flex-shrink:0;box-shadow:0 0 0 6px rgba(169,235,27,.1)}
+.secure-pay-copy{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;column-gap:18px;row-gap:3px;width:100%;min-width:0}
+.secure-pay-btn strong{display:block;font-family:'Manrope';font-size:17px;line-height:1.15}
+.secure-pay-btn em{font-style:normal;font-size:11px;color:rgba(255,255,255,.65)}
+.secure-pay-btn small{grid-column:2;grid-row:1 / span 2;display:flex;align-items:center;justify-content:flex-end;gap:12px;flex-wrap:wrap}
+.secure-pay-btn small img{height:30px;max-width:100px;width:auto;border-radius:8px;background:#fff;padding:3px 7px;object-fit:contain;box-shadow:0 5px 16px rgba(0,0,0,.18)}
 .manual-pay-pop{position:fixed;inset:0;z-index:2000;background:rgba(7,25,47,.46);display:grid;place-items:center;padding:32px 18px}
 .manual-pay-card{background:#fff;border:1px solid var(--s100);border-radius:15px;padding:15px;box-shadow:0 14px 36px rgba(7,25,47,.12)}
 .manual-pay-pop .manual-pay-card{width:min(720px,100%);max-height:86vh;overflow:auto}
@@ -406,6 +410,10 @@ tbody tr:hover td{background:var(--s50)}
 /* ── Landing ────────────────────────────────────────── */
 .land{min-height:100vh;background:#fff}
 .lnav{position:sticky;top:0;z-index:100;background:var(--n);backdrop-filter:blur(12px);padding:0 44px;height:66px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(255,255,255,.08);box-shadow:0 1px 12px rgba(7,25,47,.12)}
+.public-checkout-back{width:38px;height:38px;border-radius:50%;border:1px solid rgba(169,235,27,.24);background:rgba(255,255,255,.06);color:#eaffd4;font-size:21px;display:grid;place-items:center;cursor:pointer;transition:.2s ease}
+.public-checkout-back:hover{background:var(--g);color:var(--n);transform:translateX(-2px)}
+.public-checkout-logo{border:0;background:transparent;padding:0;display:flex;align-items:center;cursor:pointer}
+.public-checkout-logo img{display:block;width:132px;max-height:48px;object-fit:contain;object-position:left center}
 .hero{background:linear-gradient(180deg,#FFFFFF 0%,#F7FAEE 100%);padding:86px 44px 74px;position:relative;overflow:hidden;border-bottom:1px solid var(--s100)}
 .hero::before{content:'';position:absolute;top:-35%;right:-18%;width:58%;height:120%;background:radial-gradient(ellipse,rgba(168,196,0,.16) 0%,transparent 65%);pointer-events:none;z-index:0}
 .hero > *{position:relative;z-index:1}
@@ -1826,6 +1834,13 @@ tbody tr:hover td{background:var(--s50)}
 
 @media (max-width:720px){
   .public-back{display:none!important}
+  .secure-pay-btn{padding:13px 14px;gap:12px;min-height:78px}
+  .secure-pay-ico{width:42px;height:42px;font-size:20px}
+  .secure-pay-copy{column-gap:10px}
+  .secure-pay-btn strong{font-size:14px}
+  .secure-pay-btn em{font-size:9.5px}
+  .secure-pay-btn small{gap:7px}
+  .secure-pay-btn small img{height:24px;max-width:72px;padding:2px 5px}
   .auth-social-login{grid-template-columns:1fr}
   .legal-header{align-items:flex-start;flex-direction:column;margin-top:36px}
   .legal-header img{width:146px}

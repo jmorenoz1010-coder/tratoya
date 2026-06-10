@@ -24,9 +24,10 @@ export default function ManualPaymentBox({ amount, reference, busy, onReport }) 
   if (!open) {
     return (
       <button className="secure-pay-btn" onClick={() => setOpen(true)} disabled={busy}>
-        <span className="secure-pay-ico">🔒</span>
-        <span>
+        <span className="secure-pay-ico" aria-hidden="true">✓</span>
+        <span className="secure-pay-copy">
           <strong>Pago seguro TratoYa</strong>
+          <em>Transfiere y adjunta tu comprobante</em>
           <small>
             <img src="/brand-nequi.svg" alt="Nequi" />
             <img src="/brand-breb.svg" alt="Bre-B" />
@@ -100,7 +101,7 @@ export default function ManualPaymentBox({ amount, reference, busy, onReport }) 
       <button className="btn bp blg" style={{ width: "100%" }} onClick={submit} disabled={busy || !ready}>
         {busy ? <div className="spin" /> : "Ya realicé el pago"}
       </button>
-      <div className="manual-pay-foot">Verificando tu pago automáticamente. Te notificamos de inmediato.</div>
+      <div className="manual-pay-foot">Nuestro equipo validará el comprobante y te notificará por email y WhatsApp.</div>
     </div>
     </div>
   );

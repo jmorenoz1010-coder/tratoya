@@ -67,7 +67,7 @@ const api = {
   upload: (p, f) => api.req("POST", p, f, true),
   put:  (p, b) => api.req("PUT",    p, b),
   patch:(p, b) => api.req("PATCH",  p, b),
-  del:  (p)    => api.req("DELETE", p),
+  del:  (p, b) => api.req("DELETE", p, b),
 };
 
 const fmt = (n) => new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", minimumFractionDigits: 0 }).format(n || 0);
@@ -312,7 +312,7 @@ const NAV = [
   { id: "baneos",       ico: "🚫", l: "Baneados / Suspendidos" },
   { sec: "Operaciones" },
   { id: "tratos",       ico: "🤝", l: "Todos los tratos" },
-  { id: "pagos",        ico: "💳", l: "Pagos y retiros" },
+  { id: "pagos",        ico: "💳", l: "Operaciones manuales" },
   { id: "comisiones",   ico: "💰", l: "Comisiones TratoYa" },
   { id: "resenas",      ico: "⭐", l: "Reseñas y reputación" },
   { id: "disputas",     ico: "⚖️", l: "Disputas", badge: true },
@@ -471,6 +471,7 @@ function Usuarios({ toast }) {
   const [kycBusy, setKycBusy] = useState(null); // id del usuario cuyo KYC está cambiando
   const [pwForm, setPwForm] = useState({ password: "", confirmar: "" });
   const [msgForm, setMsgForm] = useState({ titulo: "", cuerpo: "" });
+  const [deleteCode, setDeleteCode] = useState("");
 
   const load = () => {
     setLoading(true);
@@ -530,6 +531,20 @@ function Usuarios({ toast }) {
       await api.post(`/admin/users/${selected.id}/notificacion`, msgForm);
       toast(`Notificación enviada a ${selected.nombre}`, "success");
       setModal(null); setMsgForm({ titulo: "", cuerpo: "" });
+    } catch (e) { toast(e.message, "error"); }
+    setBusy(false);
+  };
+
+  const deleteUser = async () => {
+    if (!selected || !deleteCode) { toast("Ingresa el código de confirmación", "error"); return; }
+    setBusy(true);
+    try {
+      await api.del(`/admin/users/${selected.id}`, { confirmation_code: deleteCode });
+      toast(`Usuario ${selected.nombre} eliminado`, "success");
+      setModal(null);
+      setSelected(null);
+      setDeleteCode("");
+      load();
     } catch (e) { toast(e.message, "error"); }
     setBusy(false);
   };
@@ -683,6 +698,31 @@ function Usuarios({ toast }) {
             <div className="modal-ft">
               <button className="btn bpu bsm" onClick={() => setModal("msg")}>🔔 Enviar notificación</button>
               <button className="btn bor bsm" onClick={() => setModal("pw")}>🔑 Resetear contraseña</button>
+              <button className="btn brd bsm" onClick={() => { setDeleteCode(""); setModal("delete"); }}>Eliminar usuario</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {modal === "delete" && selected && (
+        <div className="overlay" onClick={() => { setModal(null); setDeleteCode(""); }}>
+          <div className="modal" style={{ maxWidth: 460 }} onClick={e => e.stopPropagation()}>
+            <div className="modal-hd">
+              <h3 style={{ fontSize: 15 }}>Eliminar usuario</h3>
+              <button className="btn bg_ bsm" onClick={() => { setModal(null); setDeleteCode(""); }}>×</button>
+            </div>
+            <div className="modal-bd">
+              <div style={{ background: "var(--rdb)", border: "1px solid #f2caca", borderRadius: 8, padding: "11px 13px", marginBottom: 14, fontSize: 12.5, color: "var(--rd)" }}>
+                Se anonimizarán los datos personales de <strong>{selected.nombre} {selected.apellido}</strong>. No se permite eliminar usuarios con tratos activos.
+              </div>
+              <div className="fg">
+                <label className="fl">Código de confirmación</label>
+                <input className="inp" type="password" inputMode="numeric" value={deleteCode} onChange={e => setDeleteCode(e.target.value)} placeholder="Ingresa el código administrativo" />
+              </div>
+            </div>
+            <div className="modal-ft">
+              <button className="btn bg_" onClick={() => { setModal(null); setDeleteCode(""); }}>Cancelar</button>
+              <button className="btn brd" disabled={busy || !deleteCode} onClick={deleteUser}>{busy ? <div className="spin" /> : "Eliminar definitivamente"}</button>
             </div>
           </div>
         </div>
@@ -1579,7 +1619,7 @@ function PagosAdmin({ toast }) {
   const [busy, setBusy] = useState(false);
   const [lastSync, setLastSync] = useState(null);
   const [statusFilter, setStatusFilter] = useState("todos");
-  const [payPanel, setPayPanel] = useState("recientes");
+  const payPanel = "todos";
   const [historyFrom, setHistoryFrom] = useState("");
   const [historyTo, setHistoryTo] = useState("");
   const [confirmTarget, setConfirmTarget] = useState(null);
@@ -1678,7 +1718,7 @@ function PagosAdmin({ toast }) {
   };
 
   const estadoCls = (estado) => estado === "aprobado" ? "gn" : ["pendiente", "procesando"].includes(estado) ? "or" : "rd";
-  const porConsignar = pagos.filter((p) => p.tipo === "retencion" && p.estado === "aprobado" && ["pago_retenido","en_entrega","confirmado","pendiente_confirmacion"].includes(p.Trato?.estado));
+  const porConsignar = pagos.filter((p) => p.tipo === "retencion" && p.estado === "aprobado" && p.Trato?.estado === "confirmado");
   const sellerAmount = (p) => Number(p.neto_desembolso || p.Trato?.monto_neto || p.Trato?.monto || 0);
   const freeGain = (p) => Math.round(Number(p.Trato?.monto || 0) * 0.045);
   const coveredCosts = (p) => Math.max(0, Number(p.monto || 0) - sellerAmount(p) - freeGain(p));
@@ -1842,8 +1882,8 @@ function PagosAdmin({ toast }) {
       )}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, marginBottom: 14, flexWrap: "wrap" }}>
         <div>
-          <h1 style={{ fontSize: 20 }}>Pagos y Retiros</h1>
-          <p style={{ fontSize: 12, color: "var(--s500)", marginTop: 3 }}>Cola en vivo de pagos reportados. Actualiza cada 60s.</p>
+          <h1 style={{ fontSize: 20 }}>Centro de operaciones manuales</h1>
+          <p style={{ fontSize: 12, color: "var(--s500)", marginTop: 3 }}>Valida ingresos, sigue la entrega y consigna al vendedor desde una sola pantalla.</p>
         </div>
         <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
           <div className="search" style={{ width: 240 }}>🔍 <input placeholder="Número del trato…" value={q} onChange={e => setQ(e.target.value)} onKeyDown={e => e.key === "Enter" && load()} /></div>
@@ -1852,23 +1892,24 @@ function PagosAdmin({ toast }) {
         </div>
       </div>
       <div className="pay-admin-menu">
-        {panelItems.map(([key, label, count, sub]) => (
-          <button key={key} className={`pay-admin-tab ${payPanel === key ? "active" : ""}`} onClick={() => setPayPanel(key)}>
+        {panelItems.slice(0, 3).map(([key, label, count, sub]) => (
+          <button key={key} className={`pay-admin-tab ${statusFilter === key ? "active" : ""}`} onClick={() => setStatusFilter(key)}>
             <span>{label}</span>
             <strong>{count}</strong>
             <em>{sub}</em>
           </button>
         ))}
+        <button className={`pay-admin-tab ${statusFilter === "todos" ? "active" : ""}`} onClick={() => setStatusFilter("todos")}>
+          <span>Todos los movimientos</span><strong>{pagos.length}</strong><em>Vista operativa completa</em>
+        </button>
       </div>
-      {payPanel === "todos" && (
-        <div className="pay-admin-filters">
-          {filterItems.map(([key, label, count]) => (
-            <button key={key} className={`btn bsm ${statusFilter === key ? "bp" : "bg_"}`} onClick={() => setStatusFilter(key)}>
-              {label} <span className="mono" style={{ opacity: .72 }}>{count}</span>
-            </button>
-          ))}
-        </div>
-      )}
+      <div className="pay-admin-filters">
+        {filterItems.map(([key, label, count]) => (
+          <button key={key} className={`btn bsm ${statusFilter === key ? "bp" : "bg_"}`} onClick={() => setStatusFilter(key)}>
+            {label} <span className="mono" style={{ opacity: .72 }}>{count}</span>
+          </button>
+        ))}
+      </div>
       {payPanel === "recientes" && <div className="card live-payments">
         <div className="live-payments-head">
           <div>
@@ -1922,7 +1963,7 @@ function PagosAdmin({ toast }) {
                 <b>Verificación del pago</b>
                 <span>1. Busca en Nequi/Bre-B la referencia {selected.pasarela_ref || selected.metadata?.transaction_ref || "reportada"}.</span>
                 <span>2. Confirma que llegó exactamente {fmt(selected.monto)} para {selected.Trato?.codigo || "el trato"}.</span>
-                <span>3. Al confirmar, el vendedor recibe notificación para entregar. Al liberar, ambos ven que se refleja máximo en 1 hora.</span>
+                <span>3. Al confirmar, el vendedor entrega. Solo cuando el comprador confirme la recepción podrás consignar y completar el trato.</span>
                 {selected.metadata?.transfer_concept && <span>Concepto enviado: {selected.metadata.transfer_concept}</span>}
                 {selected.metadata?.receipt_url && <a href={selected.metadata.receipt_url} target="_blank" rel="noreferrer">Abrir comprobante adjunto</a>}
                 {selected.metadata?.release_receipt_url && <a href={selected.metadata.release_receipt_url} target="_blank" rel="noreferrer">Abrir comprobante de consignación al vendedor</a>}
@@ -1971,7 +2012,7 @@ function PagosAdmin({ toast }) {
             <div className="modal-ft" style={{ flexWrap: "wrap" }}>
               {selected.tipo === "retencion" && selected.estado !== "aprobado" && <button className="btn bp" disabled={busy} onClick={() => confirmar(selected)}>Confirmar recibido</button>}
               {selected.tipo === "retencion" && ["pendiente","procesando"].includes(selected.estado) && <button className="btn brd" disabled={busy} onClick={() => rechazar(selected)}>Marcar fallido</button>}
-              {["pago_retenido","en_entrega","confirmado","pendiente_confirmacion"].includes(selected.Trato?.estado) && <button className="btn bp" disabled={busy} onClick={() => liberar(selected)}>LIBERAR</button>}
+              {selected.Trato?.estado === "confirmado" && <button className="btn bp" disabled={busy} onClick={() => liberar(selected)}>Consignar y completar</button>}
               <a className="btn bg_" href={`${ADMIN_ENTRY_PATH}?trato=${encodeURIComponent(selected.trato_id)}&from=pagos`} target="_blank" rel="noreferrer">Ver trato completo</a>
             </div>
           </div>
@@ -1998,7 +2039,7 @@ function PagosAdmin({ toast }) {
                       <td style={{ fontFamily: "Syne", fontWeight: 800, color: "var(--g2)" }}>{fmt(sellerAmount(p))}</td>
                       <td style={{ fontWeight: 800 }}>{fmt(freeGain(p))}</td>
                       <td>{fmt(coveredCosts(p))}</td>
-                      <td><button className="btn bp bsm" disabled={busy} onClick={(e) => { e.stopPropagation(); liberar(p); }}>LIBERAR</button></td>
+                      <td><button className="btn bp bsm" disabled={busy} onClick={(e) => { e.stopPropagation(); liberar(p); }}>Consignar</button></td>
                     </tr>
                   ))}
                 </tbody>
@@ -2063,7 +2104,7 @@ function PagosAdmin({ toast }) {
                       <button className="btn bg_ bsm" onClick={(e) => { e.stopPropagation(); setSelected(p); }}>Ver flujo</button>
                       {p.tipo === "retencion" && p.estado !== "aprobado" && <button className="btn bp bsm" disabled={busy} onClick={(e) => { e.stopPropagation(); confirmar(p); }}>Confirmar</button>}
                       {p.tipo === "retencion" && ["pendiente","procesando"].includes(p.estado) && <button className="btn brd bsm" disabled={busy} onClick={(e) => { e.stopPropagation(); rechazar(p); }}>Fallido</button>}
-                      {["pago_retenido","en_entrega","confirmado","pendiente_confirmacion"].includes(p.Trato?.estado) && <button className="btn bp bsm" disabled={busy} onClick={(e) => { e.stopPropagation(); liberar(p); }}>LIBERAR</button>}
+                      {p.Trato?.estado === "confirmado" && <button className="btn bp bsm" disabled={busy} onClick={(e) => { e.stopPropagation(); liberar(p); }}>Consignar</button>}
                     </div>
                   </td>
                 </tr>

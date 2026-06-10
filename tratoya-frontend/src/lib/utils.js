@@ -95,21 +95,30 @@ export const FINANCIAL_ENTITIES = [
   ...BANK_ENTITIES,
 ];
 
-export const passwordChecks = (password, f = {}) => [
-  ["length", "Mínimo 6 caracteres", String(password || "").length >= 6],
-  ["upper", "Una mayúscula", /[A-Z]/.test(password || "")],
-  ["lower", "Una minúscula", /[a-z]/.test(password || "")],
-  ["number", "Un número", /\d/.test(password || "")],
-  ["special", "Un carácter especial", /[^A-Za-z0-9]/.test(password || "")],
-  ["spaces", "Sin espacios", !/\s/.test(password || "") && Boolean(password)],
-  [
-    "personal",
-    "No usar tu nombre o correo",
-    Boolean(password) &&
-      !String(password).toLowerCase().includes(String(f.nombre || "").toLowerCase()) &&
-      !String(password).toLowerCase().includes(String(f.email || "").split("@")[0].toLowerCase()),
-  ],
-];
+export const passwordChecks = (password, f = {}) => {
+  const value = String(password || "");
+  const lowerValue = value.toLowerCase();
+  const nombre = String(f.nombre || "").trim().toLowerCase();
+  const emailUser = String(f.email || "").trim().split("@")[0].toLowerCase();
+  const hasPersonalData = Boolean(nombre || emailUser);
+
+  return [
+    ["length", "Mínimo 6 caracteres", value.length >= 6],
+    ["upper", "Una mayúscula", /[A-Z]/.test(value)],
+    ["lower", "Una minúscula", /[a-z]/.test(value)],
+    ["number", "Un número", /\d/.test(value)],
+    ["special", "Un carácter especial", /[^A-Za-z0-9]/.test(value)],
+    ["spaces", "Sin espacios", !/\s/.test(value) && Boolean(value)],
+    [
+      "personal",
+      "No usar tu nombre o correo",
+      !hasPersonalData || (
+        (!nombre || !lowerValue.includes(nombre)) &&
+        (!emailUser || !lowerValue.includes(emailUser))
+      ),
+    ],
+  ];
+};
 
 export const strongPasswordOk = (password, f) =>
   passwordChecks(password, f).every(([, , ok]) => ok);

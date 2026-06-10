@@ -95,5 +95,6 @@ export const api = {
   get: (p) => api.req("GET", p),
   post: (p, b) => api.req("POST", p, b),
   put: (p, b) => api.req("PUT", p, b),
+  delete: (p, b) => api.req("DELETE", p, b),
   upload: (p, f) => api.req("POST", p, f, true),
 };

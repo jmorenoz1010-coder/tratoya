@@ -51,7 +51,7 @@ function getTransporter() {
 }
 
 const FROM    = () => process.env.EMAIL_FROM || '"TratoYa" <soporte@tratoya.com>';
-const APP_URL = () => process.env.FRONTEND_URL || 'https://tratoya.com';
+const APP_URL = () => process.env.PUBLIC_FRONTEND_URL || process.env.FRONTEND_URL || 'https://tratoya.com';
 
 // Logo incrustado como base64 (13 KB) — no depende de URLs externas
 let _logoB64 = null;
@@ -227,6 +227,36 @@ const TEMPLATES = {
       <h2>El vendedor registró la entrega</h2>
       <p>Hola ${nombre}. El vendedor del trato <strong>${codigo}</strong> registró la entrega. <strong>Cuando recibas el producto en perfecto estado, confírmalo en la app para liberar el pago.</strong></p>
       <a href="${APP_URL()}" class="cta">Confirmar entrega →</a>
+    `),
+  }),
+
+  entrega_confirmada_comprador: ({ nombre, codigo, titulo }) => ({
+    subject: `TratoYA · Entrega confirmada — ${codigo}`,
+    html: wrap(`
+      <span class="badge badge-gn">Entrega confirmada ✅</span>
+      <h2>Tu confirmación quedó registrada</h2>
+      <p>Hola ${nombre}. Confirmaste la entrega de <strong>${titulo || codigo}</strong>. TratoYA realizará la consignación manual al vendedor y te avisará cuando finalice.</p>
+      <a href="${APP_URL()}" class="cta">Ver trato →</a>
+    `),
+  }),
+
+  entrega_confirmada_pendiente_pago: ({ nombre, codigo, titulo }) => ({
+    subject: `TratoYA · Entrega confirmada, pago por consignar — ${codigo}`,
+    html: wrap(`
+      <span class="badge badge-gn">Listo para consignar ✅</span>
+      <h2>El comprador confirmó la entrega</h2>
+      <p>Hola ${nombre}. La entrega de <strong>${titulo || codigo}</strong> fue confirmada. El equipo TratoYA realizará la consignación manual y te notificará cuando los fondos hayan sido enviados.</p>
+      <a href="${APP_URL()}" class="cta">Ver trato →</a>
+    `),
+  }),
+
+  trato_completado: ({ nombre, codigo, titulo }) => ({
+    subject: `TratoYA · Trato completado — ${codigo}`,
+    html: wrap(`
+      <span class="badge badge-gn">Trato completado ✅</span>
+      <h2>Todo quedó listo</h2>
+      <p>Hola ${nombre}. El trato <strong>${titulo || codigo}</strong> fue completado y el pago al vendedor quedó registrado.</p>
+      <a href="${APP_URL()}" class="cta">Ver trato →</a>
     `),
   }),
 
