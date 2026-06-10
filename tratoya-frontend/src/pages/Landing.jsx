@@ -25,16 +25,6 @@ const WHAT_IS = [
   { icon: "📱", title: "100% digital", body: "Crea, paga y cobra un trato en minutos desde el celular." },
 ];
 
-const PROBLEM_BAD = [
-  { e: "😟", t: "Pagar directo", d: "Cruzas los dedos. Sin respaldo si algo falla." },
-  { e: "🚨", t: "Riesgo real", d: "Bloqueos inesperados, dinero retenido y disputas sin intermediario." },
-];
-
-const PROBLEM_GOOD = [
-  { e: "✅", t: "Con TratoYa", d: "El dinero queda protegido hasta confirmar la entrega." },
-  { e: "🤝", t: "Ambos ganan", d: "Comprador seguro. Vendedor cobra al cumplir." },
-];
-
 const TRANSFER_BRANDS = [
   { name: "Nequi", src: "/brand-nequi.svg", cls: "ty-pay-logo--nequi" },
   { name: "Bancolombia", src: "/brand-bancolombia.svg", cls: "ty-pay-logo--bancolombia" },
@@ -341,14 +331,7 @@ export default function Landing({ goAuth }) {
                 <p className="ty-sub ty-text-pulse ty-text-pulse--delay">
                   La confianza no basta cuando hay dinero de por medio.
                 </p>
-                <ContrastGrid bad={PROBLEM_BAD} good={PROBLEM_GOOD} />
-                <div className="ty-shield-viz">
-                  <ShieldNode label="Comprador" icon={<BuyerIcon />} />
-                  <span className="ty-shield-arrow" aria-hidden="true">→</span>
-                  <ShieldNode label="TratoYa" logoSrc={logo} core />
-                  <span className="ty-shield-arrow" aria-hidden="true">→</span>
-                  <ShieldNode label="Vendedor" icon={<SellerIcon />} />
-                </div>
+                <RiskDemo />
               </div>
             </SlideWrap>
           )}
@@ -631,43 +614,114 @@ function InfoGrid({ items, columns = 3 }) {
   );
 }
 
-function ContrastGrid({ bad, good }) {
+/* ── RiskDemo: comparador animado "Sin TratoYa / Con TratoYa" ──
+   Reemplaza las cards estáticas del problema con una demo en vivo:
+   el dinero viaja directo y falla (✕) o pasa por la custodia
+   TratoYa y llega seguro (✓). Auto-alterna; el toque manual pausa. */
+const RISK_MODES = {
+  sin: {
+    tab: "Sin TratoYa",
+    caption: "Pagas directo y cruzas los dedos. Si algo falla, no hay respaldo.",
+    badge: "✕ Dinero en riesgo",
+  },
+  con: {
+    tab: "Con TratoYa",
+    caption: "El pago queda en custodia y solo se libera al confirmar la entrega.",
+    badge: "✓ Dinero protegido",
+  },
+};
+
+const RISK_CYCLE = { duration: 2.6, repeat: Infinity, repeatDelay: 1.1, ease: "easeInOut" };
+
+function RiskDemo() {
+  const [modo, setModo] = useState("con");
+  const pauseRef = useRef(false);
+
+  useEffect(() => {
+    const id = setInterval(() => {
+      if (!pauseRef.current) setModo((m) => (m === "sin" ? "con" : "sin"));
+    }, 5200);
+    return () => clearInterval(id);
+  }, []);
+
+  const pick = (m) => {
+    pauseRef.current = true;
+    setModo(m);
+    setTimeout(() => { pauseRef.current = false; }, 9000);
+  };
+
+  const sin = modo === "sin";
+  const coin = sin
+    ? { left: ["8%", "8%", "78%", "78%", "78%"], opacity: [0, 1, 1, 1, 0] }
+    : { left: ["8%", "44%", "44%", "78%", "78%"], opacity: [0, 1, 1, 1, 0] };
+  const coinTimes = sin ? [0, 0.08, 0.8, 0.92, 1] : [0, 0.4, 0.6, 0.92, 1];
+
   return (
-    <div className="ty-contrast-grid">
-      <div className="ty-contrast-col">
-        {bad.map((item, i) => (
-          <motion.div
-            key={item.t}
-            className="ty-contrast-card ty-contrast-card--bad"
-            initial={{ opacity: 0, x: -16 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.1 + i * 0.08, duration: 0.45, ease: EASE }}
+    <div className="ty-riskdemo">
+      <div className="ty-riskdemo__tabs" role="tablist" aria-label="Comparar con y sin TratoYa">
+        {Object.entries(RISK_MODES).map(([key, cfg]) => (
+          <button
+            key={key}
+            type="button"
+            role="tab"
+            aria-selected={modo === key}
+            className={`ty-riskdemo__tab${modo === key ? ` active--${key}` : ""}`}
+            onClick={() => pick(key)}
           >
-            <span aria-hidden="true">{item.e}</span>
-            <div>
-              <strong>{item.t}</strong>
-              <p>{item.d}</p>
-            </div>
-          </motion.div>
+            {cfg.tab}
+          </button>
         ))}
       </div>
-      <div className="ty-contrast-col">
-        {good.map((item, i) => (
-          <motion.div
-            key={item.t}
-            className="ty-contrast-card ty-contrast-card--good"
-            initial={{ opacity: 0, x: 16 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.1 + i * 0.08, duration: 0.45, ease: EASE }}
-          >
-            <span aria-hidden="true">{item.e}</span>
-            <div>
-              <strong>{item.t}</strong>
-              <p>{item.d}</p>
-            </div>
-          </motion.div>
-        ))}
-      </div>
+
+      <AnimatePresence mode="wait" initial={false}>
+        <motion.div
+          key={modo}
+          className={`ty-riskdemo__panel ty-riskdemo__panel--${modo}`}
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -8 }}
+          transition={{ duration: 0.35, ease: EASE }}
+        >
+          <div className="ty-riskdemo__stage">
+            <span className={`ty-riskdemo__line ty-riskdemo__line--${modo}`} aria-hidden="true" />
+
+            <motion.span
+              className="ty-riskdemo__coin"
+              aria-hidden="true"
+              animate={coin}
+              transition={{ ...RISK_CYCLE, times: coinTimes }}
+            >
+              💸
+            </motion.span>
+
+            <motion.span
+              className={`ty-riskdemo__burst ty-riskdemo__burst--${modo}`}
+              aria-hidden="true"
+              animate={{ opacity: [0, 0, 1, 1, 0], scale: [0.5, 0.5, 1.25, 1, 1] }}
+              transition={{ ...RISK_CYCLE, times: [0, 0.78, 0.86, 0.95, 1] }}
+            >
+              {sin ? "✕" : "✓"}
+            </motion.span>
+
+            <ShieldNode label="Comprador" icon={<BuyerIcon />} />
+            {sin ? (
+              <span className="ty-riskdemo__ghost" aria-hidden="true">?</span>
+            ) : (
+              <span className="ty-riskdemo__core">
+                <ShieldNode label="TratoYa" logoSrc={logo} core />
+              </span>
+            )}
+            <ShieldNode label="Vendedor" icon={<SellerIcon />} />
+          </div>
+
+          <div className="ty-riskdemo__foot">
+            <span className={`ty-riskdemo__badge ty-riskdemo__badge--${modo}`}>
+              {RISK_MODES[modo].badge}
+            </span>
+            <p className="ty-riskdemo__caption">{RISK_MODES[modo].caption}</p>
+          </div>
+        </motion.div>
+      </AnimatePresence>
     </div>
   );
 }
