@@ -31,10 +31,10 @@ const TRANSFER_BRANDS = [
   { name: "PSE", src: "/brand-pse.png", cls: "ty-pay-logo--pse" },
 ];
 
-const SAFETY = [
-  { icon: "🔒", title: "Dinero protegido", body: "No se mueve hasta que ambos cumplan." },
-  { icon: "⚖️", title: "Disputas mediadas", body: "Revisamos evidencia y resolvemos en hasta 72 horas." },
-  { icon: "👤", title: "Soporte humano", body: "Personas reales te acompañan si algo sale mal." },
+const SAFETY_SHOW = [
+  { id: "protegido", icon: "🔒", tab: "Protegido", title: "Dinero protegido", body: "No se mueve hasta que ambos cumplan." },
+  { id: "disputas", icon: "⚖️", tab: "Disputas", title: "Disputas mediadas", body: "Revisamos evidencia y resolvemos en hasta 72 horas." },
+  { id: "soporte", icon: "👤", tab: "Soporte", title: "Soporte humano", body: "Personas reales te acompañan si algo sale mal." },
 ];
 
 const MINI_FAQ = [
@@ -56,7 +56,7 @@ const COMMISSION_PAYERS = [
   { id: "compartida", label: "50 / 50" },
 ];
 
-const FLOW_AUTO_MS = 3200;
+const FLOW_AUTO_MS = 3000;
 const FLOW_ENTER_MS = 680;
 const FLOW_FADE = { duration: 0.75, ease: [0.4, 0, 0.2, 1] };
 
@@ -161,6 +161,44 @@ export default function Landing({ goAuth }) {
 
   const amount = Number(monto.replace(/\D/g, "")) || 0;
   const calc = amount >= 50000 ? calcularComisionUI(amount, quienComision) : null;
+
+  // ── Simulación automática (slide 6): teclea 500.000, muestra el
+  //    desglose, espera, limpia y deja la barra al usuario ──────────
+  const AUTO_SIM_VALUE = "500000";
+  const autoSimDoneRef = useRef(false);
+  const autoSimTimersRef = useRef([]);
+  const [autoSimRunning, setAutoSimRunning] = useState(false);
+
+  const cancelAutoSim = useCallback((clearInput = false) => {
+    autoSimTimersRef.current.forEach(clearTimeout);
+    autoSimTimersRef.current = [];
+    autoSimDoneRef.current = true;
+    setAutoSimRunning(false);
+    if (clearInput) setMonto("");
+  }, []);
+
+  useEffect(() => {
+    if (slide !== 5 || autoSimDoneRef.current) return undefined;
+    const timers = autoSimTimersRef.current;
+    setAutoSimRunning(true);
+    // Tecleo dígito a dígito (efecto máquina de escribir)
+    AUTO_SIM_VALUE.split("").forEach((_, i) => {
+      timers.push(setTimeout(() => setMonto(AUTO_SIM_VALUE.slice(0, i + 1)), 900 + i * 160));
+    });
+    // Mantiene el desglose visible y luego limpia la barra
+    const typedAt = 900 + AUTO_SIM_VALUE.length * 160;
+    timers.push(setTimeout(() => {
+      setMonto("");
+      autoSimDoneRef.current = true;
+      setAutoSimRunning(false);
+    }, typedAt + 3000));
+    return () => {
+      timers.forEach(clearTimeout);
+      autoSimTimersRef.current = [];
+      setAutoSimRunning(false);
+    };
+  }, [slide]);
+
   const enableFlowManual = useCallback(() => {
     flowManualRef.current = true;
     setFlowManual(true);
@@ -409,7 +447,7 @@ export default function Landing({ goAuth }) {
                 <p className="ty-sub ty-text-pulse ty-text-pulse--delay">
                   Tu dinero queda protegido mientras resolvemos.
                 </p>
-                <InfoGrid items={SAFETY} columns={3} />
+                <SafetyShowcase />
                 <MiniFaq items={MINI_FAQ} />
               </div>
             </SlideWrap>
@@ -430,8 +468,13 @@ export default function Landing({ goAuth }) {
                     type="text"
                     inputMode="numeric"
                     placeholder="$ 500.000"
+                    className={autoSimRunning ? "ty-sim-typing" : ""}
                     value={monto ? Number(monto).toLocaleString("es-CO") : ""}
-                    onChange={(e) => setMonto(e.target.value.replace(/\D/g, ""))}
+                    onPointerDown={() => { if (autoSimRunning) cancelAutoSim(true); }}
+                    onChange={(e) => {
+                      if (autoSimRunning) cancelAutoSim();
+                      setMonto(e.target.value.replace(/\D/g, ""));
+                    }}
                   />
                   <div className="ty-commission-pickers" role="group" aria-label="Quién paga la comisión">
                     <span className="ty-commission-pickers__label">La comisión la paga</span>
@@ -498,29 +541,70 @@ export default function Landing({ goAuth }) {
 
           {slide === 7 && (
             <SlideWrap key="s7" dir={dir}>
-              <div className="ty-slide">
-                <p className="ty-kicker ty-text-pulse">Listo para tu primer trato</p>
-                <h2 className="ty-mega ty-text-pulse">
-                  Haz el negocio.<br /><span>Nosotros cuidamos.</span>
+              <div className="ty-slide ty-slide--finale">
+                {/* Onda expansiva tras el impacto del titular */}
+                <motion.span
+                  className="ty-finale-flash"
+                  aria-hidden="true"
+                  initial={{ opacity: 0, scale: 0.2 }}
+                  animate={{ opacity: [0, 0.55, 0], scale: [0.2, 1.6, 2.1] }}
+                  transition={{ delay: 0.95, duration: 1.1, ease: "easeOut" }}
+                />
+
+                <motion.p
+                  className="ty-kicker"
+                  initial={{ opacity: 0, letterSpacing: "0.6em" }}
+                  animate={{ opacity: 1, letterSpacing: "0.18em" }}
+                  transition={{ delay: 0.15, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+                >
+                  Listo para tu primer trato
+                </motion.p>
+
+                <h2 className="ty-mega ty-mega--finale">
+                  <WordZoom text="Haz el negocio." delay={0.35} />
+                  <br />
+                  <motion.span
+                    className="ty-finale-accent"
+                    initial={{ opacity: 0, scale: 3.2, filter: "blur(20px)" }}
+                    animate={{ opacity: 1, scale: [3.2, 0.96, 1.04, 1], filter: "blur(0px)" }}
+                    transition={{ delay: 0.78, duration: 0.7, times: [0, 0.6, 0.82, 1], ease: [0.16, 1, 0.3, 1] }}
+                  >
+                    Nosotros cuidamos.
+                  </motion.span>
                 </h2>
-                <p className="ty-sub ty-text-pulse ty-text-pulse--delay">
+
+                <motion.p
+                  className="ty-sub"
+                  initial={{ opacity: 0, y: 18, filter: "blur(6px)" }}
+                  animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+                  transition={{ delay: 1.45, duration: 0.55, ease: EASE }}
+                >
                   Registro gratis. Tu primer trato en minutos.
-                </p>
+                </motion.p>
+
                 <div className="ty-cta-stack">
                   <motion.button
-                    className="ty-neon-btn ty-cta-mega"
+                    className="ty-neon-btn ty-cta-mega ty-cta-finale"
                     type="button"
                     onClick={register}
-                    whileHover={{ scale: 1.04, boxShadow: "0 0 60px rgba(158,216,25,0.55)" }}
-                    whileTap={{ scale: 0.96 }}
+                    initial={{ opacity: 0, scale: 0.5, y: 26 }}
+                    animate={{ opacity: 1, scale: [0.5, 1.08, 1], y: 0 }}
+                    transition={{ delay: 1.7, duration: 0.55, times: [0, 0.7, 1], ease: [0.16, 1, 0.3, 1] }}
+                    whileHover={{ scale: 1.05, boxShadow: "0 0 70px rgba(158,216,25,0.6)" }}
+                    whileTap={{ scale: 0.95 }}
                   >
                     Crear cuenta gratis →
                   </motion.button>
-                  <div className="ty-cta-links">
+                  <motion.div
+                    className="ty-cta-links"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 2.15, duration: 0.5 }}
+                  >
                     <a href="/legal/terminos">Términos</a>
                     <a href="/legal/privacidad">Privacidad</a>
                     <a href="mailto:soporte@tratoya.com">Soporte</a>
-                  </div>
+                  </motion.div>
                 </div>
               </div>
             </SlideWrap>
@@ -632,22 +716,39 @@ const RISK_MODES = {
 };
 
 const RISK_CYCLE = { duration: 2.6, repeat: Infinity, repeatDelay: 1.1, ease: "easeInOut" };
+// Coreografía: 1.2s de espera al entrar → "sin" 2 ciclos → "con" 2 ciclos → loop
+const RISK_START_DELAY_MS = 1200;
+const RISK_PLAYS_PER_MODE_MS = 2 * (2600 + 1100);
 
 function RiskDemo() {
-  const [modo, setModo] = useState("con");
+  const [modo, setModo] = useState("sin");
+  const [started, setStarted] = useState(false);
+  const [tick, setTick] = useState(0);
   const pauseRef = useRef(false);
 
+  // Arranque automático al montar (la slide 3 monta este componente)
   useEffect(() => {
-    const id = setInterval(() => {
-      if (!pauseRef.current) setModo((m) => (m === "sin" ? "con" : "sin"));
-    }, 5200);
-    return () => clearInterval(id);
+    const t = setTimeout(() => setStarted(true), RISK_START_DELAY_MS);
+    return () => clearTimeout(t);
   }, []);
+
+  // Tras 2 reproducciones completas, cambia de modo
+  useEffect(() => {
+    if (!started) return undefined;
+    const t = setTimeout(() => {
+      if (!pauseRef.current) setModo((m) => (m === "sin" ? "con" : "sin"));
+    }, RISK_PLAYS_PER_MODE_MS);
+    return () => clearTimeout(t);
+  }, [modo, started, tick]);
 
   const pick = (m) => {
     pauseRef.current = true;
     setModo(m);
-    setTimeout(() => { pauseRef.current = false; }, 9000);
+    setStarted(true);
+    setTimeout(() => {
+      pauseRef.current = false;
+      setTick((x) => x + 1); // re-arma el temporizador de cambio de modo
+    }, 9000);
   };
 
   const sin = modo === "sin";
@@ -688,8 +789,8 @@ function RiskDemo() {
             <motion.span
               className="ty-riskdemo__coin"
               aria-hidden="true"
-              animate={coin}
-              transition={{ ...RISK_CYCLE, times: coinTimes }}
+              animate={started ? coin : { opacity: 0 }}
+              transition={started ? { ...RISK_CYCLE, times: coinTimes } : { duration: 0.2 }}
             >
               💸
             </motion.span>
@@ -697,8 +798,8 @@ function RiskDemo() {
             <motion.span
               className={`ty-riskdemo__burst ty-riskdemo__burst--${modo}`}
               aria-hidden="true"
-              animate={{ opacity: [0, 0, 1, 1, 0], scale: [0.5, 0.5, 1.25, 1, 1] }}
-              transition={{ ...RISK_CYCLE, times: [0, 0.78, 0.86, 0.95, 1] }}
+              animate={started ? { opacity: [0, 0, 1, 1, 0], scale: [0.5, 0.5, 1.25, 1, 1] } : { opacity: 0 }}
+              transition={started ? { ...RISK_CYCLE, times: [0, 0.78, 0.86, 0.95, 1] } : { duration: 0.2 }}
             >
               {sin ? "✕" : "✓"}
             </motion.span>
@@ -726,6 +827,139 @@ function RiskDemo() {
   );
 }
 
+/* ── SafetyShowcase: las 3 garantías como demo animada por pestañas ──
+   Auto-rota cada 3.6s; tocar una pestaña la fija 8s. Cada garantía
+   tiene su propia micro-escena en loop. */
+const SAFETY_ROTATE_MS = 3600;
+
+function SafetyStage({ id }) {
+  if (id === "protegido") {
+    return (
+      <div className="ty-safety__scene">
+        <motion.span
+          className="ty-safety__ring"
+          aria-hidden="true"
+          animate={{ scale: [1, 1.55], opacity: [0.55, 0] }}
+          transition={{ duration: 1.6, repeat: Infinity, ease: "easeOut" }}
+        />
+        <motion.span
+          className="ty-safety__drop"
+          aria-hidden="true"
+          animate={{ y: [-46, 0, 0], opacity: [0, 1, 0], scale: [1, 0.55, 0.4] }}
+          transition={{ duration: 1.8, repeat: Infinity, repeatDelay: 0.5, times: [0, 0.55, 1], ease: "easeIn" }}
+        >
+          💸
+        </motion.span>
+        <motion.span
+          className="ty-safety__big"
+          aria-hidden="true"
+          animate={{ scale: [1, 1.08, 1] }}
+          transition={{ duration: 1.8, repeat: Infinity, repeatDelay: 0.5, times: [0.5, 0.62, 0.8] }}
+        >
+          🔒
+        </motion.span>
+      </div>
+    );
+  }
+  if (id === "disputas") {
+    return (
+      <div className="ty-safety__scene">
+        <motion.span
+          className="ty-safety__big"
+          aria-hidden="true"
+          animate={{ rotate: [0, -9, 9, -5, 5, 0] }}
+          transition={{ duration: 2.2, repeat: Infinity, repeatDelay: 0.7, ease: "easeInOut" }}
+        >
+          ⚖️
+        </motion.span>
+        <motion.span
+          className="ty-safety__stamp"
+          aria-hidden="true"
+          animate={{ opacity: [0, 0, 1, 1, 0], scale: [0.4, 0.4, 1.2, 1, 1] }}
+          transition={{ duration: 2.9, repeat: Infinity, times: [0, 0.62, 0.72, 0.9, 1] }}
+        >
+          72h
+        </motion.span>
+      </div>
+    );
+  }
+  return (
+    <div className="ty-safety__scene">
+      <motion.span className="ty-safety__big" aria-hidden="true">👤</motion.span>
+      <span className="ty-safety__bubble" aria-hidden="true">
+        {[0, 1, 2].map((i) => (
+          <motion.i
+            key={i}
+            animate={{ opacity: [0.25, 1, 0.25], y: [0, -3, 0] }}
+            transition={{ duration: 0.9, repeat: Infinity, delay: i * 0.18 }}
+          />
+        ))}
+      </span>
+      <motion.span
+        className="ty-safety__stamp ty-safety__stamp--ok"
+        aria-hidden="true"
+        animate={{ opacity: [0, 0, 1, 1, 0], scale: [0.4, 0.4, 1.2, 1, 1] }}
+        transition={{ duration: 3, repeat: Infinity, times: [0, 0.6, 0.7, 0.9, 1] }}
+      >
+        ✓
+      </motion.span>
+    </div>
+  );
+}
+
+function SafetyShowcase() {
+  const [active, setActive] = useState(0);
+  const pinRef = useRef(false);
+
+  useEffect(() => {
+    const id = setInterval(() => {
+      if (!pinRef.current) setActive((a) => (a + 1) % SAFETY_SHOW.length);
+    }, SAFETY_ROTATE_MS);
+    return () => clearInterval(id);
+  }, []);
+
+  const pin = (i) => {
+    pinRef.current = true;
+    setActive(i);
+    setTimeout(() => { pinRef.current = false; }, 8000);
+  };
+
+  const item = SAFETY_SHOW[active];
+
+  return (
+    <div className="ty-safety">
+      <div className="ty-safety__tabs" role="tablist" aria-label="Garantías TratoYa">
+        {SAFETY_SHOW.map((s, i) => (
+          <button
+            key={s.id}
+            type="button"
+            role="tab"
+            aria-selected={active === i}
+            className={`ty-safety__tab${active === i ? " active" : ""}`}
+            onClick={() => pin(i)}
+          >
+            <span aria-hidden="true">{s.icon}</span> {s.tab}
+          </button>
+        ))}
+      </div>
+      <AnimatePresence mode="wait" initial={false}>
+        <motion.div
+          key={item.id}
+          className="ty-safety__panel"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -8 }}
+          transition={{ duration: 0.32, ease: EASE }}
+        >
+          <SafetyStage id={item.id} />
+          <strong className="ty-safety__title">{item.title}</strong>
+          <p className="ty-safety__caption">{item.body}</p>
+        </motion.div>
+      </AnimatePresence>
+    </div>
+  );
+}
+
 function MiniFaq({ items }) {
   return (
     <div className="ty-mini-faq">
@@ -745,21 +979,71 @@ function MiniFaq({ items }) {
   );
 }
 
+/* ── EarlyList interactiva: recorre los beneficios uno a uno con
+   resaltado neón y check que "se firma" en cada pasada. Tocar un
+   beneficio lo fija 7s. ── */
 function EarlyList({ items }) {
+  const [active, setActive] = useState(0);
+  const pinRef = useRef(false);
+
+  useEffect(() => {
+    const id = setInterval(() => {
+      if (!pinRef.current) setActive((a) => (a + 1) % items.length);
+    }, 2300);
+    return () => clearInterval(id);
+  }, [items.length]);
+
+  const pin = (i) => {
+    pinRef.current = true;
+    setActive(i);
+    setTimeout(() => { pinRef.current = false; }, 7000);
+  };
+
   return (
     <ul className="ty-early-list">
-      {items.map((item, i) => (
-        <motion.li
-          key={item}
-          initial={{ opacity: 0, x: -12 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.14 + i * 0.07, duration: 0.45, ease: EASE }}
-        >
-          <span className="ty-check">✓</span>
-          {item}
-        </motion.li>
-      ))}
+      {items.map((item, i) => {
+        const on = active === i;
+        return (
+          <motion.li
+            key={item}
+            className={on ? "ty-early-active" : ""}
+            onClick={() => pin(i)}
+            initial={{ opacity: 0, x: -12 }}
+            animate={{ opacity: 1, x: 0, scale: on ? 1.03 : 1 }}
+            transition={{ delay: 0.14 + i * 0.07, duration: 0.4, ease: EASE, scale: { duration: 0.3, ease: EASE } }}
+          >
+            <motion.span
+              className="ty-check"
+              animate={on ? { scale: [0.3, 1.35, 1], rotate: [-100, 12, 0] } : { scale: 1, rotate: 0 }}
+              transition={{ duration: 0.5, ease: EASE }}
+            >
+              ✓
+            </motion.span>
+            {item}
+          </motion.li>
+        );
+      })}
     </ul>
+  );
+}
+
+/* ── WordZoom: palabras que llegan desde la profundidad (zoom-in
+   agresivo con blur) en cascada. Para el cierre de la slide 8. ── */
+function WordZoom({ text, delay = 0, step = 0.11, className = "" }) {
+  return (
+    <span className={`ty-zoomline ${className}`}>
+      {text.split(" ").map((w, i) => (
+        <motion.span
+          key={`${w}-${i}`}
+          className="ty-zoomword"
+          initial={{ opacity: 0, scale: 2.6, y: 22, filter: "blur(16px)" }}
+          animate={{ opacity: 1, scale: 1, y: 0, filter: "blur(0px)" }}
+          transition={{ delay: delay + i * step, duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+        >
+          {w}
+        </motion.span>
+      ))}
+    </span>
   );
 }
 

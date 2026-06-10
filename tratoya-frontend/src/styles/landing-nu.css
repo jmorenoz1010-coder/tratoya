@@ -2131,3 +2131,270 @@
     animation: none;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════
+   V2 INTERACTIVO — RiskDemo logo solo, SafetyShowcase, EarlyList
+   viva, simulador auto-tecleo y finale cinematográfico (slide 8)
+   ═══════════════════════════════════════════════════════════ */
+
+/* RiskDemo: nodo central solo con el logo (sin texto "TratoYa") */
+.ty-riskdemo__core .ty-shield-node__label {
+  display: none;
+}
+
+.ty-riskdemo__core .ty-shield-node {
+  padding: 5px;
+  border-radius: 50%;
+}
+
+/* Input del simulador mientras "teclea" solo */
+.ty-sim-typing {
+  animation: tySimCaret 0.85s steps(2) infinite;
+}
+
+@keyframes tySimCaret {
+  0%, 100% { border-color: rgba(159, 224, 25, 0.7); box-shadow: 0 0 0 3px rgba(159, 224, 25, 0.12); }
+  50% { border-color: rgba(159, 224, 25, 0.25); box-shadow: none; }
+}
+
+/* ── SafetyShowcase (slide 5) ── */
+.ty-safety {
+  width: 100%;
+  max-width: 520px;
+  margin: 12px auto 0;
+}
+
+.ty-safety__tabs {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.ty-safety__tab {
+  min-height: 42px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(255, 255, 255, 0.65);
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  cursor: pointer;
+  transition: background 0.25s, border-color 0.25s, color 0.25s, transform 0.2s;
+}
+
+.ty-safety__tab:active {
+  transform: scale(0.97);
+}
+
+.ty-safety__tab.active {
+  background: rgba(159, 224, 25, 0.12);
+  border-color: rgba(159, 224, 25, 0.5);
+  color: #cdf36b;
+}
+
+.ty-safety__panel {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  border-radius: 20px;
+  border: 1px solid rgba(159, 224, 25, 0.25);
+  background: rgba(8, 22, 14, 0.55);
+  backdrop-filter: blur(10px);
+  padding: 14px 16px 14px;
+  overflow: hidden;
+}
+
+.ty-safety__scene {
+  position: relative;
+  height: 72px;
+  width: 100%;
+  display: grid;
+  place-items: center;
+}
+
+.ty-safety__big {
+  font-size: 40px;
+  line-height: 1;
+  display: inline-block;
+  filter: drop-shadow(0 6px 18px rgba(0, 0, 0, 0.4));
+}
+
+.ty-safety__ring {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 58px;
+  height: 58px;
+  margin: -29px 0 0 -29px;
+  border-radius: 50%;
+  border: 2px solid rgba(159, 224, 25, 0.6);
+  pointer-events: none;
+}
+
+.ty-safety__drop {
+  position: absolute;
+  top: 16%;
+  left: 50%;
+  margin-left: -10px;
+  font-size: 20px;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.ty-safety__stamp {
+  position: absolute;
+  right: 16%;
+  top: 6%;
+  min-width: 30px;
+  height: 30px;
+  padding: 0 8px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  font-size: 12.5px;
+  font-weight: 900;
+  background: rgba(159, 224, 25, 0.16);
+  border: 1px solid rgba(159, 224, 25, 0.6);
+  color: #cdf36b;
+  pointer-events: none;
+}
+
+.ty-safety__bubble {
+  position: absolute;
+  right: 22%;
+  top: 18%;
+  display: inline-flex;
+  gap: 4px;
+  padding: 8px 10px;
+  border-radius: 12px 12px 12px 3px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+}
+
+.ty-safety__bubble i {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #cdf36b;
+  display: inline-block;
+}
+
+.ty-safety__title {
+  font-size: 16px;
+  font-weight: 900;
+  color: #fff;
+  letter-spacing: -0.01em;
+}
+
+.ty-safety__caption {
+  margin: 0;
+  font-size: 13.5px;
+  line-height: 1.45;
+  color: rgba(255, 255, 255, 0.7);
+  text-align: center;
+  max-width: 36ch;
+}
+
+/* ── EarlyList viva (slide 7) ── */
+.ty-early-list li {
+  cursor: pointer;
+  transition: border-color 0.3s, background 0.3s, box-shadow 0.3s;
+}
+
+.ty-early-list li.ty-early-active {
+  border-color: rgba(159, 224, 25, 0.55);
+  background: rgba(159, 224, 25, 0.1);
+  box-shadow: 0 0 24px rgba(159, 224, 25, 0.14);
+}
+
+.ty-early-list li.ty-early-active .ty-check {
+  color: #dfff36;
+}
+
+/* ── Finale (slide 8) ── */
+.ty-slide--finale {
+  position: relative;
+}
+
+.ty-finale-flash {
+  position: absolute;
+  top: 34%;
+  left: 50%;
+  width: 320px;
+  height: 320px;
+  margin-left: -160px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(159, 224, 25, 0.35) 0%, rgba(159, 224, 25, 0.08) 45%, transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.ty-slide--finale > * {
+  position: relative;
+  z-index: 1;
+}
+
+.ty-zoomline {
+  display: inline-flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0 0.28em;
+}
+
+.ty-zoomword {
+  display: inline-block;
+  will-change: transform, opacity, filter;
+}
+
+.ty-finale-accent {
+  display: inline-block;
+  color: var(--ty-lime, #dfff36);
+  text-shadow: 0 0 38px rgba(159, 224, 25, 0.45);
+}
+
+.ty-mega--finale {
+  position: relative;
+}
+
+/* CTA con respiración de glow + barrido de brillo */
+.ty-cta-finale {
+  position: relative;
+  overflow: hidden;
+  animation: tyCtaBreath 2.6s ease-in-out 2.4s infinite;
+}
+
+@keyframes tyCtaBreath {
+  0%, 100% { box-shadow: 0 0 24px rgba(159, 224, 25, 0.25); }
+  50% { box-shadow: 0 0 52px rgba(159, 224, 25, 0.55); }
+}
+
+.ty-cta-finale::after {
+  content: "";
+  position: absolute;
+  top: -40%;
+  bottom: -40%;
+  left: -30%;
+  width: 36%;
+  transform: rotate(16deg);
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.38), transparent);
+  animation: tyCtaShine 3.2s ease-in-out 2.8s infinite;
+  pointer-events: none;
+}
+
+@keyframes tyCtaShine {
+  0%, 55% { left: -40%; }
+  85%, 100% { left: 120%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ty-sim-typing,
+  .ty-cta-finale,
+  .ty-cta-finale::after {
+    animation: none;
+  }
+}
