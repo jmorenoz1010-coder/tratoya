@@ -1676,3 +1676,214 @@
     animation: none;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════
+   MOBILE IMPACT LAYER — íconos grandes en chips, cards con
+   presencia, tipografía legible. Cards horizontales (chip a la
+   izquierda) para crecer sin desbordar el alto del slide.
+   Va al final del archivo: gana por cascada a los bloques previos.
+   ═══════════════════════════════════════════════════════════ */
+@media (max-width: 860px) {
+  /* ── Info cards (¿Qué es? / Seguridad): horizontal, 1 columna ── */
+  .ty-info-grid,
+  .ty-info-grid--3 {
+    grid-template-columns: 1fr;
+    gap: 10px;
+    margin-top: 10px;
+  }
+
+  .ty-info-card {
+    display: grid;
+    grid-template-columns: 54px 1fr;
+    grid-template-rows: auto auto;
+    column-gap: 14px;
+    align-items: center;
+    text-align: left;
+    padding: 14px 16px;
+    border-radius: 18px;
+  }
+
+  .ty-info-card__ico {
+    grid-row: 1 / 3;
+    width: 54px;
+    height: 54px;
+    display: grid;
+    place-items: center;
+    font-size: 28px;
+    margin-bottom: 0;
+    background: rgba(159, 224, 25, 0.1);
+    border: 1px solid rgba(159, 224, 25, 0.22);
+    border-radius: 16px;
+  }
+
+  .ty-info-card h3 {
+    grid-column: 2;
+    font-size: 16px;
+    line-height: 1.25;
+    margin-bottom: 2px;
+  }
+
+  .ty-info-card p {
+    grid-column: 2;
+    font-size: 13.5px;
+    line-height: 1.45;
+    margin-top: 0;
+    -webkit-line-clamp: 2;
+  }
+
+  /* ── Contraste (problema/solución): chips 48px, texto legible ── */
+  .ty-contrast-grid {
+    gap: 10px;
+    margin-top: 10px;
+  }
+
+  .ty-contrast-card {
+    padding: 12px 14px;
+    gap: 12px;
+    border-radius: 16px;
+    align-items: center;
+  }
+
+  .ty-contrast-card > span {
+    width: 48px;
+    height: 48px;
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+    font-size: 24px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 14px;
+  }
+
+  .ty-contrast-card--good > span {
+    background: rgba(159, 224, 25, 0.12);
+    border-color: rgba(159, 224, 25, 0.28);
+  }
+
+  .ty-contrast-card strong {
+    font-size: 15px;
+    margin-bottom: 2px;
+  }
+
+  .ty-contrast-card p {
+    font-size: 13px;
+    line-height: 1.4;
+    -webkit-line-clamp: 2;
+  }
+
+  /* ── Custodia (shield viz): nodos más visibles ── */
+  .ty-shield-node__icon {
+    width: 40px;
+    height: 40px;
+  }
+
+  .ty-shield-node--core .ty-shield-node__icon {
+    width: 44px;
+    height: 44px;
+  }
+
+  .ty-shield-node {
+    font-size: 12px;
+    padding: 6px 10px 6px 6px;
+    gap: 8px;
+  }
+
+  .ty-shield-node__label {
+    font-size: 12px;
+  }
+
+  /* ── Mini FAQ: 1 columna legible (antes 3 col a 10px) ── */
+  .ty-mini-faq {
+    grid-template-columns: 1fr;
+    gap: 8px;
+    margin-top: 10px;
+  }
+
+  .ty-mini-faq__item {
+    padding: 12px 14px;
+    border-radius: 14px;
+    text-align: left;
+  }
+
+  .ty-mini-faq__item strong {
+    font-size: 14.5px;
+    margin-bottom: 3px;
+    line-height: 1.3;
+  }
+
+  .ty-mini-faq__item p {
+    font-size: 13px;
+    line-height: 1.45;
+    -webkit-line-clamp: 2;
+  }
+
+  /* ── Beneficios early: 1 columna, check visible ── */
+  .ty-early-list {
+    grid-template-columns: 1fr;
+    gap: 8px;
+    margin-top: 12px;
+  }
+
+  .ty-early-list li {
+    padding: 11px 14px;
+    font-size: 14px;
+    border-radius: 13px;
+    gap: 10px;
+  }
+
+  .ty-early-list .ty-check {
+    font-size: 15px;
+  }
+
+  /* ── Kicker y CTA: jerarquía sin perder elegancia ── */
+  .ty-kicker {
+    font-size: 11px;
+    padding: 6px 14px;
+  }
+
+  .ty-sub {
+    font-size: 15px;
+    line-height: 1.45;
+  }
+
+  .ty-cta-mega {
+    min-height: 50px;
+    font-size: 14px;
+    padding: 0 28px;
+  }
+
+  .ty-cta-links a {
+    font-size: 13px;
+  }
+
+  /* ── Pasos (cómo funciona): texto sin recorte agresivo ── */
+  .ty-flow-desc {
+    font-size: 14px;
+    -webkit-line-clamp: 3;
+  }
+
+  .ty-flow-tab {
+    width: 46px;
+    height: 46px;
+    font-size: 13px;
+  }
+
+  /* ── Calculadora: touch targets ── */
+  .ty-commission-opt {
+    min-height: 44px;
+    font-size: 13px;
+  }
+
+  .ty-mini-calc input {
+    min-height: 48px;
+  }
+
+  .ty-calc-out div {
+    font-size: 14px;
+  }
+
+  .ty-calc-out strong {
+    font-size: 16px;
+  }
+}
