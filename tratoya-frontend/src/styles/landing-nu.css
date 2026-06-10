@@ -2722,3 +2722,8 @@
   background-clip: initial !important;
   color: var(--fin-c, #dfff36) !important;
 }
+
+/* Fix: separación entre palabras del título del flow (slide 4) */
+.ty-flow-title .ty-zoomword:not(:last-child) {
+  margin-right: 0.26em;
+}
