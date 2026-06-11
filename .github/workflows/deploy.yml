@@ -67,13 +67,14 @@ jobs:
       - uses: actions/checkout@v4
       - name: Install Vercel CLI
         run: npm install -g vercel@latest
+      # Se ejecuta desde la raíz del repo: el proyecto en Vercel ya tiene
+      # Root Directory = tratoya-backend, por lo que correr el CLI dentro
+      # de la subcarpeta duplica la ruta y rompe el deploy.
       - name: Vercel build backend
-        working-directory: tratoya-backend
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
         run: vercel build --prod --token "$VERCEL_TOKEN" --yes
       - name: Deploy backend prebuilt → Vercel
-        working-directory: tratoya-backend
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
         run: vercel deploy --prebuilt --prod --token "$VERCEL_TOKEN"
@@ -98,14 +99,14 @@ jobs:
         working-directory: tratoya-frontend
       - name: Install Vercel CLI
         run: npm install -g vercel@latest
+      # Igual que el backend: se ejecuta desde la raíz del repo porque el
+      # proyecto en Vercel tiene Root Directory = tratoya-frontend.
       - name: Vercel build frontend
-        working-directory: tratoya-frontend
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           VITE_API_URL: https://api.tratoya.com/api
         run: vercel build --prod --token "$VERCEL_TOKEN" --yes
       - name: Deploy frontend prebuilt → Vercel
-        working-directory: tratoya-frontend
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
         run: vercel deploy --prebuilt --prod --token "$VERCEL_TOKEN"
