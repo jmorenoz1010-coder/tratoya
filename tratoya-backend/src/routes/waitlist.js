@@ -15,7 +15,8 @@ const FOUNDER_LIMIT = 1000;
 
 const clean = (value) => String(value || '').trim();
 const normalizeEmail = (value) => clean(value).toLowerCase();
-const adminKey = () => process.env.WAITLIST_ADMIN_KEY || 'clave-secreta-para-admin';
+// S-14: sin clave por defecto. Si no está configurada, el acceso admin queda cerrado.
+const adminKey = () => process.env.WAITLIST_ADMIN_KEY || null;
 
 function clientIp(req) {
   return String(req.headers['x-forwarded-for'] || req.ip || req.socket?.remoteAddress || '')
@@ -108,8 +109,9 @@ async function moveApplicantUp(applicant, places, transaction) {
 }
 
 function requireAdmin(req, res, next) {
+  const expected = adminKey();
   const key = req.get('X-Admin-Key');
-  if (!key || key !== adminKey()) {
+  if (!expected || !key || key !== expected) {
     return res.status(401).json({ success: false, message: 'Clave admin invalida.' });
   }
   return next();

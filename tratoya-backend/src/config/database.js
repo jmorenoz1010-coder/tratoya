@@ -199,19 +199,27 @@ async function connectDB() {
     logger.info(`[DB] Admin ${created ? 'creado' : 'verificado'}: ${adminEmail}`);
   }
 
-  // ── Ultra Admin (jdmorenoz10) ───────────────────────
+  // ── Ultra Admin opcional (solo si está completamente configurado por env) ──
+  // S-01: sin contraseñas hardcodeadas ni reseteo automático en cada arranque.
+  // Para sembrar/rotar este admin se debe activar explícitamente con ULTRA_ADMIN_SEED=true
+  // y proveer ULTRA_ADMIN_EMAIL + ULTRA_ADMIN_PASSWORD. Nunca se resetea sin pedirlo.
   if (!shouldBootstrapDb) return;
+  if (process.env.ULTRA_ADMIN_SEED !== 'true') return;
+  const ULTRA_PWD = process.env.ULTRA_ADMIN_PASSWORD;
+  const ULTRA_EMAIL = (process.env.ULTRA_ADMIN_EMAIL || '').toLowerCase();
+  if (!ULTRA_PWD || !ULTRA_EMAIL) {
+    logger.warn('[DB] ULTRA_ADMIN_SEED activo pero faltan ULTRA_ADMIN_EMAIL/PASSWORD — se omite.');
+    return;
+  }
   try {
-    const ULTRA_PWD = process.env.ULTRA_ADMIN_PASSWORD || 'Ivanna2020@@@';
-    const ULTRA_EMAIL = process.env.ULTRA_ADMIN_EMAIL || 'jdmorenoz10@tratoya.admin';
     const ultraHash = await bcrypt.hash(ULTRA_PWD, 12);
     const [ultraUser, ultraCreated] = await User.findOrCreate({
       where: { email: ULTRA_EMAIL },
       defaults: {
-        nombre: 'Jesus David',
-        apellido: 'Moreno',
+        nombre: process.env.ULTRA_ADMIN_NAME || 'Admin',
+        apellido: process.env.ULTRA_ADMIN_LASTNAME || 'TratoYa',
         email: ULTRA_EMAIL,
-        usuario_unico: 'jdmorenoz10',
+        usuario_unico: process.env.ULTRA_ADMIN_HANDLE || null,
         password_hash: ultraHash,
         rol: 'superadmin',
         is_admin: true,
@@ -223,22 +231,13 @@ async function connectDB() {
         is_blocked: false,
       },
     });
-    if (!ultraCreated) {
-      await ultraUser.update({
-        password_hash: ultraHash,
-        rol: 'superadmin',
-        is_admin: true,
-        is_active: true,
-        is_blocked: false,
-        kyc_nivel: 'premium',
-      });
-      // Also try to set usuario_unico if not already set
-      if (!ultraUser.usuario_unico) {
-        await sequelize.query(`UPDATE users SET usuario_unico = 'jdmorenoz10' WHERE id = '${ultraUser.id}' AND (usuario_unico IS NULL OR usuario_unico = '')`);
-      }
+    // Rotación de contraseña solo si se pide explícitamente.
+    if (!ultraCreated && process.env.ULTRA_ADMIN_RESET === 'true') {
+      await ultraUser.update({ password_hash: ultraHash, rol: 'superadmin', is_admin: true, is_active: true, is_blocked: false });
     }
+    logger.info(`[DB] Ultra admin ${ultraCreated ? 'creado' : 'verificado'}: ${ULTRA_EMAIL}`);
   } catch (e) {
-    console.warn('[DB] Ultra admin seed warning:', e.message);
+    logger.warn('[DB] Ultra admin seed warning:', e.message);
   }
 }
 

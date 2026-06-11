@@ -89,7 +89,6 @@ app.get('/health', (req, res) => {
     status: 'ok',
     app: 'TratoYa API',
     version: '1.0.0',
-    env: process.env.NODE_ENV,
     timestamp: new Date().toISOString(),
   });
 });

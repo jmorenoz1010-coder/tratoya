@@ -17,6 +17,38 @@ const PUBLIC_FRONTEND_URL = 'https://www.tratoya.com';
 const fmt = (n) => Number(n).toLocaleString('es-CO');
 const tratoLink = (link) => `${PUBLIC_FRONTEND_URL}/t/${link}`;
 
+// S-06: expone solo campos seguros del trato en el link público (sin notas internas,
+// metadata, IDs internos ni IP de creación).
+const toPublicTrato = (trato) => {
+  if (!trato) return null;
+  const t = typeof trato.toJSON === 'function' ? trato.toJSON() : trato;
+  const persona = (u) => (u ? {
+    nombre: u.nombre,
+    apellido: u.apellido,
+    reputacion: u.reputacion,
+    kyc_nivel: u.kyc_nivel,
+  } : null);
+  return {
+    codigo: t.codigo,
+    titulo: t.titulo,
+    descripcion: t.descripcion,
+    tipo: t.tipo,
+    monto: t.monto,
+    comision_pct: t.comision_pct,
+    comision_monto: t.comision_monto,
+    monto_neto: t.monto_neto,
+    quien_paga_comision: t.quien_paga_comision,
+    moneda: t.moneda,
+    estado: t.estado,
+    dias_inspeccion: t.dias_inspeccion,
+    link_compartir: t.link_compartir,
+    fecha_creado: t.fecha_creado,
+    fecha_expiracion: t.fecha_expiracion,
+    vendedor: persona(t.vendedor),
+    comprador: persona(t.comprador),
+  };
+};
+
 // ── GET /api/tratos/public/:link ─────────────
 router.get('/public/:link', async (req, res, next) => {
   try {
@@ -32,7 +64,7 @@ router.get('/public/:link', async (req, res, next) => {
       await trato.update({ estado: 'expirado' });
       return res.status(410).json({ success: false, message: 'Este link expiró. Pide al vendedor crear o reenviar un trato nuevo.' });
     }
-    res.json({ success: true, data: trato });
+    res.json({ success: true, data: toPublicTrato(trato) });
   } catch (err) { next(err); }
 });
 
@@ -42,6 +74,10 @@ router.put('/public/:link/activar', auth, async (req, res, next) => {
     const trato = await Trato.findOne({ where: { link_compartir: req.params.link } });
     if (!trato) return res.status(404).json({ success: false, message: 'Link de trato no encontrado' });
     if (trato.estado !== 'borrador') return res.status(400).json({ success: false, message: 'Este trato ya no puede activarse' });
+    // S-02: un trato con comprador ya asignado no puede ser tomado por otro usuario.
+    if (trato.comprador_id && trato.comprador_id !== req.user.id) {
+      return res.status(403).json({ success: false, message: 'Este trato ya tiene un comprador asignado.' });
+    }
     if (trato.fecha_expiracion && dayjs().isAfter(dayjs(trato.fecha_expiracion))) {
       await trato.update({ estado: 'expirado' });
       return res.status(410).json({ success: false, message: 'Este link expiró. Pide al vendedor crear o reenviar un trato nuevo.' });
@@ -206,6 +242,10 @@ router.put('/:id/activar', async (req, res, next) => {
     const trato = await Trato.findByPk(req.params.id);
     if (!trato) return res.status(404).json({ success: false, message: 'Trato no encontrado' });
     if (trato.estado !== 'borrador') return res.status(400).json({ success: false, message: 'Este trato ya no puede activarse' });
+    // S-02: si el trato ya tiene un comprador asignado, nadie más puede tomarlo.
+    if (trato.comprador_id && trato.comprador_id !== req.user.id) {
+      return res.status(403).json({ success: false, message: 'Este trato ya tiene un comprador asignado.' });
+    }
     if (trato.vendedor_id === req.user.id) return res.status(400).json({ success: false, message: 'No puedes ser comprador de tu propio trato' });
 
     await trato.update({ comprador_id: req.user.id, estado: 'activo', fecha_activado: new Date() });
@@ -229,9 +269,10 @@ router.put('/:id/activar', async (req, res, next) => {
 router.post('/:id/prueba-entrega', async (req, res, next) => {
   try {
     const multer = require('multer');
-    const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
+    const { validateUpload } = require('../utils/fileValidation');
+    const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 8 * 1024 * 1024, files: 5 } });
     upload.any()(req, res, async (err) => {
-      if (err) return next(err);
+      if (err) return res.status(400).json({ success: false, message: 'No se pudo procesar el archivo. Verifica el tamaño (máx 8 MB).' });
       const trato = await Trato.findByPk(req.params.id);
       if (!trato) return res.status(404).json({ success: false, message: 'Trato no encontrado' });
       if (trato.vendedor_id !== req.user.id) return res.status(403).json({ success: false, message: 'Solo el vendedor puede subir pruebas' });
@@ -240,9 +281,10 @@ router.post('/:id/prueba-entrega', async (req, res, next) => {
       const { s3Upload } = require('../services/s3Service');
       const urls = [];
       for (const file of (req.files || [])) {
-        const ext = (file.originalname.split('.').pop() || 'jpg');
-        const key = `entregas/${trato.id}/foto-${Date.now()}-${Math.random().toString(16).slice(2)}.${ext}`;
-        const url = await s3Upload(key, file.buffer, file.mimetype);
+        const check = validateUpload(file);
+        if (!check.ok) return res.status(400).json({ success: false, message: check.message });
+        const key = `entregas/${trato.id}/foto-${Date.now()}-${Math.random().toString(16).slice(2)}.${check.ext}`;
+        const url = await s3Upload(key, file.buffer, check.mime);
         urls.push(url);
       }
 

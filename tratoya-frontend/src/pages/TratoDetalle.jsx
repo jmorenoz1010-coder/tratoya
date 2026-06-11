@@ -315,7 +315,10 @@ export default function TratoDetalle({ tratoId, setPage, setDisputeTratoId, user
             {/* Progreso visual */}
             <DealProgress steps={steps} />
 
-            <CommissionBreakdown monto={montoTrato} quien={quienComision} />
+            <details className="td-comm-toggle">
+              <summary>Ver desglose de comisión y montos</summary>
+              <CommissionBreakdown monto={montoTrato} quien={quienComision} />
+            </details>
 
             {/* Acciones del vendedor: envío */}
             {canShip && (

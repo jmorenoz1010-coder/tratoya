@@ -240,6 +240,14 @@ export const PAGO_ESTADO = {
   error:       { l: "Error en pago",             c: "rd", desc: "Ocurrió un error procesando el pago.", help: "Contacta a soporte si el problema persiste." },
 };
 
+export const DISPUTA_ESTADO = {
+  abierta:        { l: "Disputa abierta",     c: "or" },
+  en_revision:    { l: "En revisión",         c: "nb" },
+  esperando_info: { l: "Esperando información", c: "or" },
+  resuelta:       { l: "Resuelta",            c: "gn" },
+  cerrada:        { l: "Cerrada",             c: "gn" },
+};
+
 export const TIPO_ICO = {
   producto: "📦",
   servicio: "🛠️",

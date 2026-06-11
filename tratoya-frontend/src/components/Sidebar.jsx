@@ -8,7 +8,7 @@ const NAV = [
   ["pagos",     "💳", "Pagos"],
   ["disputas",  "⚖️", "Disputas"],
 ];
-const BOT = [["perfil", "👤", "Perfil"]];
+const BOT = [["reputacion", "⭐", "Reputación"], ["perfil", "👤", "Perfil"]];
 
 export default function Sidebar({ page, setPage, user, onLogout, onMenuOpen, hasPendingTratos = false }) {
   const nom = user ? `${user.nombre} ${user.apellido}` : "";

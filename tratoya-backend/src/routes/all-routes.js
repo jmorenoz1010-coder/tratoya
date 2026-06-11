@@ -528,9 +528,12 @@ paymentsRouter.post('/manual/report', paymentUpload.single('receipt'), async (re
     if (!req.file) {
       return res.status(400).json({ success: false, message: 'Debes adjuntar el comprobante de pago' });
     }
+    const { validateUpload } = require('../utils/fileValidation');
+    const receiptCheck = validateUpload(req.file);
+    if (!receiptCheck.ok) return res.status(400).json({ success: false, message: receiptCheck.message });
     const { s3Upload } = require('../services/s3Service');
-    const receiptKey = `payments/${trato.codigo || trato.id}/${Date.now()}-${String(req.file.originalname || 'comprobante').replace(/[^a-zA-Z0-9_.-]/g, '_')}`;
-    const receiptUrl = await s3Upload(receiptKey, req.file.buffer, req.file.mimetype);
+    const receiptKey = `payments/${trato.codigo || trato.id}/${Date.now()}-${Math.random().toString(16).slice(2)}.${receiptCheck.ext}`;
+    const receiptUrl = await s3Upload(receiptKey, req.file.buffer, receiptCheck.mime);
     const reference = `MANUAL-${String(trato.codigo || trato.id).replace(/[^a-zA-Z0-9-]/g, '').slice(0, 18)}-${Date.now()}`;
     const paymentMetadata = {
       reference,
@@ -543,7 +546,7 @@ paymentsRouter.post('/manual/report', paymentUpload.single('receipt'), async (re
       notes,
       receipt_url: receiptUrl,
       receipt_name: req.file.originalname,
-      receipt_mimetype: req.file.mimetype,
+      receipt_mimetype: receiptCheck.mime,
       amount_expected: amountCop,
       seller_receives: commission.monto_neto,
       commission_visible: commission.monto_comision,
@@ -697,19 +700,22 @@ paymentsRouter.get('/status-disabled/:transaction_id', async (req, res, next) =>
 
 paymentsRouter.post('/sandbox-approve/:trato_id', async (req, res, next) => {
   try {
-    if (process.env.NODE_ENV === 'production' && process.env.BETA_ALLOW_SANDBOX_PAYMENTS !== 'true') {
+    // S-03: la simulación de pago NUNCA está disponible en producción. Es un bypass
+    // del escrow (marca pago_retenido sin pago real) y solo debe usarse en entornos
+    // de prueba (NODE_ENV !== 'production'). Los pagos reales se confirman vía webhook
+    // de pasarela o confirmación manual del admin.
+    if (process.env.NODE_ENV === 'production') {
       return res.status(403).json({ success: false, message: 'Simulación no disponible en producción' });
     }
     const trato = await Trato.findByPk(req.params.trato_id);
     if (!trato) return res.status(404).json({ success: false, message: 'Trato no encontrado' });
     const rol = req.user.rol || (req.user.is_admin ? 'admin' : 'user');
     const esComprador = trato.comprador_id === req.user.id;
-    const esCreador = trato.vendedor_id === req.user.id;
-    const esOperadorBeta = esCreador || req.user.is_admin || ['admin', 'superadmin'].includes(rol);
-    if (!esComprador && !esOperadorBeta) {
+    const esAdmin = req.user.is_admin || ['admin', 'superadmin'].includes(rol);
+    if (!esComprador && !esAdmin) {
       return res.status(403).json({ success: false, message: 'Solo el comprador puede pagar' });
     }
-    if (!trato.comprador_id && esOperadorBeta) {
+    if (!trato.comprador_id && esAdmin) {
       await trato.update({ comprador_id: req.user.id, estado: 'activo', fecha_activado: new Date() });
     }
     const pago = await Pago.findOne({
@@ -984,6 +990,12 @@ disputesRouter.post('/', [
     });
     if (!trato) return res.status(404).json({ success: false, message: 'Trato no encontrado' });
 
+    // S-12: solo se puede disputar un trato con pago ya protegido / en proceso de entrega.
+    const ESTADOS_DISPUTABLES = ['pago_retenido', 'en_entrega', 'pendiente_confirmacion', 'confirmado'];
+    if (!ESTADOS_DISPUTABLES.includes(trato.estado)) {
+      return res.status(400).json({ success: false, message: 'Solo puedes abrir una disputa cuando el pago ya está protegido y hay una entrega en curso.' });
+    }
+
     const yaExiste = await Disputa.findOne({ where: { trato_id } });
     if (yaExiste) return res.status(400).json({ success: false, message: 'Ya existe una disputa para este trato' });
 
@@ -1029,7 +1041,7 @@ module.exports.disputes = disputesRouter;
 // =============================================
 const kycRouter = express.Router();
 const multer = require('multer');
-const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 8 * 1024 * 1024 } });
 
 kycRouter.use(auth);
 
@@ -1040,13 +1052,15 @@ kycRouter.post('/upload', upload.fields([
 ]), async (req, res, next) => {
   try {
     const { s3Upload } = require('../services/s3Service');
+    const { validateUpload } = require('../utils/fileValidation');
     const updates = { kyc_estado: 'en_revision' };
 
     for (const [field, files] of Object.entries(req.files || {})) {
       const file = files[0];
-      const ext = file.originalname.split('.').pop();
-      const key = `kyc/${req.user.id}/${field}-${Date.now()}.${ext}`;
-      updates[`${field}_url`] = await s3Upload(key, file.buffer, file.mimetype);
+      const check = validateUpload(file);
+      if (!check.ok) return res.status(400).json({ success: false, message: check.message });
+      const key = `kyc/${req.user.id}/${field}-${Date.now()}.${check.ext}`;
+      updates[`${field}_url`] = await s3Upload(key, file.buffer, check.mime);
     }
 
     if (req.body.cedula) updates.cedula = req.body.cedula;

@@ -3,10 +3,27 @@ const router = express.Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
+const rateLimit = require('express-rate-limit');
 const { body, validationResult } = require('express-validator');
 const { User } = require('../config/database');
 const { sendEmail } = require('../services/emailService');
 const logger = require('../utils/logger');
+
+// S-10: límites estrictos en endpoints sensibles (fuerza bruta / abuso).
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: process.env.NODE_ENV === 'production' ? 10 : 200,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, message: 'Demasiados intentos. Espera unos minutos y vuelve a intentar.' },
+});
+const passwordResetLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: process.env.NODE_ENV === 'production' ? 5 : 100,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, message: 'Demasiadas solicitudes. Intenta de nuevo en una hora.' },
+});
 
 const signToken = (id, expiresIn = '15m') => jwt.sign({ id }, process.env.JWT_SECRET, {
   expiresIn
@@ -59,7 +76,7 @@ const localCallbackUrl = (req, provider) => `${req.protocol}://${req.get('host')
 const socialRedirect = async (res, user) => {
   const rol = user.rol || (user.is_admin ? 'admin' : 'user');
   const isAdminSession = ['admin', 'superadmin'].includes(rol);
-  const token = signToken(user.id, isAdminSession ? (process.env.JWT_ADMIN_EXPIRES_IN || '3650d') : undefined);
+  const token = signToken(user.id, isAdminSession ? (process.env.JWT_ADMIN_EXPIRES_IN || '7d') : undefined);
   const refresh_token = signRefresh(user.id);
   await user.update({ last_login: new Date(), refresh_token: await bcrypt.hash(refresh_token, 6) });
   const payload = Buffer.from(JSON.stringify(publicUser(user))).toString('base64url');
@@ -269,7 +286,7 @@ router.post('/register', [
 });
 
 // POST /api/auth/login
-router.post('/login', [
+router.post('/login', authLimiter, [
   body('email').isEmail().normalizeEmail(),
   body('password').notEmpty(),
 ], async (req, res, next) => {
@@ -299,9 +316,9 @@ router.post('/login', [
 
     const rol = user.rol || (user.is_admin ? 'admin' : 'user');
     const isAdminSession = ['admin', 'superadmin'].includes(rol);
-    const token = signToken(user.id, isAdminSession ? (process.env.JWT_ADMIN_EXPIRES_IN || '3650d') : undefined);
+    const token = signToken(user.id, isAdminSession ? (process.env.JWT_ADMIN_EXPIRES_IN || '7d') : undefined);
     const refresh_token = signRefresh(user.id);
-    await user.update({ last_login: new Date(), refresh_token: await bcrypt.hash(refresh_token, 6) });
+    await user.update({ last_login: new Date(), refresh_token: await bcrypt.hash(refresh_token, 10) });
 
     res.json({
       success: true,
@@ -359,7 +376,7 @@ router.get('/me', require('../middleware/auth'), (req, res) => {
 });
 
 // POST /api/auth/forgot-password
-router.post('/forgot-password', [
+router.post('/forgot-password', passwordResetLimiter, [
   body('email').isEmail().normalizeEmail(),
 ], async (req, res, next) => {
   try {
@@ -385,14 +402,23 @@ router.post('/forgot-password', [
 });
 
 // POST /api/auth/reset-password
-router.post('/reset-password', [
+router.post('/reset-password', passwordResetLimiter, [
   body('token').notEmpty(),
   body('id').isUUID(),
-  body('password').isLength({ min: 6 }),
+  // S-11: misma política de contraseña fuerte que el registro.
+  body('password').custom((value) => {
+    if (!isStrongPassword(value)) {
+      throw new Error('La contraseña debe tener mínimo 6 caracteres, mayúscula, minúscula, número y un símbolo.');
+    }
+    return true;
+  }),
 ], async (req, res, next) => {
   try {
     const errors = validationResult(req);
-    if (!errors.isEmpty()) return res.status(400).json({ success: false, message: 'Datos inválidos' });
+    if (!errors.isEmpty()) {
+      const msgs = errors.array().map((e) => e.msg);
+      return res.status(400).json({ success: false, message: msgs[0] || 'Datos inválidos' });
+    }
     const { token, id, password } = req.body;
     const user = await User.findByPk(id);
     if (!user) return res.status(400).json({ success: false, message: 'Enlace inválido o expirado' });

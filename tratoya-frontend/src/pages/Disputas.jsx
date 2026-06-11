@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { api } from "../lib/api";
-import { fmtDate, ESTADO } from "../lib/utils";
+import { fmtDate, ESTADO, DISPUTA_ESTADO } from "../lib/utils";
 
 export default function Disputas({ toast, initialTratoId, clearInitialTratoId, setPage, setTratoId }) {
   const [d, setD] = useState([]);
@@ -106,7 +106,7 @@ export default function Disputas({ toast, initialTratoId, clearInitialTratoId, s
                 <div className="wrap-any" style={{ fontWeight: 700, fontSize: 14, marginBottom: 2 }}>{x.motivo}</div>
                 <div className="wrap-any" style={{ fontSize: 12, color: "var(--s600)" }}>{x.descripcion?.slice(0, 160)}{x.descripcion?.length > 160 ? "..." : ""}</div>
               </div>
-              <span className={`bdg ${["resuelta","cerrada"].includes(x.estado) ? "gn" : "or"}`}>{x.estado}</span>
+                <span className={`bdg ${DISPUTA_ESTADO[x.estado]?.c || "or"}`}>{DISPUTA_ESTADO[x.estado]?.l || x.estado}</span>
             </div>
             <div className="g4" style={{ marginTop: 12, gap: 8 }}>
               {[
