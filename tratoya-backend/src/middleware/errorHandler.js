@@ -5,6 +5,7 @@ module.exports = (err, req, res, next) => {
   const status = err.status || err.statusCode || 500;
 
   logger.error(`[${req.method}] ${req.originalUrl} → ${status}: ${err.message}`);
+  if (status >= 500 && err.stack) logger.error(err.stack);
 
   // Errores de Sequelize
   if (err.name === 'SequelizeUniqueConstraintError') {

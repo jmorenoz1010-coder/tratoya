@@ -8,6 +8,7 @@ const { Op } = require('sequelize');
 const usersRouter = express.Router();
 const auth = require('../middleware/auth');
 const { User, CuentaBancaria, Notificacion } = require('../config/database');
+const { validateUpload } = require('../utils/fileValidation');
 
 usersRouter.use(auth);
 
@@ -528,7 +529,6 @@ paymentsRouter.post('/manual/report', paymentUpload.single('receipt'), async (re
     if (!req.file) {
       return res.status(400).json({ success: false, message: 'Debes adjuntar el comprobante de pago' });
     }
-    const { validateUpload } = require('../utils/fileValidation');
     const receiptCheck = validateUpload(req.file);
     if (!receiptCheck.ok) return res.status(400).json({ success: false, message: receiptCheck.message });
     const { s3Upload } = require('../services/s3Service');
@@ -592,24 +592,33 @@ paymentsRouter.post('/manual/report', paymentUpload.single('receipt'), async (re
       },
     });
 
-    await AuditLog.create({
-      user_id: req.user.id,
-      action: 'MANUAL_PAYMENT_REPORTED',
-      entity_type: 'payment_intent',
-      entity_id: intent.id,
-      metadata: { deal_id: trato.id, reference, transaction_ref: cleanRef, amount_cop: amountCop },
-    });
+    // Pasos no críticos: nunca deben tumbar un pago ya registrado.
+    try {
+      await AuditLog.create({
+        user_id: req.user.id,
+        action: 'MANUAL_PAYMENT_REPORTED',
+        entity_type: 'payment_intent',
+        entity_id: intent.id,
+        metadata: { deal_id: trato.id, reference, transaction_ref: cleanRef, amount_cop: amountCop },
+      });
+    } catch (e) {
+      require('../utils/logger').warn(`[PAYMENT] AuditLog falló (no bloquea): ${e.message}`);
+    }
 
-    const { notificar } = require('../services/notificacionService');
-    await notificar(trato.comprador_id, 'pago_reportado', {
-      titulo: 'Comprobante recibido',
-      cuerpo: `Recibimos el comprobante del trato ${trato.codigo}. Nuestro equipo validará el pago manualmente.`,
-      metadata: { trato_id: trato.id, payment_intent_id: intent.id },
-      email_template: 'pago_recibido_comprador',
-      email_data: { codigo: trato.codigo, titulo: trato.titulo, monto: Number(amountCop).toLocaleString('es-CO') },
-      wa_evento: 'pago_recibido_comprador',
-      wa_params: { codigo: trato.codigo, titulo: trato.titulo, monto: Number(amountCop).toLocaleString('es-CO') },
-    });
+    try {
+      const { notificar } = require('../services/notificacionService');
+      await notificar(trato.comprador_id, 'pago_reportado', {
+        titulo: 'Comprobante recibido',
+        cuerpo: `Recibimos el comprobante del trato ${trato.codigo}. Nuestro equipo validará el pago manualmente.`,
+        metadata: { trato_id: trato.id, payment_intent_id: intent.id },
+        email_template: 'pago_recibido_comprador',
+        email_data: { codigo: trato.codigo, titulo: trato.titulo, monto: Number(amountCop).toLocaleString('es-CO') },
+        wa_evento: 'pago_recibido_comprador',
+        wa_params: { codigo: trato.codigo, titulo: trato.titulo, monto: Number(amountCop).toLocaleString('es-CO') },
+      });
+    } catch (e) {
+      require('../utils/logger').warn(`[PAYMENT] Notificación falló (no bloquea): ${e.message}`);
+    }
 
     res.json({
       success: true,
@@ -1052,7 +1061,6 @@ kycRouter.post('/upload', upload.fields([
 ]), async (req, res, next) => {
   try {
     const { s3Upload } = require('../services/s3Service');
-    const { validateUpload } = require('../utils/fileValidation');
     const updates = { kyc_estado: 'en_revision' };
 
     for (const [field, files] of Object.entries(req.files || {})) {

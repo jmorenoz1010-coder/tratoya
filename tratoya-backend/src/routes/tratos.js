@@ -7,6 +7,7 @@ const dayjs = require('dayjs');
 
 const auth = require('../middleware/auth');
 const kycRequired = require('../middleware/kycRequired');
+const { validateUpload } = require('../utils/fileValidation');
 const { Trato, User, Pago, Mensaje } = require('../config/database');
 const { calcularComision, MONTO_MINIMO_TRATO } = require('../services/comisionService');
 const { notificar } = require('../services/notificacionService');
@@ -269,7 +270,6 @@ router.put('/:id/activar', async (req, res, next) => {
 router.post('/:id/prueba-entrega', async (req, res, next) => {
   try {
     const multer = require('multer');
-    const { validateUpload } = require('../utils/fileValidation');
     const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 8 * 1024 * 1024, files: 5 } });
     upload.any()(req, res, async (err) => {
       if (err) return res.status(400).json({ success: false, message: 'No se pudo procesar el archivo. Verifica el tamaño (máx 8 MB).' });
