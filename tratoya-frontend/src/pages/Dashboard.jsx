@@ -45,6 +45,19 @@ export default function Dashboard({ setPage, setTratoId, user, toast, setUser })
     .reduce((s, t) => s + parseFloat(t.monto || 0), 0);
   const completados = tratos.filter((t) => t.estado === "completado").length || userStats?.tratos_exitosos || 0;
 
+  // Primer trato que requiere una acción del usuario → "Tu próximo paso"
+  const nextAction = (() => {
+    for (const t of activos) {
+      const soyVendedor = t.vendedor?.id === user?.id;
+      const soyComprador = t.comprador?.id === user?.id;
+      if (t.estado === "borrador" && soyVendedor) return { t, ico: "🔗", txt: "Comparte el link para que acepten tu trato", cta: "Ver trato" };
+      if (["activo", "pago_pendiente"].includes(t.estado) && soyComprador && t.estado === "activo") return { t, ico: "💰", txt: "Realiza el pago para proteger tu trato", cta: "Ir a pagar" };
+      if (t.estado === "pago_retenido" && soyVendedor) return { t, ico: "📦", txt: "El dinero está protegido: registra el envío", cta: "Registrar envío" };
+      if (["en_entrega", "pendiente_confirmacion"].includes(t.estado) && soyComprador) return { t, ico: "✅", txt: "¿Ya recibiste? Confirma para liberar el pago", cta: "Confirmar entrega" };
+    }
+    return null;
+  })();
+
   const kpis = [
     { ico: "📋", bg: "var(--cr)", l: "Tratos activos",   v: activos.length,   action: () => setPage("tratos") },
     { ico: "🔒", bg: "var(--cr)", l: "Dinero protegido", v: fmt(protegido),   action: () => setPage("tratos") },
@@ -67,6 +80,21 @@ export default function Dashboard({ setPage, setTratoId, user, toast, setUser })
           </button>
         </div>
       </div>
+
+      {!loading && nextAction && (
+        <div className="dash-next fi" role="button" tabIndex={0}
+          onClick={() => { setTratoId(nextAction.t.id); setPage("detalle"); }}
+          onKeyDown={(e) => e.key === "Enter" && (setTratoId(nextAction.t.id), setPage("detalle"))}
+        >
+          <span className="dash-next-ico">{nextAction.ico}</span>
+          <div className="dash-next-info">
+            <span className="dash-next-label">Tu próximo paso</span>
+            <strong>{nextAction.txt}</strong>
+            <em>{nextAction.t.titulo} · {fmt(nextAction.t.monto)}</em>
+          </div>
+          <span className="dash-next-cta">{nextAction.cta} →</span>
+        </div>
+      )}
 
       {loading ? (
         <SkeletonKpiGrid />

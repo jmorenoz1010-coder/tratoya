@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { api } from "../lib/api";
-import { fmt, fmtDate, ESTADO, TIPO_ICO } from "../lib/utils";
+import { fmt, fmtDate, ESTADO, TIPO_ICO, accionPendiente } from "../lib/utils";
 import { SkeletonList } from "../components/SkeletonCard";
 
 let tratosCache = [];
@@ -69,47 +69,44 @@ export default function MisTratos({ setPage, setTratoId, user, toast, alertTrato
         </div>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 9 }}>
-          {filtered.map((t) => {
+          {filtered.map((t, idx) => {
             const ec = ESTADO[t.estado] || ESTADO.borrador;
             const rol = t.vendedor?.id === user?.id ? "Vendedor" : "Comprador";
             const hasAlert = alertTratoIds?.has(t.id);
+            const pendiente = accionPendiente(t, user?.id);
             return (
-              <div key={t.id} className="trato-row">
+              <div
+                key={t.id}
+                className="trato-row trato-row--tap fi"
+                style={{ animationDelay: `${Math.min(idx, 8) * 0.04}s` }}
+                role="button"
+                tabIndex={0}
+                onClick={() => { setTratoId(t.id); setPage("detalle"); }}
+                onKeyDown={(e) => e.key === "Enter" && (setTratoId(t.id), setPage("detalle"))}
+              >
                 <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
                   <div style={{ width: 40, height: 40, borderRadius: 11, background: "var(--cr)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, flexShrink: 0 }}>
                     {TIPO_ICO[t.tipo] || "📋"}
                   </div>
 
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 3 }}>
-                      <span style={{ fontFamily: "Manrope", fontWeight: 700, fontSize: 10.5, color: "var(--g2)" }}>
-                        {t.codigo}
+                    <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 3 }}>
+                      <div style={{ fontWeight: 700, fontSize: 14, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1, minWidth: 0 }}>
+                        {t.titulo}
+                      </div>
+                      {hasAlert && <span style={{ fontSize: 11, flexShrink: 0 }} title="Tienes notificaciones sin leer">⚠️</span>}
+                      <span style={{ fontFamily: "Manrope", fontWeight: 800, fontSize: 14, flexShrink: 0 }}>
+                        {fmt(t.monto)}
                       </span>
-                      <span className={`bdg ${rol === "Vendedor" ? "nb" : "or"}`} style={{ fontSize: 9 }}>{rol}</span>
-                      {hasAlert && <span style={{ fontSize: 11 }} title="Tienes notificaciones sin leer">⚠️</span>}
-                    </div>
-
-                    <div style={{ fontWeight: 700, fontSize: 14, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", marginBottom: 5 }}>
-                      {t.titulo}
                     </div>
 
                     <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
                       <span className={`bdg ${ec.c}`} style={{ fontSize: 10 }}>{ec.l}</span>
-                      <span style={{ fontSize: 11, color: "var(--s400)" }}>{fmtDate(t.createdAt)}</span>
-                      <span style={{ marginLeft: "auto", fontFamily: "Manrope", fontWeight: 800, fontSize: 14, flexShrink: 0 }}>
-                        {fmt(t.monto)}
-                      </span>
+                      {pendiente && <span className="bdg trato-chip-action" style={{ fontSize: 10 }}>{pendiente}</span>}
+                      <span style={{ fontSize: 11, color: "var(--s400)" }}>{rol} · {fmtDate(t.createdAt)}</span>
+                      <span className="trato-row-arrow" aria-hidden="true">→</span>
                     </div>
                   </div>
-                </div>
-
-                <div className="trato-actions">
-                  <button
-                    className="trato-details-link"
-                    onClick={() => { setTratoId(t.id); setPage("detalle"); }}
-                  >
-                    Ver detalles
-                  </button>
                 </div>
               </div>
             );

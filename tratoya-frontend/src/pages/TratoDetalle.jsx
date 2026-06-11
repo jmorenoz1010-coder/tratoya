@@ -66,6 +66,7 @@ export default function TratoDetalle({ tratoId, setPage, setDisputeTratoId, user
   const [busy, setBusy] = useState(false);
   const [paymentReport, setPaymentReport] = useState(null);
   const [guideDismissed, setGuideDismissed] = useState(false);
+  const [chatOpen, setChatOpen] = useState(() => typeof window !== "undefined" && window.innerWidth > 860);
   const previousEstadoRef = useRef(null);
   const chatEndRef = useRef(null);
   const actionRef = useRef(null);
@@ -280,44 +281,47 @@ export default function TratoDetalle({ tratoId, setPage, setDisputeTratoId, user
           );
         })()}
 
-        {ec.desc && (
+        {/* La descripción del estado solo aparece si la guía fue cerrada (evita texto duplicado) */}
+        {guideDismissed && ec.desc && (
           <div style={{ background: "var(--cr)", border: "1px solid var(--s100)", borderRadius: 10, padding: "10px 13px" }}>
             <p style={{ margin: 0, fontSize: 13, color: "var(--n)", lineHeight: 1.55 }}>{ec.desc}</p>
-            {ec.help && <p style={{ margin: "4px 0 0", fontSize: 12, color: "var(--g2)", fontWeight: 600 }}>{ec.help}</p>}
           </div>
         )}
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 305px", gap: 14 }}>
+      <div className="td-grid">
         <div style={{ display: "flex", flexDirection: "column", gap: 13 }}>
           {/* Info del trato */}
-          <div className="card" style={{ padding: "18px 20px" }}>
-            <div style={{ display: "flex", gap: 13, marginBottom: 14 }}>
-              <div style={{ width: 48, height: 48, borderRadius: 12, background: "var(--cr)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, flexShrink: 0 }}>
-                {TIPO_ICO[trato.tipo] || "📋"}
-              </div>
-              <div style={{ flex: 1 }}>
-                <h2 style={{ fontSize: 17, marginBottom: 2 }}>{trato.titulo}</h2>
-                <div style={{ fontSize: 13, color: "var(--s600)" }}>
-                  {cp ? `${esV ? "Comprador" : "Vendedor"}: ${cp.nombre} ${cp.apellido}` : <span style={{ color: "var(--or)" }}>⚠ Esperando que alguien acepte el trato</span>}
+          <div className="card td-card">
+            <div className="td-strip">
+              <div className="td-strip-ico">{TIPO_ICO[trato.tipo] || "📋"}</div>
+              <div className="td-strip-info">
+                <h2>{trato.titulo}</h2>
+                <div className="td-strip-cp">
+                  {cp
+                    ? <><Avatar name={`${cp.nombre} ${cp.apellido}`} size={18} /> {esV ? "Comprador" : "Vendedor"}: <b>{cp.nombre} {cp.apellido}</b></>
+                    : <span style={{ color: "var(--or)" }}>⚠ Esperando que alguien acepte el trato</span>}
                 </div>
               </div>
-              <div style={{ textAlign: "right" }}>
-                <div style={{ fontFamily: "Manrope", fontSize: 22, fontWeight: 800 }}>{fmt(montoTrato)}</div>
-                <div style={{ fontSize: 11.5, color: "var(--s400)" }}>{fmtDate(trato.createdAt)}</div>
-              </div>
+              <div className="td-strip-amount">{fmt(montoTrato)}</div>
             </div>
-
-            {trato.descripcion && (
-              <p style={{ fontSize: 13, color: "var(--s600)", lineHeight: 1.6, marginBottom: 14 }}>{trato.descripcion}</p>
-            )}
 
             {/* Progreso visual */}
             <DealProgress steps={steps} />
 
             <details className="td-comm-toggle">
-              <summary>Ver desglose de comisión y montos</summary>
-              <CommissionBreakdown monto={montoTrato} quien={quienComision} />
+              <summary>Ver detalles del trato</summary>
+              <div className="td-details-body">
+                {trato.descripcion && (
+                  <p className="td-details-desc">{trato.descripcion}</p>
+                )}
+                <div className="td-details-meta">
+                  <div><span>Código</span><b>{trato.codigo}</b></div>
+                  <div><span>Creado</span><b>{fmtDate(trato.createdAt)}</b></div>
+                  <div><span>Días de inspección</span><b>{trato.dias_inspeccion || 7}</b></div>
+                </div>
+                <CommissionBreakdown monto={montoTrato} quien={quienComision} />
+              </div>
             </details>
 
             {/* Acciones del vendedor: envío */}
@@ -452,60 +456,64 @@ export default function TratoDetalle({ tratoId, setPage, setDisputeTratoId, user
 
         {/* Columna derecha: chat + acciones */}
         <div style={{ display: "flex", flexDirection: "column", gap: 11 }}>
-          <div className="card chat-card">
-            <div style={{ display: "flex", alignItems: "center", gap: 9, paddingBottom: 10, borderBottom: "1px solid var(--s100)", marginBottom: 9 }}>
+          <div className={`card chat-card ${chatOpen ? "" : "chat-card--closed"}`}>
+            <button type="button" className="td-chat-head" onClick={() => setChatOpen((v) => !v)} aria-expanded={chatOpen}>
               <Avatar name={cp ? `${cp.nombre} ${cp.apellido}` : "?"} size={28} />
-              <div>
+              <div style={{ flex: 1, textAlign: "left" }}>
                 <div style={{ fontWeight: 700, fontSize: 13 }}>{cp ? `${cp.nombre} ${cp.apellido}` : "Sin contraparte"}</div>
-                <div style={{ fontSize: 10.5, color: "var(--s400)" }}>Chat del trato</div>
+                <div style={{ fontSize: 10.5, color: "var(--s400)" }}>
+                  Chat del trato{msgs.length > 0 ? ` · ${msgs.length} mensaje${msgs.length === 1 ? "" : "s"}` : ""}
+                </div>
               </div>
-            </div>
-            <div style={{ flex: 1, overflowY: "auto", display: "flex", flexDirection: "column", gap: 7 }}>
-              {msgs.length === 0 && (
-                <div style={{ textAlign: "center", color: "var(--s400)", fontSize: 13, marginTop: 18 }}>Sin mensajes aún.</div>
-              )}
-              {msgs.map((m, i) => {
-                const mine = m.remitente_id === user?.id;
-                return (
-                  <div key={i} style={{ maxWidth: "85%", alignSelf: mine ? "flex-end" : "flex-start" }}>
-                    <div style={{ background: mine ? "var(--n)" : "var(--s50)", color: mine ? "#fff" : "var(--n)", borderRadius: mine ? "11px 11px 3px 11px" : "11px 11px 11px 3px", padding: "8px 12px", fontSize: 13, border: mine ? "none" : "1px solid var(--s100)" }}>
-                      {m.contenido}
-                    </div>
-                    <div style={{ fontSize: 10, color: "var(--s400)", marginTop: 2, textAlign: mine ? "right" : "left" }}>
-                      {timeAgo(m.createdAt)}
-                    </div>
+              <span className={`td-chat-chev ${chatOpen ? "open" : ""}`} aria-hidden="true">▾</span>
+            </button>
+            {chatOpen && (
+              <>
+                <div style={{ flex: 1, overflowY: "auto", display: "flex", flexDirection: "column", gap: 7 }}>
+                  {msgs.length === 0 && (
+                    <div style={{ textAlign: "center", color: "var(--s400)", fontSize: 13, marginTop: 18 }}>Sin mensajes aún.</div>
+                  )}
+                  {msgs.map((m, i) => {
+                    const mine = m.remitente_id === user?.id;
+                    return (
+                      <div key={i} style={{ maxWidth: "85%", alignSelf: mine ? "flex-end" : "flex-start" }}>
+                        <div style={{ background: mine ? "var(--n)" : "var(--s50)", color: mine ? "#fff" : "var(--n)", borderRadius: mine ? "11px 11px 3px 11px" : "11px 11px 11px 3px", padding: "8px 12px", fontSize: 13, border: mine ? "none" : "1px solid var(--s100)" }}>
+                          {m.contenido}
+                        </div>
+                        <div style={{ fontSize: 10, color: "var(--s400)", marginTop: 2, textAlign: mine ? "right" : "left" }}>
+                          {timeAgo(m.createdAt)}
+                        </div>
+                      </div>
+                    );
+                  })}
+                  <div ref={chatEndRef} />
+                </div>
+                {cp && (
+                  <div style={{ display: "flex", gap: 6, paddingTop: 9, borderTop: "1px solid var(--s100)", marginTop: 7 }}>
+                    <input
+                      className="inp"
+                      style={{ height: 34, fontSize: 13 }}
+                      placeholder="Escribe un mensaje..."
+                      value={msg}
+                      onChange={(e) => setMsg(e.target.value)}
+                      onKeyDown={(e) => e.key === "Enter" && sendMsg()}
+                    />
+                    <button className="btn bp bsm" onClick={sendMsg}>→</button>
                   </div>
-                );
-              })}
-              <div ref={chatEndRef} />
-            </div>
-            {cp && (
-              <div style={{ display: "flex", gap: 6, paddingTop: 9, borderTop: "1px solid var(--s100)", marginTop: 7 }}>
-                <input
-                  className="inp"
-                  style={{ height: 34, fontSize: 13 }}
-                  placeholder="Escribe un mensaje..."
-                  value={msg}
-                  onChange={(e) => setMsg(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && sendMsg()}
-                />
-                <button className="btn bp bsm" onClick={sendMsg}>→</button>
-              </div>
+                )}
+              </>
             )}
           </div>
 
-          <div className="card" style={{ padding: 13 }}>
-            <div style={{ fontSize: 10.5, fontWeight: 700, color: "var(--s600)", textTransform: "uppercase", letterSpacing: ".5px", marginBottom: 9 }}>Acciones</div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-              <button className="btn bo bsm" style={{ justifyContent: "flex-start" }} onClick={() => { navigator.clipboard.writeText(publicTratoUrl(trato.link_compartir)); toast("Link copiado ✓", "success"); }}>
-                🔗 Copiar link del trato
+          <div className="td-quick-actions">
+            <button className="btn bo bsm" onClick={() => { navigator.clipboard.writeText(publicTratoUrl(trato.link_compartir)); toast("Link copiado ✓", "success"); }}>
+              🔗 Copiar link
+            </button>
+            {!["disputado","completado","cancelado"].includes(trato.estado) && (
+              <button className="btn bg_ bsm td-dispute-link" onClick={abrirDisputa}>
+                ⚖️ Abrir disputa
               </button>
-              {!["disputado","completado","cancelado"].includes(trato.estado) && (
-                <button className="btn bdd bsm" style={{ justifyContent: "flex-start" }} onClick={abrirDisputa}>
-                  ⚖️ Abrir disputa
-                </button>
-              )}
-            </div>
+            )}
           </div>
         </div>
       </div>

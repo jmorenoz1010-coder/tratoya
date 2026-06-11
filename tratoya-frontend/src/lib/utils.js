@@ -240,6 +240,17 @@ export const PAGO_ESTADO = {
   error:       { l: "Error en pago",             c: "rd", desc: "Ocurrió un error procesando el pago.", help: "Contacta a soporte si el problema persiste." },
 };
 
+// Acción pendiente del usuario en un trato (para chips "Te toca a ti")
+export const accionPendiente = (t, userId) => {
+  const soyV = t.vendedor?.id === userId;
+  const soyC = t.comprador?.id === userId;
+  if (t.estado === "borrador" && soyV) return "Comparte el link";
+  if (t.estado === "activo" && soyC) return "Te toca: pagar";
+  if (t.estado === "pago_retenido" && soyV) return "Te toca: enviar";
+  if (["en_entrega", "pendiente_confirmacion"].includes(t.estado) && soyC) return "Te toca: confirmar";
+  return null;
+};
+
 export const DISPUTA_ESTADO = {
   abierta:        { l: "Disputa abierta",     c: "or" },
   en_revision:    { l: "En revisión",         c: "nb" },

@@ -310,6 +310,67 @@ tbody tr:hover td{background:var(--s50)}
 .td-comm-toggle[open]>summary::after{transform:rotate(180deg)}
 .td-comm-toggle>summary:hover{background:var(--s100)}
 .td-comm-toggle .commbox{margin:0 12px 12px}
+
+/* ── Dashboard: tarjeta "Tu próximo paso" ───────────── */
+.dash-next{display:flex;align-items:center;gap:13px;background:linear-gradient(135deg,var(--n) 0%,#123861 100%);border-radius:15px;padding:15px 17px;margin-bottom:14px;cursor:pointer;box-shadow:0 12px 30px rgba(7,25,47,.22);transition:transform .18s,box-shadow .18s}
+.dash-next:hover{transform:translateY(-1px);box-shadow:0 16px 38px rgba(7,25,47,.28)}
+.dash-next-ico{width:42px;height:42px;border-radius:12px;background:rgba(181,228,0,.16);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.dash-next-info{flex:1;min-width:0}
+.dash-next-label{display:block;font-size:10px;font-weight:900;color:#9ed819;text-transform:uppercase;letter-spacing:.7px;margin-bottom:2px}
+.dash-next-info strong{display:block;color:#fff;font-size:14.5px;line-height:1.3}
+.dash-next-info em{display:block;font-style:normal;font-size:11.5px;color:rgba(255,255,255,.6);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dash-next-cta{flex-shrink:0;background:var(--g);color:var(--n);font-weight:900;font-size:12.5px;border-radius:999px;padding:9px 14px;white-space:nowrap}
+@media(max-width:520px){
+  .dash-next{flex-wrap:wrap;padding:13px 14px}
+  .dash-next-info{flex:1 1 calc(100% - 56px)}
+  .dash-next-cta{margin-left:auto}
+}
+
+/* ── Cards de tratos: fila clicable + chip de acción ── */
+.trato-row--tap{cursor:pointer}
+.trato-row--tap>div{flex:1;min-width:0}
+.trato-row-arrow{margin-left:auto;color:var(--s300,#CBD3DD);font-weight:900;font-size:14px;transition:transform .18s,color .18s}
+.trato-row--tap:hover .trato-row-arrow{transform:translateX(3px);color:var(--g2)}
+.trato-chip-action{background:var(--n);color:var(--g);animation:pulse 2.4s ease infinite}
+
+/* ── Detalle del trato v2 (rediseño limpio) ─────────── */
+.td-grid{display:grid;grid-template-columns:1fr 305px;gap:14px}
+.td-card{padding:16px 18px}
+.td-strip{display:flex;align-items:center;gap:12px}
+.td-strip-ico{width:44px;height:44px;border-radius:12px;background:var(--cr);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.td-strip-info{flex:1;min-width:0}
+.td-strip-info h2{font-size:16px;margin:0 0 3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.td-strip-cp{display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--s600)}
+.td-strip-cp b{color:var(--n);font-weight:700}
+.td-strip-amount{font-family:'Manrope',sans-serif;font-size:21px;font-weight:800;color:var(--n);flex-shrink:0}
+.td-details-body{padding:0 14px 14px;display:flex;flex-direction:column;gap:12px;animation:fi .25s ease both}
+.td-details-desc{font-size:13px;color:var(--s600);line-height:1.55;margin:0}
+.td-details-meta{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.td-details-meta>div{background:#fff;border:1px solid var(--s100);border-radius:9px;padding:8px 10px}
+.td-details-meta span{display:block;font-size:10px;color:var(--s400);text-transform:uppercase;letter-spacing:.4px;margin-bottom:2px}
+.td-details-meta b{font-size:12.5px;color:var(--n)}
+.td-details-body .commbox{margin:0}
+.td-chat-head{display:flex;align-items:center;gap:9px;width:100%;background:none;border:0;padding:0 0 10px;cursor:pointer;border-bottom:1px solid var(--s100);margin-bottom:9px;font-family:inherit}
+.chat-card--closed{height:auto}
+.chat-card--closed .td-chat-head{padding-bottom:0;border-bottom:none;margin-bottom:0}
+.td-chat-chev{color:var(--s400);font-size:14px;transition:transform .2s}
+.td-chat-chev.open{transform:rotate(180deg)}
+.td-quick-actions{display:flex;gap:8px;flex-wrap:wrap}
+.td-quick-actions .btn{flex:1}
+.td-dispute-link{color:var(--s400)}
+.td-dispute-link:hover{color:var(--re)!important;background:var(--reb)!important}
+@media(max-width:860px){
+  .td-grid{grid-template-columns:1fr}
+  .td-strip-amount{font-size:18px}
+}
+@media(max-width:520px){
+  .td-card{padding:14px}
+  .td-strip{flex-wrap:wrap}
+  .td-strip-info{flex:1 1 calc(100% - 56px)}
+  .td-strip-info h2{white-space:normal;line-height:1.25}
+  .td-strip-amount{flex-basis:100%;text-align:left;padding-left:56px;margin-top:-4px}
+  .td-details-meta{grid-template-columns:1fr 1fr}
+}
 .create-glow-btn{background:linear-gradient(135deg,var(--g),#dfff36)!important;color:var(--n)!important;box-shadow:0 12px 30px rgba(181,228,0,.32);animation:createGlow 2.8s ease-in-out infinite}
 @keyframes createGlow{0%,100%{box-shadow:0 10px 24px rgba(181,228,0,.25)}50%{box-shadow:0 16px 38px rgba(181,228,0,.48)}}
 .payment-flow-overlay{align-items:flex-start;padding-top:clamp(18px,6vh,54px)}
@@ -428,7 +489,8 @@ tbody tr:hover td{background:var(--s50)}
 .dp-step:not(:last-child)::after{content:'';position:absolute;top:13px;left:calc(50% + 13px);right:calc(-50% + 13px);height:2px;background:var(--s100);z-index:0;transition:background .4s}
 .dp-step.done:not(:last-child)::after{background:var(--g)}
 .dp-dot{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;border:2px solid var(--s200);background:#fff;color:var(--s400);position:relative;z-index:1;transition:all .3s}
-.dp-dot.done{background:var(--g);border-color:var(--g);color:var(--n)}
+.dp-dot.done{background:var(--g);border-color:var(--g);color:var(--n);animation:checkPop .4s cubic-bezier(.34,1.56,.64,1) both}
+@keyframes checkPop{from{transform:scale(.4)}60%{transform:scale(1.15)}to{transform:scale(1)}}
 .dp-dot.active{background:var(--n);border-color:var(--n);color:var(--g);animation:pulse 2s ease infinite}
 .dp-label{font-size:10.5px;font-weight:600;color:var(--s400);text-align:center;margin-top:5px;line-height:1.3}
 .dp-label.done{color:var(--g2)}
