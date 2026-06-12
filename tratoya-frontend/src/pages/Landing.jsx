@@ -2,6 +2,7 @@ import { useEffect, useState, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { calcularComisionUI, fmt } from "../lib/utils";
 import { track } from "../lib/analytics";
+import { ShieldIcon, ScaleIcon, PhoneIcon, LockIcon, PersonIcon, CashIcon, BoltIcon, FlagIcon, BankIcon } from "../components/LandingIcons";
 import logo from "../assets/tratoya-logo.png";
 import stepPaymentProtected from "../assets/step-payment-protected.webp";
 import stepServiceDelivery from "../assets/step-service-delivery.webp";
@@ -33,9 +34,9 @@ const FLOW = [
 ];
 
 const WHAT_IS = [
-  { icon: "🛡️", title: "Intermediario de pagos", body: "Retenemos el dinero hasta que ambos cumplan lo acordado." },
-  { icon: "⚖️", title: "Neutral y seguro", body: "Más confiable que transferir directo a un desconocido." },
-  { icon: "📱", title: "100% digital", body: "Crea, paga y cobra un trato en minutos desde el celular." },
+  { icon: ShieldIcon, title: "Intermediario de pagos", body: "Retenemos el dinero hasta que ambos cumplan lo acordado." },
+  { icon: ScaleIcon, title: "Neutral y seguro", body: "Más confiable que transferir directo a un desconocido." },
+  { icon: PhoneIcon, title: "100% digital", body: "Crea, paga y cobra un trato en minutos desde el celular." },
 ];
 
 const TRANSFER_BRANDS = [
@@ -45,9 +46,9 @@ const TRANSFER_BRANDS = [
 ];
 
 const SAFETY_SHOW = [
-  { id: "protegido", icon: "🔒", tab: "Protegido", title: "Dinero protegido", body: "No se mueve hasta que ambos cumplan." },
-  { id: "disputas", icon: "⚖️", tab: "Disputas", title: "Disputas mediadas", body: "Revisamos evidencia y resolvemos en hasta 72 horas." },
-  { id: "soporte", icon: "👤", tab: "Soporte", title: "Soporte humano", body: "Personas reales te acompañan si algo sale mal." },
+  { id: "protegido", icon: LockIcon, tab: "Protegido", title: "Dinero protegido", body: "No se mueve hasta que ambos cumplan." },
+  { id: "disputas", icon: ScaleIcon, tab: "Disputas", title: "Disputas mediadas", body: "Revisamos evidencia y resolvemos en hasta 72 horas." },
+  { id: "soporte", icon: PersonIcon, tab: "Soporte", title: "Soporte humano", body: "Personas reales te acompañan si algo sale mal." },
 ];
 
 const MINI_FAQ = [
@@ -587,7 +588,7 @@ export default function Landing({ goAuth }) {
             <SlideWrap key="s5" dir={dir}>
               <div className="ty-slide ty-slide--compact">
                 <p className="ty-kicker ty-kicker--bolt ty-text-pulse">
-                  <span aria-hidden="true">⚡</span> Simula tu trato
+                  <span aria-hidden="true"><BoltIcon /></span> Simula tu trato
                 </p>
                 <h2 className="ty-mega ty-text-pulse">
                   <span>4.5%</span> + 4×1000.
@@ -657,6 +658,16 @@ export default function Landing({ goAuth }) {
                   Sé de los primeros en usar pagos protegidos entre personas en Colombia.
                 </p>
                 <EarlyList items={EARLY_PERKS} />
+                <motion.div
+                  className="ty-trust-strip"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.45, duration: 0.45, ease: EASE }}
+                >
+                  <span><FlagIcon /> Empresa colombiana constituida</span>
+                  <span><BankIcon /> Pagos por bancos regulados</span>
+                  <span><PersonIcon /> Soporte humano real</span>
+                </motion.div>
                 <div className="ty-cta-stack">
                   <motion.button
                     className="ty-neon-btn ty-cta-mega"
@@ -772,6 +783,14 @@ export default function Landing({ goAuth }) {
                     <a href="/legal/privacidad">Privacidad</a>
                     <a href="mailto:soporte@tratoya.com">Soporte</a>
                   </motion.div>
+                  <motion.p
+                    className="ty-legal-line"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 2.6, duration: 0.5 }}
+                  >
+                    INVENTION TECHNOLOGIES SAS · NIT 901.778.129 · Colombia
+                  </motion.p>
                 </div>
               </div>
             </SlideWrap>
@@ -960,7 +979,7 @@ function RiskDemo() {
               animate={started ? coin : { opacity: 0 }}
               transition={started ? { ...RISK_CYCLE, times: coinTimes } : { duration: 0.2 }}
             >
-              💸
+              <CashIcon />
             </motion.span>
 
             <motion.span
@@ -1044,7 +1063,7 @@ function OrbitShield() {
               className={`ty-orbit__sat ty-orbit__sat--${i}${active === i ? " active" : ""}`}
               onClick={() => pin(i)}
             >
-              <span className="ty-orbit__satin">{it.icon}</span>
+              <span className="ty-orbit__satin"><it.icon /></span>
             </button>
           ))}
         </div>
@@ -1058,7 +1077,7 @@ function OrbitShield() {
           exit={{ opacity: 0, y: -8 }}
           transition={{ duration: 0.3, ease: EASE }}
         >
-          <strong>{item.icon} {item.title}</strong>
+          <strong><item.icon /> {item.title}</strong>
           <p>{item.body}</p>
         </motion.div>
       </AnimatePresence>
@@ -1087,7 +1106,7 @@ function SafetyStage({ id }) {
           animate={{ y: [-46, 0, 0], opacity: [0, 1, 0], scale: [1, 0.55, 0.4] }}
           transition={{ duration: 1.8, repeat: Infinity, repeatDelay: 0.5, times: [0, 0.55, 1], ease: "easeIn" }}
         >
-          💸
+          <CashIcon />
         </motion.span>
         <motion.span
           className="ty-safety__big"
@@ -1095,7 +1114,7 @@ function SafetyStage({ id }) {
           animate={{ scale: [1, 1.08, 1] }}
           transition={{ duration: 1.8, repeat: Infinity, repeatDelay: 0.5, times: [0.5, 0.62, 0.8] }}
         >
-          🔒
+          <LockIcon />
         </motion.span>
       </div>
     );
@@ -1109,7 +1128,7 @@ function SafetyStage({ id }) {
           animate={{ rotate: [0, -9, 9, -5, 5, 0] }}
           transition={{ duration: 2.2, repeat: Infinity, repeatDelay: 0.7, ease: "easeInOut" }}
         >
-          ⚖️
+          <ScaleIcon />
         </motion.span>
         <motion.span
           className="ty-safety__stamp"
@@ -1124,7 +1143,7 @@ function SafetyStage({ id }) {
   }
   return (
     <div className="ty-safety__scene">
-      <motion.span className="ty-safety__big" aria-hidden="true">👤</motion.span>
+      <motion.span className="ty-safety__big" aria-hidden="true"><PersonIcon /></motion.span>
       <span className="ty-safety__bubble" aria-hidden="true">
         {[0, 1, 2].map((i) => (
           <motion.i
@@ -1177,7 +1196,7 @@ function SafetyShowcase() {
             className={`ty-safety__tab${active === i ? " active" : ""}`}
             onClick={() => pin(i)}
           >
-            <span aria-hidden="true">{s.icon}</span> {s.tab}
+            <span aria-hidden="true"><s.icon /></span> {s.tab}
           </button>
         ))}
       </div>

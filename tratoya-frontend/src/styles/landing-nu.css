@@ -1235,6 +1235,57 @@
   max-width: 52px;
 }
 
+/* ── Trust strip (slide registro) ────────────────────────── */
+.ty-trust-strip {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px 18px;
+  margin-top: 14px;
+}
+
+.ty-trust-strip span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  color: rgba(255, 255, 255, 0.62);
+  white-space: nowrap;
+}
+
+.ty-trust-strip svg {
+  font-size: 15px;
+}
+
+/* ── Línea legal (slide finale) ──────────────────────────── */
+.ty-legal-line {
+  margin: 10px 0 0;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: rgba(255, 255, 255, 0.34);
+  text-align: center;
+}
+
+@media (max-width: 860px) {
+  .ty-trust-strip {
+    gap: 5px 12px;
+    margin-top: 8px;
+  }
+
+  .ty-trust-strip span {
+    font-size: 10.5px;
+  }
+
+  .ty-legal-line {
+    font-size: 9.5px;
+    margin-top: 8px;
+  }
+}
+
 /* ── Responsive ──────────────────────────────────────────── */
 @media (max-width: 860px) {
   .ty-viewport {

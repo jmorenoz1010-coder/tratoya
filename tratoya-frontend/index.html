@@ -35,9 +35,100 @@
       content="Tu dinero queda protegido hasta que el trato se cumple. Pagos seguros entre personas en Colombia."
     />
     <meta name="twitter:image" content="https://www.tratoya.com/og-image.png" />
+
+    <!-- Datos estructurados: organización, sitio y FAQ -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "Organization",
+          "@id": "https://www.tratoya.com/#org",
+          "name": "TratoYa",
+          "legalName": "INVENTION TECHNOLOGIES SAS",
+          "taxID": "901778129",
+          "url": "https://www.tratoya.com/",
+          "logo": "https://www.tratoya.com/og-image.png",
+          "email": "soporte@tratoya.com",
+          "address": { "@type": "PostalAddress", "addressCountry": "CO" },
+          "description": "Intermediario de pagos entre personas en Colombia: el dinero queda protegido hasta que el trato se cumple."
+        },
+        {
+          "@type": "WebSite",
+          "@id": "https://www.tratoya.com/#website",
+          "url": "https://www.tratoya.com/",
+          "name": "TratoYa",
+          "inLanguage": "es-CO",
+          "publisher": { "@id": "https://www.tratoya.com/#org" }
+        },
+        {
+          "@type": "FAQPage",
+          "mainEntity": [
+            {
+              "@type": "Question",
+              "name": "¿Qué es TratoYa?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "TratoYa es un intermediario de pagos para compras y ventas entre personas en Colombia. El comprador paga a TratoYa, el dinero queda en custodia y solo se libera al vendedor cuando el trato se cumple."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "¿Y si el vendedor no entrega?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Abres una disputa, revisamos la evidencia y si tienes razón te devolvemos el 100% de tu dinero. Las disputas se resuelven en hasta 72 horas."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "¿Cuánto cuesta usar TratoYa?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "4.5% + 4×1000 por trato exitoso. Es la única comisión y solo se cobra si el trato se cumple. Sin costos ocultos."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "¿Cómo se paga en TratoYa?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Transfiriendo a las cuentas oficiales de TratoYa con Nequi, Bancolombia o PSE. El dinero no va al vendedor: queda protegido hasta la entrega."
+              }
+            }
+          ]
+        }
+      ]
+    }
+    </script>
   </head>
   <body>
     <div id="root"></div>
+    <noscript>
+      <main style="font-family: sans-serif; max-width: 640px; margin: 40px auto; padding: 0 20px; color: #111">
+        <h1>TratoYa — Compra y vende sin miedo</h1>
+        <p>
+          TratoYa es un intermediario de pagos entre personas en Colombia. El comprador paga a
+          TratoYa con Nequi, Bancolombia o PSE; el dinero queda protegido en custodia y solo se
+          libera al vendedor cuando el producto o servicio se entrega y se confirma.
+        </p>
+        <h2>Cómo funciona</h2>
+        <ol>
+          <li>Acuerdan el trato: precio, condiciones y plazos en un link compartido.</li>
+          <li>El comprador paga a TratoYa, no al vendedor.</li>
+          <li>El vendedor entrega con el pago asegurado.</li>
+          <li>El comprador confirma y TratoYa transfiere al vendedor.</li>
+        </ol>
+        <h2>Si algo sale mal</h2>
+        <p>
+          Abres una disputa, revisamos la evidencia y si tienes razón te devolvemos el 100% de tu
+          dinero. Soporte humano y resolución en hasta 72 horas.
+        </p>
+        <p>Comisión: 4.5% + 4×1000 por trato exitoso. Sin costos ocultos.</p>
+        <p>Esta página necesita JavaScript para funcionar. <a href="https://www.tratoya.com/">www.tratoya.com</a></p>
+        <p><small>INVENTION TECHNOLOGIES SAS · NIT 901.778.129 · Colombia</small></p>
+      </main>
+    </noscript>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
