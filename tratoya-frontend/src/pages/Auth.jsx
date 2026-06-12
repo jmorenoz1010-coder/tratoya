@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import logo from "../assets/tratoya-logo.png";
 import { API_URL, api, saveSession } from "../lib/api";
+import { track } from "../lib/analytics";
 import { passwordChecks, strongPasswordOk, normalizeHandle, DOC_TYPES, FINANCIAL_ENTITIES, getBankType } from "../lib/utils";
 import "../styles/auth-slide.css";
 
@@ -158,6 +159,7 @@ export default function Auth({ setSession, toast, initialMode = "login" }) {
         await api.post("/users/bank-accounts", { banco: f.banco, tipo, numero: f.numero_cuenta, titular: `${f.nombre} ${f.apellido}` });
       }
       setSession({ user: r.user, token: r.token });
+      track("sign_up", { method: "email" });
       playWelcomeSound();
       toast("Registro confirmado. Tu cuenta quedó lista.", "success");
     } catch (e) { toast(e.message, "error"); }

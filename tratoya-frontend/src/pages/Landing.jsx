@@ -1,19 +1,21 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { calcularComisionUI, fmt } from "../lib/utils";
+import { track } from "../lib/analytics";
 import logo from "../assets/tratoya-logo.png";
-import stepPaymentProtected from "../assets/step-payment-protected.png";
-import stepServiceDelivery from "../assets/step-service-delivery.png";
-import stepConfirmation from "../assets/step-confirmation.png";
-import stepPaymentRelease from "../assets/step-payment-release.png";
+import stepPaymentProtected from "../assets/step-payment-protected.webp";
+import stepServiceDelivery from "../assets/step-service-delivery.webp";
+import stepConfirmation from "../assets/step-confirmation.webp";
+import stepPaymentRelease from "../assets/step-payment-release.webp";
 import "../styles/landing-nu.css";
 
 const EASE = [0.22, 1, 0.36, 1];
 const TOTAL = 8;
 const FLOW_SLIDE = 3;
 
-// Arranque de la secuencia cinematográfica del hero (1s tras cargar)
-const HERO_T = 1.0;
+// Arranque de la secuencia cinematográfica del hero (rápido: el CTA
+// debe ser visible en menos de ~1.7s para no perder tráfico de campañas)
+const HERO_T = 0.35;
 // Trayectorias de las partículas de la detonación (determinísticas)
 const BOOM_PARTICLES = [
   { x: -150, y: -84, s: 1 }, { x: 142, y: -66, s: 0.7 }, { x: -98, y: -120, s: 0.85 },
@@ -49,9 +51,9 @@ const SAFETY_SHOW = [
 ];
 
 const MINI_FAQ = [
-  ["¿Y si el vendedor no entrega?", "Abres una disputa. TratoYa retiene el dinero hasta resolver."],
+  ["¿Y si el vendedor no entrega?", "Abres una disputa, revisamos la evidencia y si tienes razón te devolvemos el 100% de tu dinero."],
   ["¿El dinero está seguro?", "Sí. Queda en custodia y no se libera sin confirmación."],
-  ["¿Cuánto cuesta?", "4.5% + IMP por trato exitoso. Sin costos ocultos."],
+  ["¿Cuánto cuesta?", "4.5% + 4×1000 por trato exitoso. Sin costos ocultos."],
 ];
 
 const EARLY_PERKS = [
@@ -109,7 +111,10 @@ export default function Landing({ goAuth }) {
   const flowManualRef = useRef(false);
   const flowManualTimerRef = useRef(null);
 
-  const register = () => goAuth("register");
+  const register = () => {
+    track("cta_register_click", { slide });
+    goAuth("register");
+  };
   const login = () => goAuth("login");
 
   const go = useCallback((next) => {
@@ -347,7 +352,7 @@ export default function Landing({ goAuth }) {
                   className="ty-kicker"
                   initial={{ opacity: 0, y: -16, letterSpacing: "0.55em" }}
                   animate={{ opacity: 1, y: 0, letterSpacing: "0.18em" }}
-                  transition={{ delay: HERO_T + 1.85, duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+                  transition={{ delay: HERO_T + 1.15, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
                 >
                   Intermediario de pagos
                 </motion.p>
@@ -356,7 +361,7 @@ export default function Landing({ goAuth }) {
                 <motion.h1
                   className="ty-mega ty-mega--hero"
                   animate={{ x: [0, -7, 6, -4, 2, 0], y: [0, 3, -2, 2, -1, 0] }}
-                  transition={{ delay: HERO_T + 0.5, duration: 0.5, ease: "easeOut" }}
+                  transition={{ delay: HERO_T + 0.35, duration: 0.45, ease: "easeOut" }}
                 >
                   <span className="ty-heroline">
                     {["Compra", "y", "vende"].map((w, i) => (
@@ -365,7 +370,7 @@ export default function Landing({ goAuth }) {
                         className="ty-zoomword"
                         initial={{ opacity: 0, scale: 3.4, filter: "blur(18px)" }}
                         animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
-                        transition={{ delay: HERO_T + 0.1 + i * 0.17, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+                        transition={{ delay: HERO_T + 0.05 + i * 0.11, duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
                       >
                         {w}
                       </motion.span>
@@ -379,7 +384,7 @@ export default function Landing({ goAuth }) {
                         className="ty-glitchletter"
                         initial={{ opacity: 0, y: 28, skewX: -20, filter: "blur(9px)" }}
                         animate={{ opacity: 1, y: 0, skewX: 0, filter: "blur(0px)" }}
-                        transition={{ delay: HERO_T + 0.82 + i * 0.05, duration: 0.36, ease: [0.16, 1, 0.3, 1] }}
+                        transition={{ delay: HERO_T + 0.5 + i * 0.035, duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
                       >
                         {ch === " " ? " " : ch}
                       </motion.span>
@@ -389,7 +394,7 @@ export default function Landing({ goAuth }) {
                       aria-hidden="true"
                       initial={{ scaleX: 0 }}
                       animate={{ scaleX: 1 }}
-                      transition={{ delay: HERO_T + 1.4, duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
+                      transition={{ delay: HERO_T + 0.9, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
                     />
                   </span>
                 </motion.h1>
@@ -400,7 +405,7 @@ export default function Landing({ goAuth }) {
                   className="ty-sub ty-sub--hero"
                   initial={{ opacity: 0, y: 16, filter: "blur(6px)" }}
                   animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-                  transition={{ delay: HERO_T + 1.75, duration: 0.5, ease: EASE }}
+                  transition={{ delay: HERO_T + 1.05, duration: 0.45, ease: EASE }}
                 >
                   TratoYa retiene el dinero hasta que el trato se cumple.
                 </motion.p>
@@ -412,7 +417,7 @@ export default function Landing({ goAuth }) {
                     onClick={register}
                     initial={{ opacity: 0, scale: 0.45, y: 24 }}
                     animate={{ opacity: 1, scale: [0.45, 1.1, 1], y: 0 }}
-                    transition={{ delay: HERO_T + 1.95, duration: 0.55, times: [0, 0.7, 1], ease: [0.16, 1, 0.3, 1] }}
+                    transition={{ delay: HERO_T + 1.2, duration: 0.5, times: [0, 0.7, 1], ease: [0.16, 1, 0.3, 1] }}
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                   >
@@ -585,9 +590,9 @@ export default function Landing({ goAuth }) {
                   <span aria-hidden="true">⚡</span> Simula tu trato
                 </p>
                 <h2 className="ty-mega ty-text-pulse">
-                  <span>4.5%</span> + IMP.
+                  <span>4.5%</span> + 4×1000.
                 </h2>
-                <p className="ty-sub ty-text-pulse ty-text-pulse--delay">Sin sorpresas. Simula tu trato ahora.</p>
+                <p className="ty-sub ty-text-pulse ty-text-pulse--delay">La única comisión, solo si el trato se cumple. Simula el tuyo.</p>
                 <div className="ty-mini-calc">
                   <input
                     type="text"
@@ -686,7 +691,7 @@ export default function Landing({ goAuth }) {
                   transition={{ delay: 1.3, duration: 3.4, repeat: Infinity, ease: "easeInOut" }}
                 >
                   <motion.img
-                    src="/finale-icon.png"
+                    src="/finale-icon.webp"
                     alt=""
                     initial={{ opacity: 0, scale: 0.15, rotate: -22, filter: "blur(12px)" }}
                     animate={{ opacity: 1, scale: [0.15, 1.14, 1], rotate: 0, filter: "blur(0px)" }}
@@ -828,11 +833,11 @@ function HeroShowcase() {
       style={{ transformPerspective: 900 }}
       initial={{ opacity: 0, y: 64, rotateX: 26, scale: 0.9 }}
       animate={{ opacity: 1, y: 0, rotateX: 0, scale: 1 }}
-      transition={{ delay: HERO_T + 1.3, duration: 0.85, ease: [0.16, 1, 0.3, 1] }}
+      transition={{ delay: HERO_T + 0.8, duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
     >
       <div className="ty-hero-showcase__glow" aria-hidden="true" />
       <img
-        src="/hero-app-mockup.png"
+        src="/hero-app-mockup.webp"
         alt="App TratoYa: tratos activos, dinero protegido y pagos seguros"
         loading="eager"
         decoding="async"

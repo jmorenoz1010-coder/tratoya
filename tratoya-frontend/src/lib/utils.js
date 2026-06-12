@@ -133,7 +133,7 @@ export const calcularCostoGmfUI = (totalCobrado, montoDesembolso) =>
 export const calcularComisionUI = (monto, quien = "comprador") => {
   let comisionTratoYa = 0;
   let label = "";
-  if (monto > 0 && monto <= 50000000) { comisionTratoYa = Math.round(monto * 0.045); label = "4.5% + IMP"; }
+  if (monto > 0 && monto <= 50000000) { comisionTratoYa = Math.round(monto * 0.045); label = "4.5% + 4×1000"; }
   else { comisionTratoYa = 0; label = "Negociable"; }
 
   let comision = comisionTratoYa;
