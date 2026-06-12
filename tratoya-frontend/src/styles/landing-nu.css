@@ -1304,8 +1304,15 @@
     font-size: 13px;
   }
 
+  .ty-topbar__actions {
+    gap: 6px;
+  }
+
   .ty-topbar__actions .ty-ghost-btn {
-    display: none;
+    min-height: 36px;
+    padding: 8px 10px;
+    font-size: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.16);
   }
 
   .ty-topbar__actions .ty-neon-btn {

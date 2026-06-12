@@ -731,9 +731,10 @@
     grid-template-columns: 1fr;
   }
 
+  /* Hero compacto: solo logo + una línea de marca, el formulario queda a la vista */
   .auth-hero {
     min-height: auto;
-    padding: 72px 20px 20px;
+    padding: 64px 20px 14px;
     border-left: 0;
     border-bottom: 1px solid rgba(255, 255, 255, 0.06);
     align-items: center;
@@ -748,29 +749,93 @@
 
   .auth-logo-link--right {
     align-self: center;
+    margin-bottom: 10px;
   }
 
-  .auth-trust-pills {
-    margin-top: 16px;
+  .auth-logo-link--right img {
+    width: 64px;
   }
 
-  .auth-social-stack {
-    grid-template-columns: 1fr;
-  }
-
+  .auth-kicker,
+  .auth-hero__sub,
+  .auth-trust-pills,
   .auth-orbit-ring {
-    width: 280px;
-    height: 280px;
-    right: -100px;
-    top: 8%;
+    display: none;
   }
 
   .auth-mega {
-    font-size: 32px;
+    font-size: 22px;
+  }
+
+  .auth-mega br {
+    display: none;
+  }
+
+  .auth-mega span::before {
+    content: " ";
+  }
+
+  /* Sociales lado a lado para ahorrar alto */
+  .auth-social-stack {
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .auth-social-btn {
+    min-height: 44px;
+  }
+
+  /* Aire entre el botón principal y "o continúa con" */
+  .auth-divider {
+    margin: 22px 0 14px;
   }
 
   .auth-panel {
-    padding: 20px 16px 40px;
+    padding: 16px 16px 36px;
+  }
+
+  .auth-glass-card {
+    padding: 20px 18px;
+  }
+
+  .auth-glass-card::before {
+    margin: -6px 0 16px;
+  }
+
+  .auth-card-head h2 {
+    font-size: 23px;
+  }
+
+  .auth-card-head p {
+    margin-bottom: 16px;
+    font-size: 13px;
+  }
+
+  .auth-step-dots {
+    margin-bottom: 14px;
+  }
+
+  .auth-slide-app .fg {
+    margin-bottom: 12px;
+  }
+
+  /* Mantiene Nombre/Apellido y Tipo ID/Número en dos columnas: menos scroll */
+  .auth-slide-app .g2 {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 10px;
+  }
+
+  .auth-slide-app .inp {
+    min-height: 48px;
+    height: 48px;
+  }
+
+  .auth-neon-btn {
+    min-height: 50px;
+  }
+
+  .auth-switch {
+    margin-top: 16px;
   }
 }
 
