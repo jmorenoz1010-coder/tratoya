@@ -7,6 +7,7 @@ const rateLimit = require('express-rate-limit');
 const { body, validationResult } = require('express-validator');
 const { User } = require('../config/database');
 const { sendEmail } = require('../services/emailService');
+const { registerLimiter } = require('../middleware/rateLimiters');
 const logger = require('../utils/logger');
 
 // S-10: límites estrictos en endpoints sensibles (fuerza bruta / abuso).
@@ -243,7 +244,7 @@ router.post('/oauth/apple/callback', async (req, res, next) => {
 });
 
 // POST /api/auth/register
-router.post('/register', [
+router.post('/register', registerLimiter, [
   body('nombre').notEmpty().trim().withMessage('Nombre requerido'),
   body('apellido').notEmpty().trim().withMessage('Apellido requerido'),
   body('email').isEmail().normalizeEmail().withMessage('Email inválido'),

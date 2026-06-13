@@ -54,6 +54,8 @@ export const normalizeHandle = (value) =>
     .slice(0, 24);
 
 export const MONTO_MINIMO_TRATO = 50000;
+export const MONTO_MAXIMO_TRATO = 50000000;
+export const SOPORTE_EMAIL = "soporte@tratoya.com";
 export const PUBLIC_BASE_URL = "https://www.tratoya.com";
 export const publicTratoUrl = (link) => `${PUBLIC_BASE_URL}/t/${link}`;
 

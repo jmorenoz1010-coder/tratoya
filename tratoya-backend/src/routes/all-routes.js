@@ -9,6 +9,9 @@ const usersRouter = express.Router();
 const auth = require('../middleware/auth');
 const { User, CuentaBancaria, Notificacion } = require('../config/database');
 const { validateUpload } = require('../utils/fileValidation');
+const {
+  reportePagoLimiter, disputaLimiter, uploadLimiter, chatLimiter,
+} = require('../middleware/rateLimiters');
 
 usersRouter.use(auth);
 
@@ -492,7 +495,7 @@ paymentsRouter.get('/status', async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
-paymentsRouter.post('/manual/report', paymentUpload.single('receipt'), async (req, res, next) => {
+paymentsRouter.post('/manual/report', reportePagoLimiter, paymentUpload.single('receipt'), async (req, res, next) => {
   try {
     const { dealId, transactionRef = '', transferConcept = '', method = 'breb', notes = '' } = req.body || {};
     if (!dealId) return res.status(400).json({ success: false, message: 'dealId requerido' });
@@ -853,7 +856,7 @@ messagesRouter.get('/:trato_id', async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
-messagesRouter.post('/:trato_id', [
+messagesRouter.post('/:trato_id', chatLimiter, [
   bodyMsg('contenido').notEmpty().trim().withMessage('Mensaje vacío'),
 ], async (req, res, next) => {
   const errors = validMsg(req);
@@ -980,7 +983,7 @@ const dayjs = require('dayjs');
 
 disputesRouter.use(auth);
 
-disputesRouter.post('/', [
+disputesRouter.post('/', disputaLimiter, [
   bodyD('trato_id').isUUID().withMessage('trato_id inválido'),
   bodyD('motivo').notEmpty().withMessage('Motivo requerido'),
   bodyD('descripcion').isLength({ min: 20 }).withMessage('Descripción mínimo 20 caracteres'),
@@ -1054,7 +1057,7 @@ const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 8 *
 
 kycRouter.use(auth);
 
-kycRouter.post('/upload', upload.fields([
+kycRouter.post('/upload', uploadLimiter, upload.fields([
   { name: 'cedula_frente', maxCount: 1 },
   { name: 'cedula_reverso', maxCount: 1 },
   { name: 'selfie', maxCount: 1 },

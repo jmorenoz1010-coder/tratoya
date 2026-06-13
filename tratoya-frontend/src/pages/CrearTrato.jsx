@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { api } from "../lib/api";
-import { fmt, normalizeHandle, calcularComisionUI, MONTO_MINIMO_TRATO, publicTratoUrl } from "../lib/utils";
+import { fmt, normalizeHandle, calcularComisionUI, MONTO_MINIMO_TRATO, MONTO_MAXIMO_TRATO, SOPORTE_EMAIL, publicTratoUrl } from "../lib/utils";
 import CommissionBreakdown from "../components/CommissionBreakdown";
 
 const TIPOS = [
@@ -18,6 +18,15 @@ export default function CrearTrato({ setPage, toast, user }) {
   const [lookup, setLookup] = useState({ loading: false, data: null, error: "" });
   const sf = (k, v) => setF_((p) => ({ ...p, [k]: v }));
   const monto = parseInt((f.monto || "").replace(/\D/g, "")) || 0;
+  const excedeMaximo = monto > MONTO_MAXIMO_TRATO;
+
+  const contactarSoporte = () => {
+    const asunto = encodeURIComponent("Trato mayor a $50.000.000");
+    const cuerpo = encodeURIComponent(
+      `Hola, quiero crear un trato por ${fmt(monto)} COP que supera el límite automático. ¿Me ayudan a gestionarlo?`
+    );
+    window.location.href = `mailto:${SOPORTE_EMAIL}?subject=${asunto}&body=${cuerpo}`;
+  };
 
   const buscarContraparte = async () => {
     const handle = normalizeHandle(f.contraparte);
@@ -38,6 +47,7 @@ export default function CrearTrato({ setPage, toast, user }) {
   const create = async () => {
     if (f.directo && !lookup.data) { toast("Busca y confirma el nombre de usuario de tu contraparte.", "error"); return; }
     if (monto < MONTO_MINIMO_TRATO) { toast(`El monto mínimo es ${fmt(MONTO_MINIMO_TRATO)}`, "error"); return; }
+    if (excedeMaximo) { toast(`Para tratos mayores a ${fmt(MONTO_MAXIMO_TRATO)} debes contactar a soporte.`, "error"); setStep(1); return; }
     if (!["comprador", "vendedor", "compartida"].includes(f.quien)) { toast("Define quién paga la comisión.", "error"); setStep(2); return; }
     setLoading(true);
     try {
@@ -158,30 +168,43 @@ export default function CrearTrato({ setPage, toast, user }) {
             <div className="fg">
               <label className="fl" style={{ display: "flex", justifyContent: "space-between", gap: 10, alignItems: "baseline" }}>
                 <span>Monto en COP *</span>
-                <span style={{ color: "var(--s400)", fontSize: 11.5, fontWeight: 600 }}>Monto mínimo permitido: {fmt(MONTO_MINIMO_TRATO)}</span>
+                <span style={{ color: "var(--s400)", fontSize: 11.5, fontWeight: 600 }}>Entre {fmt(MONTO_MINIMO_TRATO)} y {fmt(MONTO_MAXIMO_TRATO)}</span>
               </label>
               <div style={{ position: "relative" }}>
                 <span style={{ position: "absolute", left: 13, top: "50%", transform: "translateY(-50%)", color: "var(--s400)", fontSize: 14 }}>$</span>
                 <input
                   className="inp"
-                  style={{ paddingLeft: 26 }}
+                  style={{ paddingLeft: 26, borderColor: excedeMaximo ? "var(--re)" : undefined }}
                   placeholder="0"
                   value={f.monto}
                   onChange={(e) => sf("monto", e.target.value.replace(/\D/g, "").replace(/\B(?=(\d{3})+(?!\d))/g, "."))}
                 />
               </div>
             </div>
-            {monto > 0 && <CommissionBreakdown monto={monto} quien={f.quien} />}
+            {excedeMaximo && (
+              <div style={{ background: "#fff4f4", border: "1.5px solid var(--re)", borderRadius: 12, padding: "14px 16px", marginBottom: 14 }}>
+                <div style={{ fontWeight: 700, fontSize: 14, color: "var(--re)", marginBottom: 6 }}>
+                  Monto mayor a {fmt(MONTO_MAXIMO_TRATO)}
+                </div>
+                <div style={{ fontSize: 13, color: "var(--s600)", lineHeight: 1.55, marginBottom: 12 }}>
+                  Para tratos de este tamaño, nuestro equipo debe revisarlo manualmente. Contacta a soporte para continuar de forma segura.
+                </div>
+                <button className="btn bp bsm" onClick={contactarSoporte}>Contactar soporte</button>
+              </div>
+            )}
+            {monto > 0 && !excedeMaximo && <CommissionBreakdown monto={monto} quien={f.quien} />}
             <div className="fg" style={{ marginTop: 14 }}>
               <label className="fl">Notas adicionales</label>
               <textarea className="inp" rows="2" placeholder="Condiciones especiales, detalles del envío, etc." value={f.notas} onChange={(e) => sf("notas", e.target.value)} maxLength={500} />
             </div>
             <button
               className="btn bp blg"
-              style={{ width: "100%", marginTop: 6 }}
+              style={{ width: "100%", marginTop: 6, opacity: excedeMaximo ? 0.55 : 1 }}
+              disabled={excedeMaximo}
               onClick={() => {
                 if (!f.titulo || f.titulo.trim().length < 5) { toast("El título debe tener mínimo 5 caracteres", "error"); return; }
                 if (monto < MONTO_MINIMO_TRATO) { toast(`El monto mínimo es ${fmt(MONTO_MINIMO_TRATO)}`, "error"); return; }
+                if (excedeMaximo) { toast(`Para tratos mayores a ${fmt(MONTO_MAXIMO_TRATO)} debes contactar a soporte.`, "error"); return; }
                 setStep(2);
               }}
             >

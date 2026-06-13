@@ -8,8 +8,9 @@ const dayjs = require('dayjs');
 const auth = require('../middleware/auth');
 const kycRequired = require('../middleware/kycRequired');
 const { validateUpload } = require('../utils/fileValidation');
+const { crearTratoLimiter, uploadLimiter } = require('../middleware/rateLimiters');
 const { Trato, User, Pago, Mensaje } = require('../config/database');
-const { calcularComision, MONTO_MINIMO_TRATO } = require('../services/comisionService');
+const { calcularComision, MONTO_MINIMO_TRATO, MONTO_MAXIMO_AUTOMATICO } = require('../services/comisionService');
 const { notificar } = require('../services/notificacionService');
 const { generarCodigo } = require('../utils/helpers');
 const logger = require('../utils/logger');
@@ -138,7 +139,7 @@ router.get('/', async (req, res, next) => {
 });
 
 // ── POST /api/tratos ─────────────────────────
-router.post('/', kycRequired, [
+router.post('/', crearTratoLimiter, kycRequired, [
   body('titulo').notEmpty().trim().isLength({ min: 5 }).withMessage('Título mínimo 5 caracteres'),
   body('tipo').isIn(['producto','servicio','reserva','vehiculo','inmueble','otro']).withMessage('Tipo de trato inválido'),
   body('monto').isFloat({ min: MONTO_MINIMO_TRATO }).withMessage(`Monto mínimo $${MONTO_MINIMO_TRATO.toLocaleString('es-CO')} COP`),
@@ -149,6 +150,16 @@ router.post('/', kycRequired, [
   if (!errors.isEmpty()) {
     const msgs = errors.array().map((e) => e.msg);
     return res.status(400).json({ success: false, message: msgs[0], errors: errors.array() });
+  }
+  // Tope de monto automático: bloquea desde el backend (defensa en profundidad).
+  // 422 = la solicitud es válida pero requiere revisión manual de soporte.
+  const montoSolicitado = parseFloat(req.body.monto);
+  if (Number.isFinite(montoSolicitado) && montoSolicitado > MONTO_MAXIMO_AUTOMATICO) {
+    return res.status(422).json({
+      success: false,
+      code: 'MONTO_REQUIERE_SOPORTE',
+      message: `Para tratos mayores a $${MONTO_MAXIMO_AUTOMATICO.toLocaleString('es-CO')}, nuestro equipo debe revisarlo manualmente. Contacta a soporte para continuar.`,
+    });
   }
   try {
     const { titulo, descripcion, tipo, monto, dias_inspeccion = 7, quien_paga_comision, notas, contraparte_usuario_unico } = req.body;
@@ -267,7 +278,7 @@ router.put('/:id/activar', async (req, res, next) => {
 });
 
 // ── POST /api/tratos/:id/prueba-entrega (subir fotos) ──
-router.post('/:id/prueba-entrega', async (req, res, next) => {
+router.post('/:id/prueba-entrega', uploadLimiter, async (req, res, next) => {
   try {
     const multer = require('multer');
     const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 8 * 1024 * 1024, files: 5 } });
