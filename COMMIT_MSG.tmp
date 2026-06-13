@@ -1,0 +1,19 @@
+fix: cierre de hallazgos criticos de auditoria panel y escrow
+
+Backend fintech/seguridad:
+- Disputas: resolucion con devolucion (Pago devolucion + LedgerEntry), audit log y
+  notificaciones; favor vendedor pasa a confirmado (no completado directo).
+- Cancelacion admin: guarda de estado, devolucion trazable, audit y notificaciones.
+- Liberacion admin: AuditLog + LedgerEntry; upload con validateUpload.
+- Aprobacion pago admin: exige monto_verificado vs total_a_pagar.
+- GET /tratos/:id: serializer sin PII anticipada, notas internas ni URLs directas.
+- Archivos: tokens firmados (/api/files/:token), s3 guarda solo claves.
+- OAuth: codigo de un solo uso (sin tokens en URL); refresh con rotacion.
+- Pagos duplicados: bloquea pendiente/procesando/aprobado; notifica al vendedor.
+- CORS rechazo sin 500; Redis warm-up en Vercel; waitlist lookup rate limited.
+- registrar-guia -> pendiente_confirmacion; audit en confirmar/cancelar/disputa.
+
+Frontend UX:
+- Wizard de pago solo en activo; validacion cliente de comprobante; attestation.
+- Campana de notificaciones (inbox); borrador CTA aceptar; dias inspeccion visibles.
+- accionPendiente/Dashboard/Disputas mejorados; Pagos con error visible.

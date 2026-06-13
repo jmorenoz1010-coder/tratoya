@@ -9,7 +9,8 @@ const auth = require('../middleware/auth');
 const kycRequired = require('../middleware/kycRequired');
 const { validateUpload } = require('../utils/fileValidation');
 const { crearTratoLimiter, uploadLimiter } = require('../middleware/rateLimiters');
-const { Trato, User, Pago, Mensaje } = require('../config/database');
+const { toParticipantTrato } = require('../utils/tratoSerializer');
+const { Trato, User, Pago, Mensaje, AuditLog } = require('../config/database');
 const { calcularComision, MONTO_MINIMO_TRATO, MONTO_MAXIMO_AUTOMATICO } = require('../services/comisionService');
 const { notificar } = require('../services/notificacionService');
 const { generarCodigo } = require('../utils/helpers');
@@ -18,6 +19,15 @@ const PUBLIC_FRONTEND_URL = 'https://www.tratoya.com';
 
 const fmt = (n) => Number(n).toLocaleString('es-CO');
 const tratoLink = (link) => `${PUBLIC_FRONTEND_URL}/t/${link}`;
+
+const esParticipante = (trato, userId) =>
+  trato && (trato.comprador_id === userId || trato.vendedor_id === userId);
+
+const findTratoParticipante = async (id, userId) => {
+  const trato = await Trato.findByPk(id);
+  if (!trato || !esParticipante(trato, userId)) return null;
+  return trato;
+};
 
 // S-06: expone solo campos seguros del trato en el link público (sin notas internas,
 // metadata, IDs internos ni IP de creación).
@@ -100,7 +110,7 @@ router.put('/public/:link/activar', auth, async (req, res, next) => {
       wa_params: { codigo: trato.codigo, titulo: trato.titulo, monto: fmt(trato.monto) },
     });
 
-    res.json({ success: true, message: 'Trato aceptado. Ya puedes proceder al pago.', data: trato });
+    res.json({ success: true, message: 'Trato aceptado. Ya puedes proceder al pago.', data: toPublicTrato(trato) });
   } catch (err) { next(err); }
 });
 
@@ -188,7 +198,7 @@ router.post('/', crearTratoLimiter, kycRequired, [
       dias_inspeccion: diasInspeccion,
       notas,
       estado: contraparte ? 'activo' : 'borrador',
-      link_compartir: uuidv4().substring(0, 10),
+      link_compartir: uuidv4().replace(/-/g, '').substring(0, 16),
       fecha_activado: contraparte ? new Date() : null,
       fecha_expiracion: dayjs().add(12, 'hour').toDate(),
       ip_creacion: req.ip,
@@ -244,7 +254,7 @@ router.get('/:id', async (req, res, next) => {
       ],
     });
     if (!trato) return res.status(404).json({ success: false, message: 'Trato no encontrado' });
-    res.json({ success: true, data: trato });
+    res.json({ success: true, data: toParticipantTrato(trato, req.user.id) });
   } catch (err) { next(err); }
 });
 
@@ -284,9 +294,12 @@ router.post('/:id/prueba-entrega', uploadLimiter, async (req, res, next) => {
     const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 8 * 1024 * 1024, files: 5 } });
     upload.any()(req, res, async (err) => {
       if (err) return res.status(400).json({ success: false, message: 'No se pudo procesar el archivo. Verifica el tamaño (máx 8 MB).' });
-      const trato = await Trato.findByPk(req.params.id);
+      const trato = await findTratoParticipante(req.params.id, req.user.id);
       if (!trato) return res.status(404).json({ success: false, message: 'Trato no encontrado' });
       if (trato.vendedor_id !== req.user.id) return res.status(403).json({ success: false, message: 'Solo el vendedor puede subir pruebas' });
+      if (!['pago_retenido', 'en_entrega', 'pendiente_confirmacion'].includes(trato.estado)) {
+        return res.status(400).json({ success: false, message: 'Solo puedes subir pruebas cuando el pago está protegido y la entrega está en curso.' });
+      }
       if (!req.files || req.files.length === 0) return res.status(400).json({ success: false, message: 'Debes adjuntar al menos 1 foto de prueba de entrega.' });
 
       const { s3Upload } = require('../services/s3Service');
@@ -311,14 +324,14 @@ router.post('/:id/prueba-entrega', uploadLimiter, async (req, res, next) => {
 router.post('/:id/registrar-guia', async (req, res, next) => {
   try {
     const { guia, transportadora, tracking_url, medio_envio, numero_contacto, punto_encuentro } = req.body;
-    const trato = await Trato.findByPk(req.params.id);
+    const trato = await findTratoParticipante(req.params.id, req.user.id);
     if (!trato) return res.status(404).json({ success: false, message: 'Trato no encontrado' });
     if (trato.vendedor_id !== req.user.id) return res.status(403).json({ success: false, message: 'Solo el vendedor puede registrar la guía' });
     if (trato.estado !== 'pago_retenido') return res.status(400).json({ success: false, message: 'El pago debe estar retenido para registrar guía' });
 
     // Campos según medio de envío
     const updates = {
-      estado: 'en_entrega',
+      estado: 'pendiente_confirmacion',
       fecha_entrega: new Date(),
       transportadora: transportadora || 'Otro',
       guia_envio: guia || medio_envio || 'registro_manual',
@@ -341,6 +354,16 @@ router.post('/:id/registrar-guia', async (req, res, next) => {
     updates.metadata = meta;
 
     await trato.update(updates);
+
+    try {
+      await AuditLog.create({
+        user_id: req.user.id,
+        action: 'DELIVERY_REGISTERED',
+        entity_type: 'deal',
+        entity_id: trato.id,
+        metadata: { medio_envio, guia: guia || null, transportadora: transportadora || null },
+      });
+    } catch { /* noop */ }
 
     const fecha_limite = dayjs().add(trato.dias_inspeccion, 'day').toDate();
 
@@ -374,7 +397,7 @@ router.post('/:id/registrar-guia', async (req, res, next) => {
 // ── POST /api/tratos/:id/confirmar ───────────
 router.post('/:id/confirmar', async (req, res, next) => {
   try {
-    const trato = await Trato.findByPk(req.params.id);
+    const trato = await findTratoParticipante(req.params.id, req.user.id);
     if (!trato) return res.status(404).json({ success: false, message: 'Trato no encontrado' });
     if (trato.comprador_id !== req.user.id) return res.status(403).json({ success: false, message: 'Solo el comprador puede confirmar' });
     if (!['en_entrega', 'pendiente_confirmacion'].includes(trato.estado)) {
@@ -382,6 +405,16 @@ router.post('/:id/confirmar', async (req, res, next) => {
     }
 
     await trato.update({ estado: 'confirmado', fecha_confirmacion: new Date() });
+
+    try {
+      await AuditLog.create({
+        user_id: req.user.id,
+        action: 'DELIVERY_CONFIRMED',
+        entity_type: 'deal',
+        entity_id: trato.id,
+        metadata: { codigo: trato.codigo },
+      });
+    } catch { /* noop */ }
 
     await Promise.all([
       notificar(trato.vendedor_id, 'entrega_confirmada', {
@@ -413,14 +446,23 @@ router.post('/:id/cancelar', [
   body('motivo').notEmpty().withMessage('Motivo requerido'),
 ], async (req, res, next) => {
   try {
-    const trato = await Trato.findByPk(req.params.id);
+    const trato = await findTratoParticipante(req.params.id, req.user.id);
     if (!trato) return res.status(404).json({ success: false, message: 'Trato no encontrado' });
-    const esParticipante = [trato.comprador_id, trato.vendedor_id].includes(req.user.id);
-    if (!esParticipante) return res.status(403).json({ success: false, message: 'Sin permiso' });
     if (!['borrador', 'activo'].includes(trato.estado)) {
       return res.status(400).json({ success: false, message: 'No cancelable en este estado. Si hay pago retenido, abre una disputa.' });
     }
-    await trato.update({ estado: 'cancelado', notas_internas: `Cancelado: ${req.body.motivo}` });
+    await trato.update({
+      estado: 'cancelado',
+      metadata: { ...(trato.metadata || {}), cancel_motivo: req.body.motivo, cancelado_por: req.user.id, cancelado_at: new Date().toISOString() },
+    });
+    const contraparte = trato.comprador_id === req.user.id ? trato.vendedor_id : trato.comprador_id;
+    if (contraparte) {
+      await notificar(contraparte, 'trato_cancelado', {
+        titulo: 'Trato cancelado',
+        cuerpo: `El trato ${trato.codigo} fue cancelado por la contraparte.`,
+        metadata: { trato_id: trato.id },
+      }).catch(() => {});
+    }
     res.json({ success: true, message: 'Trato cancelado' });
   } catch (err) { next(err); }
 });

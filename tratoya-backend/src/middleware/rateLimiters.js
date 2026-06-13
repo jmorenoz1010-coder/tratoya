@@ -164,6 +164,11 @@ const inviteLimiter = createLimiter({
   message: 'Demasiadas invitaciones seguidas. Espera unos minutos.',
 });
 
+const refreshLimiter = createLimiter({
+  name: 'refresh', windowMs: 15 * MIN, max: 30, by: 'ip',
+  message: 'Demasiados intentos de renovación de sesión. Espera un momento.',
+});
+
 module.exports = {
   HybridStore,
   createLimiter,
@@ -174,4 +179,5 @@ module.exports = {
   uploadLimiter,
   chatLimiter,
   inviteLimiter,
+  refreshLimiter,
 };

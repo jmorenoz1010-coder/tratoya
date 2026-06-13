@@ -5,9 +5,10 @@ import { fmt, fmtDate, PAGO_ESTADO } from "../lib/utils";
 
 let pagosCache = [];
 
-export default function Pagos() {
+export default function Pagos({ toast }) {
   const [pagos, setPagos] = useState(pagosCache);
   const [loading, setLoading] = useState(pagosCache.length === 0);
+  const [loadError, setLoadError] = useState("");
   const [selected, setSelected] = useState(null);
 
   useEffect(() => {
@@ -15,8 +16,9 @@ export default function Pagos() {
       .then((r) => {
         pagosCache = r.data || [];
         setPagos(pagosCache);
+        setLoadError("");
       })
-      .catch(() => {})
+      .catch((e) => setLoadError(e.message || "No pudimos cargar tus pagos."))
       .finally(() => setLoading(false));
   }, []);
 
@@ -73,7 +75,14 @@ export default function Pagos() {
         document.body
       )}
 
-      {loading && pagos.length === 0 ? (
+      {loadError && (
+        <div style={{ background: "#fff4f4", border: "1px solid var(--re)", borderRadius: 10, padding: "12px 14px", marginBottom: 14, fontSize: 13, color: "var(--re)" }}>
+          {loadError}
+          <button className="btn bo bsm" style={{ marginLeft: 10 }} onClick={() => { setLoading(true); setLoadError(""); api.get("/payments/history").then((r) => { pagosCache = r.data || []; setPagos(pagosCache); }).catch((e) => setLoadError(e.message)).finally(() => setLoading(false)); }}>Reintentar</button>
+        </div>
+      )}
+
+      {loading && pagos.length === 0 && !loadError ? (
         <div style={{ textAlign: "center", padding: 40 }}>
           <div className="spin" style={{ margin: "0 auto", color: "var(--s400)" }} />
         </div>

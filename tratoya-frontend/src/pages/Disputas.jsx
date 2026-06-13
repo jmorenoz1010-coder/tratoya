@@ -126,6 +126,11 @@ export default function Disputas({ toast, initialTratoId, clearInitialTratoId, s
                 Resolución: {x.notas_mediador}
               </div>
             )}
+            {["resuelta", "cerrada"].includes(x.estado) && x.resolucion === "favor_comprador" && (
+              <div style={{ marginTop: 10, background: "#eef8ff", border: "1px solid #b8d9f5", borderRadius: 9, padding: "9px 11px", fontSize: 12, color: "var(--n)" }}>
+                Si había pago retenido, iniciamos la devolución. Revisa el estado en <button type="button" className="btn bo bsm" style={{ marginLeft: 4 }} onClick={() => setPage?.("pagos")}>Pagos</button>.
+              </div>
+            )}
             {x.Trato?.id && (
               <button className="btn bo bsm" style={{ marginTop: 10 }} onClick={() => { setTratoId?.(x.Trato.id); setPage?.("detalle"); }}>
                 Ver trato

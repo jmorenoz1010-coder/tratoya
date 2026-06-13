@@ -226,6 +226,15 @@ export default function CrearTrato({ setPage, toast, user }) {
                 <option value="compartida">50% / 50% compartida</option>
               </select>
             </div>
+            <div className="fg">
+              <label className="fl">Tiempo de inspección del comprador (días)</label>
+              <select className="inp" value={f.dias} onChange={(e) => sf("dias", e.target.value)}>
+                {[1, 2, 3, 4, 5, 6, 7].map((d) => (
+                  <option key={d} value={String(d)}>{d} día{d > 1 ? "s" : ""} para confirmar entrega</option>
+                ))}
+              </select>
+              <div style={{ fontSize: 11.5, color: "var(--s500)", marginTop: 5 }}>El comprador tendrá este plazo para revisar y confirmar (o disputar).</div>
+            </div>
             <div className="fg" style={{ marginTop: 6 }}>
               <label style={{ display: "flex", alignItems: "center", gap: 9, cursor: "pointer" }}>
                 <input type="checkbox" checked={f.directo} onChange={(e) => sf("directo", e.target.checked)} style={{ width: 16, height: 16 }} />
@@ -270,7 +279,7 @@ export default function CrearTrato({ setPage, toast, user }) {
             <button className="btn bg_ bsm" style={{ marginBottom: 16 }} onClick={() => setStep(2)}>← Atrás</button>
             <h2 style={{ fontSize: 21, marginBottom: 16 }}>Confirmar trato</h2>
             <div className="card" style={{ padding: "18px 20px", marginBottom: 14 }}>
-              {[["Tipo", f.tipo], ["Título", f.titulo], ["Monto", fmt(monto)], ["Comisión", f.quien === "comprador" ? "La paga el comprador" : f.quien === "vendedor" ? "La asume el vendedor" : "50% / 50% compartida"]].map(([k, v]) => (
+              {[["Tipo", f.tipo], ["Título", f.titulo], ["Monto", fmt(monto)], ["Inspección", `${f.dias} día${parseInt(f.dias) > 1 ? "s" : ""}`], ["Comisión", f.quien === "comprador" ? "La paga el comprador" : f.quien === "vendedor" ? "La asume el vendedor" : "50% / 50% compartida"]].map(([k, v]) => (
                 <div key={k} style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", borderBottom: "1px solid var(--s100)", fontSize: 13 }}>
                   <span style={{ color: "var(--s600)" }}>{k}</span>
                   <span style={{ fontWeight: 600 }}>{v}</span>

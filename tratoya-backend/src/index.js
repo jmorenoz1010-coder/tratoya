@@ -49,7 +49,7 @@ app.use(cors({
     const isLocalNetwork = process.env.NODE_ENV !== 'production'
       && /^http:\/\/(localhost|127\.0\.0\.1|192\.168\.\d+\.\d+|10\.\d+\.\d+\.\d+|172\.(1[6-9]|2\d|3[0-1])\.\d+\.\d+):\d+$/.test(origin);
     if (allowed.includes(origin) || isLocalNetwork) return cb(null, true);
-    return cb(new Error('Origen no permitido por CORS'));
+    return cb(null, false);
   },
   credentials: true,
   methods: ['GET','POST','PUT','PATCH','DELETE','OPTIONS'],
@@ -73,6 +73,14 @@ const waitlistRegistroLimiter = rateLimit({
   message: { success: false, message: 'Demasiados registros desde esta IP. Intenta de nuevo en una hora.' },
 });
 
+const waitlistLookupLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, message: 'Demasiadas consultas. Intenta de nuevo en unos minutos.' },
+});
+
 // ── Body parsing ───────────────────────────────
 app.use('/api/webhooks', express.raw({ type: 'application/json' }));
 app.use(express.json({ limit: '10mb' }));
@@ -82,6 +90,17 @@ app.use(express.urlencoded({ extended: true }));
 if (process.env.NODE_ENV !== 'test') {
   app.use(morgan('dev'));
 }
+
+// ── Acceso temporal a archivos (URLs firmadas vía token) ──
+const { verifyFileAccess } = require('./utils/fileAccess');
+app.get('/api/files/:token', (req, res) => {
+  const info = verifyFileAccess(req.params.token);
+  if (!info) {
+    return res.status(403).json({ success: false, message: 'Enlace de archivo expirado o inválido.' });
+  }
+  const cdn = (process.env.CDN_BASE_URL || 'https://cdn.tratoya.co').replace(/\/$/, '');
+  return res.redirect(302, `${cdn}/${info.key}`);
+});
 
 // ── Health check ───────────────────────────────
 app.get('/health', (req, res) => {
@@ -97,6 +116,7 @@ app.get('/health', (req, res) => {
 app.use('/api/auth',     authRoutes);
 app.use('/api/tratos',   tratoRoutes);
 app.use('/api/waitlist/registro', waitlistRegistroLimiter);
+app.use('/api/waitlist/posicion', waitlistLookupLimiter);
 app.use('/api/waitlist', waitlistRoutes);
 app.use('/api/users',    allRoutes.users);
 app.use('/api/payments', allRoutes.payments);
@@ -141,10 +161,16 @@ async function start() {
 if (process.env.VERCEL !== '1') {
   start();
 } else {
-  // En Vercel (serverless) no levantamos el servidor, pero sí pre-calentamos la DB
+  // En Vercel (serverless): pre-calentar DB y Redis para rate limiting compartido.
   const { sequelize } = require('./config/database');
+  const { connectRedis } = require('./config/redis');
   sequelize.authenticate().catch((e) => {
     logger.warn('⚠️  DB warm-up en Vercel falló:', e.message);
+  });
+  connectRedis().then(() => {
+    logger.info('✅ Redis conectado (serverless warm-up)');
+  }).catch((e) => {
+    logger.warn(`⚠️  Redis no disponible en Vercel — rate limit por instancia (${e.message})`);
   });
 }
 module.exports = app;

@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from "react";
 import TratoYaAdmin from "./Admin";
-import { clearLegacySession, getSavedUser, saveSession } from "./lib/api";
+import { clearLegacySession, getSavedUser, saveSession, API_URL } from "./lib/api";
 import { useToast, Toast } from "./components/Toast";
 import AppShell from "./pages/AppShell";
 import Landing from "./pages/Landing";
@@ -103,21 +103,29 @@ export default function TratoYaApp() {
 
 function AuthCallback({ setSession, toast }) {
   useEffect(() => {
-    try {
-      const params = new URLSearchParams(window.location.search);
-      const token = params.get("token");
-      const refresh = params.get("refresh");
-      const encodedUser = params.get("user");
-      if (!token || !encodedUser) throw new Error("No se pudo completar el inicio de sesión social.");
-      const user = JSON.parse(atob(encodedUser.replace(/-/g, "+").replace(/_/g, "/")));
-      saveSession(token, refresh, user);
-      setSession({ user, token });
-      toast(`Bienvenido, ${user.nombre || "TratoYa"}!`, "success");
-      window.history.replaceState(null, "", "/");
-    } catch (e) {
-      toast(e.message || "No se pudo completar el inicio de sesión social.", "error");
-      window.history.replaceState(null, "", "/");
-    }
+    (async () => {
+      try {
+        const params = new URLSearchParams(window.location.search);
+        const code = params.get("code");
+        if (!code) throw new Error("No se pudo completar el inicio de sesión social.");
+        const res = await fetch(`${API_URL}/auth/oauth/exchange`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ code }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || !data.token || !data.user) {
+          throw new Error(data.message || "No se pudo completar el inicio de sesión social.");
+        }
+        saveSession(data.token, data.refresh_token, data.user);
+        setSession({ user: data.user, token: data.token });
+        toast(`Bienvenido, ${data.user.nombre || "TratoYa"}!`, "success");
+        window.history.replaceState(null, "", "/");
+      } catch (e) {
+        toast(e.message || "No se pudo completar el inicio de sesión social.", "error");
+        window.history.replaceState(null, "", "/");
+      }
+    })();
   }, [setSession, toast]);
 
   return (

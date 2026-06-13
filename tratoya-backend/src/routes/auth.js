@@ -7,7 +7,8 @@ const rateLimit = require('express-rate-limit');
 const { body, validationResult } = require('express-validator');
 const { User } = require('../config/database');
 const { sendEmail } = require('../services/emailService');
-const { registerLimiter } = require('../middleware/rateLimiters');
+const { registerLimiter, refreshLimiter } = require('../middleware/rateLimiters');
+const { issueOAuthCode, consumeOAuthCode } = require('../utils/oauthCodes');
 const logger = require('../utils/logger');
 
 // S-10: límites estrictos en endpoints sensibles (fuerza bruta / abuso).
@@ -79,9 +80,10 @@ const socialRedirect = async (res, user) => {
   const isAdminSession = ['admin', 'superadmin'].includes(rol);
   const token = signToken(user.id, isAdminSession ? (process.env.JWT_ADMIN_EXPIRES_IN || '7d') : undefined);
   const refresh_token = signRefresh(user.id);
-  await user.update({ last_login: new Date(), refresh_token: await bcrypt.hash(refresh_token, 6) });
-  const payload = Buffer.from(JSON.stringify(publicUser(user))).toString('base64url');
-  return res.redirect(`${frontendUrl()}/auth/callback?token=${encodeURIComponent(token)}&refresh=${encodeURIComponent(refresh_token)}&user=${encodeURIComponent(payload)}`);
+  await user.update({ last_login: new Date(), refresh_token: await bcrypt.hash(refresh_token, 12) });
+  // Código de un solo uso — los tokens nunca viajan en la URL (evita logs/referrer).
+  const code = await issueOAuthCode({ token, refresh_token, user: publicUser(user) });
+  return res.redirect(`${frontendUrl()}/auth/callback?code=${encodeURIComponent(code)}`);
 };
 
 const upsertSocialUser = async ({ email, nombre, apellido }) => {
@@ -344,8 +346,21 @@ router.post('/login', authLimiter, [
   } catch (err) { next(err); }
 });
 
+// POST /api/auth/oauth/exchange — canjea código OAuth por tokens (un solo uso)
+router.post('/oauth/exchange', refreshLimiter, async (req, res) => {
+  try {
+    const { code } = req.body || {};
+    if (!code) return res.status(400).json({ success: false, message: 'Código requerido' });
+    const data = await consumeOAuthCode(code);
+    if (!data) return res.status(401).json({ success: false, message: 'Código inválido o expirado. Intenta iniciar sesión de nuevo.' });
+    res.json({ success: true, token: data.token, refresh_token: data.refresh_token, user: data.user });
+  } catch {
+    res.status(500).json({ success: false, message: 'No se pudo completar el inicio de sesión social.' });
+  }
+});
+
 // POST /api/auth/refresh
-router.post('/refresh', async (req, res, next) => {
+router.post('/refresh', refreshLimiter, async (req, res, next) => {
   try {
     const { refresh_token } = req.body;
     if (!refresh_token) return res.status(400).json({ success: false, message: 'Refresh token requerido' });
@@ -356,7 +371,9 @@ router.post('/refresh', async (req, res, next) => {
     if (!isValid) return res.status(401).json({ success: false, message: 'Refresh token inválido' });
     if (user.is_blocked) return res.status(403).json({ success: false, message: 'Cuenta suspendida' });
     const token = signToken(user.id);
-    res.json({ success: true, token });
+    const newRefresh = signRefresh(user.id);
+    await user.update({ refresh_token: await bcrypt.hash(newRefresh, 12) });
+    res.json({ success: true, token, refresh_token: newRefresh });
   } catch {
     res.status(401).json({ success: false, message: 'Refresh token inválido o expirado' });
   }

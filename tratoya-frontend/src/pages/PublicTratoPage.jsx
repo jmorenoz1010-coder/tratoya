@@ -78,7 +78,7 @@ export default function PublicTratoPage({ link, session, goAuth, toast }) {
   const vendedor = trato.vendedor ? `${trato.vendedor.nombre} ${trato.vendedor.apellido}` : "Vendedor";
   const isSeller = session?.user?.id === trato.vendedor?.id;
   const canAccept = session && !isSeller && trato.estado === "borrador";
-  const canPay = session && !isSeller && ["activo", "pago_pendiente"].includes(trato.estado);
+  const canPay = session && !isSeller && trato.estado === "activo";
 
   return (
     <div className="land">

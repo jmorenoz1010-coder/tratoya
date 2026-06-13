@@ -129,6 +129,13 @@ usersRouter.get('/stream', (req, res) => {
   req.on('close', () => clearInterval(heartbeat));
 });
 
+usersRouter.put('/notifications/read-all', async (req, res, next) => {
+  try {
+    await Notificacion.update({ leida: true }, { where: { usuario_id: req.user.id, leida: false } });
+    res.json({ success: true });
+  } catch (err) { next(err); }
+});
+
 usersRouter.put('/notifications/:id/read', async (req, res, next) => {
   try {
     await Notificacion.update({ leida: true }, { where: { id: req.params.id, usuario_id: req.user.id } });
@@ -512,7 +519,7 @@ paymentsRouter.post('/manual/report', reportePagoLimiter, paymentUpload.single('
       where: { trato_id: trato.id, tipo: 'retencion' },
       order: [['createdAt', 'DESC']],
     });
-    if (existingPayment && ['procesando', 'aprobado'].includes(existingPayment.estado)) {
+    if (existingPayment && ['pendiente', 'procesando', 'aprobado'].includes(existingPayment.estado)) {
       return res.status(409).json({ success: false, message: 'Este pago ya fue reportado. No puedes pagar dos veces el mismo trato.' });
     }
     if (existingPayment?.estado === 'rechazado') {
@@ -619,6 +626,13 @@ paymentsRouter.post('/manual/report', reportePagoLimiter, paymentUpload.single('
         wa_evento: 'pago_recibido_comprador',
         wa_params: { codigo: trato.codigo, titulo: trato.titulo, monto: Number(amountCop).toLocaleString('es-CO') },
       });
+      if (trato.vendedor_id) {
+        await notificar(trato.vendedor_id, 'pago_reportado_vendedor', {
+          titulo: 'El comprador reportó el pago',
+          cuerpo: `El comprador subió el comprobante del trato ${trato.codigo}. Lo estamos verificando.`,
+          metadata: { trato_id: trato.id, payment_intent_id: intent.id },
+        });
+      }
     } catch (e) {
       require('../utils/logger').warn(`[PAYMENT] Notificación falló (no bloquea): ${e.message}`);
     }
@@ -1019,6 +1033,17 @@ disputesRouter.post('/', disputaLimiter, [
 
     await trato.update({ estado: 'disputado' });
 
+    try {
+      const { AuditLog } = require('../config/database');
+      await AuditLog.create({
+        user_id: req.user.id,
+        action: 'DISPUTE_OPENED',
+        entity_type: 'dispute',
+        entity_id: disputa.id,
+        metadata: { trato_id, tipo, motivo },
+      });
+    } catch { /* noop */ }
+
     const contraparte = trato.comprador_id === req.user.id ? trato.vendedor_id : trato.comprador_id;
     const { notificar } = require('../services/notificacionService');
     await notificar(contraparte, 'disputa_abierta', {
@@ -1325,12 +1350,81 @@ adminRouter.get('/tratos/:id/detalle', async (req, res, next) => {
 
 adminRouter.post('/tratos/:id/cancelar', async (req, res, next) => {
   try {
-    const { Trato, Pago } = require('../config/database');
+    const { Trato, Pago, LedgerEntry, AuditLog } = require('../config/database');
     const trato = await Trato.findByPk(req.params.id);
     if (!trato) return res.status(404).json({ success: false, message: 'Trato no encontrado' });
-    await trato.update({ estado: 'cancelado', notas_internas: `Cancelado por admin ${req.user.email}` });
-    await Pago.update({ estado: 'reembolsado' }, { where: { trato_id: trato.id, estado: { [Op.in]: ['pendiente', 'procesando', 'aprobado'] } } });
-    res.json({ success: true, data: trato, message: 'Trato cancelado' });
+
+    const NO_CANCELABLE = ['completado', 'cancelado', 'expirado'];
+    if (NO_CANCELABLE.includes(trato.estado)) {
+      return res.status(409).json({ success: false, message: `No se puede cancelar un trato en estado ${trato.estado}.` });
+    }
+    const estadoPrevio = trato.estado;
+
+    const pagosActivos = await Pago.findAll({
+      where: { trato_id: trato.id, tipo: 'retencion', estado: { [Op.in]: ['pendiente', 'procesando', 'aprobado'] } },
+      order: [['createdAt', 'DESC']],
+    });
+    const pagoRetenido = pagosActivos.find((p) => p.estado === 'aprobado');
+
+    await trato.update({
+      estado: 'cancelado',
+      notas_internas: `Cancelado por admin ${req.user.email}`,
+      metadata: {
+        ...(trato.metadata || {}),
+        admin_cancelled_at: new Date().toISOString(),
+        admin_cancelled_by: req.user.id,
+      },
+    });
+
+    if (pagoRetenido) {
+      const montoDevolucion = Number(pagoRetenido.monto || 0);
+      await Pago.create({
+        trato_id: trato.id,
+        usuario_id: trato.comprador_id,
+        tipo: 'devolucion',
+        monto: montoDevolucion,
+        pasarela: 'transferencia',
+        pasarela_estado: 'REFUND_PENDING',
+        estado: 'procesando',
+        metadata: { origen_pago_id: pagoRetenido.id, iniciado_por_admin: req.user.id },
+      });
+      await Pago.update({ estado: 'reembolsado' }, { where: { id: pagoRetenido.id } });
+      await LedgerEntry.create({
+        deal_id: trato.id,
+        type: 'escrow_refund_initiated',
+        amount_cents: Math.round(montoDevolucion * 100),
+        description: `Devolución iniciada por cancelación admin ${trato.codigo}`,
+      }).catch(() => {});
+    } else if (pagosActivos.length) {
+      await Pago.update({ estado: 'anulado' }, { where: { id: { [Op.in]: pagosActivos.map((p) => p.id) } } });
+    }
+
+    await AuditLog.create({
+      user_id: req.user.id,
+      action: 'ADMIN_DEAL_CANCELLED',
+      entity_type: 'deal',
+      entity_id: trato.id,
+      metadata: { estado_previo: estadoPrevio, refund: Boolean(pagoRetenido) },
+    }).catch(() => {});
+
+    const { notificarAmbos } = require('../services/notificacionService');
+    await notificarAmbos(
+      trato.comprador_id,
+      trato.vendedor_id,
+      'trato_cancelado_admin',
+      {
+        titulo: 'Trato cancelado',
+        cuerpo: `El trato ${trato.codigo} fue cancelado por soporte.${pagoRetenido ? ' Iniciamos la devolución de tu pago.' : ''}`,
+        metadata: { trato_id: trato.id },
+      },
+      {
+        titulo: 'Trato cancelado',
+        cuerpo: `El trato ${trato.codigo} fue cancelado por soporte.`,
+        metadata: { trato_id: trato.id },
+      },
+    ).catch(() => {});
+
+    res.json({ success: true, data: trato, message: pagoRetenido ? 'Trato cancelado. Devolución iniciada.' : 'Trato cancelado' });
   } catch (err) { next(err); }
 });
 
@@ -1348,10 +1442,11 @@ adminRouter.post('/tratos/:id/liberar', paymentUpload.single('release_receipt'),
     const referenciaLiberacion = String(req.body?.referencia_liberacion || req.body?.referencia || '').trim().slice(0, 120);
     let releaseReceiptUrl = null;
     if (req.file) {
+      const receiptCheck = validateUpload(req.file);
+      if (!receiptCheck.ok) return res.status(400).json({ success: false, message: receiptCheck.message });
       const { s3Upload } = require('../services/s3Service');
-      const safeName = String(req.file.originalname || 'comprobante-liberacion').replace(/[^a-zA-Z0-9_.-]/g, '_');
-      const key = `releases/${trato.codigo || trato.id}/${Date.now()}-${safeName}`;
-      releaseReceiptUrl = await s3Upload(key, req.file.buffer, req.file.mimetype);
+      const key = `releases/${trato.codigo || trato.id}/${Date.now()}-${Math.random().toString(16).slice(2)}.${receiptCheck.ext}`;
+      releaseReceiptUrl = await s3Upload(key, req.file.buffer, receiptCheck.mime);
     }
     await trato.update({
       estado: 'completado',
@@ -1407,6 +1502,20 @@ adminRouter.post('/tratos/:id/liberar', paymentUpload.single('release_receipt'),
       }
     ).catch(() => {});
     await actualizarReputacionUsuarios(trato, User).catch(() => {});
+    const { AuditLog, LedgerEntry } = require('../config/database');
+    await LedgerEntry.create({
+      deal_id: trato.id,
+      type: 'escrow_released',
+      amount_cents: Math.round(Number(trato.monto_neto || trato.monto || 0) * 100),
+      description: `Fondos liberados al vendedor para ${trato.codigo}`,
+    }).catch(() => {});
+    await AuditLog.create({
+      user_id: req.user.id,
+      action: 'ADMIN_FUNDS_RELEASED',
+      entity_type: 'deal',
+      entity_id: trato.id,
+      metadata: { referencia_liberacion: referenciaLiberacion || null, release_receipt_url: releaseReceiptUrl },
+    }).catch(() => {});
     res.json({ success: true, data: trato, message: 'Pago liberado' });
   } catch (err) { next(err); }
 });
@@ -1421,6 +1530,18 @@ adminRouter.post('/pagos/:id/confirmar', async (req, res, next) => {
     }
     const trato = await Trato.findByPk(pago.trato_id);
     if (!trato) return res.status(404).json({ success: false, message: 'Trato no encontrado' });
+    const { calcularComision } = require('../services/comisionService');
+    const montoEsperado = calcularComision(Number(trato.monto || 0), trato.quien_paga_comision || 'comprador').total_a_pagar;
+    const montoVerificado = Number(req.body.monto_verificado);
+    if (!Number.isFinite(montoVerificado)) {
+      return res.status(400).json({ success: false, message: 'Debes indicar el monto verificado (monto_verificado).' });
+    }
+    if (Math.abs(montoVerificado - montoEsperado) > 1) {
+      return res.status(422).json({
+        success: false,
+        message: `El monto verificado ($${montoVerificado.toLocaleString('es-CO')}) no coincide con el esperado ($${montoEsperado.toLocaleString('es-CO')}).`,
+      });
+    }
     const metadata = pago.metadata || {};
     const reference = metadata.reference;
 
@@ -1432,6 +1553,8 @@ adminRouter.post('/pagos/:id/confirmar', async (req, res, next) => {
         ...metadata,
         confirmed_by_admin_id: req.user.id,
         confirmed_at: new Date().toISOString(),
+        monto_verificado: montoVerificado,
+        monto_esperado: montoEsperado,
       },
     });
     if (reference) {
@@ -1462,7 +1585,7 @@ adminRouter.post('/pagos/:id/confirmar', async (req, res, next) => {
       action: 'MANUAL_PAYMENT_CONFIRMED',
       entity_type: 'deal',
       entity_id: trato.id,
-      metadata: { pago_id: pago.id, reference, transaction_ref: pago.pasarela_ref },
+      metadata: { pago_id: pago.id, reference, transaction_ref: pago.pasarela_ref, monto_verificado: montoVerificado },
     }).catch(() => {});
     const { notificarAmbos } = require('../services/notificacionService');
     await notificarAmbos(
@@ -1659,10 +1782,67 @@ adminRouter.get('/disputes', async (req, res, next) => {
 
 adminRouter.post('/disputes/:id/resolver', async (req, res, next) => {
   try {
-    const { Disputa, Trato } = require('../config/database');
+    const { Disputa, Trato, Pago, LedgerEntry, AuditLog } = require('../config/database');
     const disputa = await Disputa.findByPk(req.params.id);
     if (!disputa) return res.status(404).json({ success: false, message: 'Disputa no encontrada' });
-    const resolucion = req.body.fallo === 'vendedor' ? 'favor_vendedor' : req.body.fallo === 'split' ? 'acuerdo_mutuo' : 'favor_comprador';
+    if (disputa.estado === 'cerrada') {
+      return res.status(409).json({ success: false, message: 'Esta disputa ya fue resuelta.' });
+    }
+
+    const trato = await Trato.findByPk(disputa.trato_id);
+    if (!trato) return res.status(404).json({ success: false, message: 'Trato no encontrado' });
+
+    const fallo = req.body.fallo;
+    const resolucion = fallo === 'vendedor' ? 'favor_vendedor' : fallo === 'split' ? 'acuerdo_mutuo' : 'favor_comprador';
+
+    const pagoRetenido = await Pago.findOne({
+      where: { trato_id: trato.id, tipo: 'retencion', estado: 'aprobado' },
+      order: [['createdAt', 'DESC']],
+    });
+
+    if (fallo === 'vendedor') {
+      // A favor del vendedor: confirmar entrega, admin debe liberar fondos (no saltar a completado).
+      await trato.update({
+        estado: 'confirmado',
+        fecha_confirmacion: new Date(),
+        metadata: {
+          ...(trato.metadata || {}),
+          disputa_resuelta: 'favor_vendedor',
+          disputa_resuelta_at: new Date().toISOString(),
+        },
+      });
+    } else {
+      // A favor del comprador o acuerdo con devolución.
+      await trato.update({
+        estado: 'cancelado',
+        metadata: {
+          ...(trato.metadata || {}),
+          disputa_resuelta: resolucion,
+          disputa_resuelta_at: new Date().toISOString(),
+        },
+      });
+      if (pagoRetenido) {
+        const montoDevolucion = Number(pagoRetenido.monto || 0);
+        await Pago.create({
+          trato_id: trato.id,
+          usuario_id: trato.comprador_id,
+          tipo: 'devolucion',
+          monto: montoDevolucion,
+          pasarela: 'transferencia',
+          pasarela_estado: 'REFUND_PENDING',
+          estado: 'procesando',
+          metadata: { origen_pago_id: pagoRetenido.id, disputa_id: disputa.id, mediador_id: req.user.id },
+        });
+        await Pago.update({ estado: 'reembolsado' }, { where: { id: pagoRetenido.id } });
+        await LedgerEntry.create({
+          deal_id: trato.id,
+          type: 'escrow_refund_initiated',
+          amount_cents: Math.round(montoDevolucion * 100),
+          description: `Devolución por disputa resuelta a favor comprador · ${trato.codigo}`,
+        }).catch(() => {});
+      }
+    }
+
     await disputa.update({
       estado: 'cerrada',
       resolucion,
@@ -1670,9 +1850,57 @@ adminRouter.post('/disputes/:id/resolver', async (req, res, next) => {
       mediador_id: req.user.id,
       fecha_resolucion: new Date(),
     });
-    const trato = await Trato.findByPk(disputa.trato_id);
-    if (trato) await trato.update({ estado: req.body.fallo === 'vendedor' ? 'completado' : 'cancelado' });
-    res.json({ success: true, data: disputa, message: 'Disputa resuelta' });
+
+    await AuditLog.create({
+      user_id: req.user.id,
+      action: 'DISPUTE_RESOLVED',
+      entity_type: 'dispute',
+      entity_id: disputa.id,
+      metadata: { trato_id: trato.id, fallo, resolucion, refund: fallo !== 'vendedor' && Boolean(pagoRetenido) },
+    }).catch(() => {});
+
+    const { notificarAmbos } = require('../services/notificacionService');
+    if (fallo === 'vendedor') {
+      await notificarAmbos(
+        trato.comprador_id,
+        trato.vendedor_id,
+        'disputa_resuelta_vendedor',
+        {
+          titulo: 'Disputa resuelta',
+          cuerpo: `La disputa del trato ${trato.codigo} se resolvió a favor del vendedor. El pago quedará listo para liberación.`,
+          metadata: { trato_id: trato.id, disputa_id: disputa.id },
+        },
+        {
+          titulo: 'Disputa resuelta a tu favor',
+          cuerpo: `Ganaste la disputa del trato ${trato.codigo}. TratoYa liberará el pago tras verificación final.`,
+          metadata: { trato_id: trato.id, disputa_id: disputa.id },
+        },
+      ).catch(() => {});
+    } else {
+      await notificarAmbos(
+        trato.comprador_id,
+        trato.vendedor_id,
+        'disputa_resuelta_comprador',
+        {
+          titulo: 'Disputa resuelta — devolución iniciada',
+          cuerpo: `La disputa del trato ${trato.codigo} se resolvió a tu favor.${pagoRetenido ? ' Iniciamos la devolución de tu pago.' : ''}`,
+          metadata: { trato_id: trato.id, disputa_id: disputa.id },
+        },
+        {
+          titulo: 'Disputa resuelta',
+          cuerpo: `La disputa del trato ${trato.codigo} se resolvió a favor del comprador.`,
+          metadata: { trato_id: trato.id, disputa_id: disputa.id },
+        },
+      ).catch(() => {});
+    }
+
+    res.json({
+      success: true,
+      data: disputa,
+      message: fallo === 'vendedor'
+        ? 'Disputa resuelta. El trato quedó confirmado; libera fondos desde admin.'
+        : 'Disputa resuelta. Devolución iniciada si había pago retenido.',
+    });
   } catch (err) { next(err); }
 });
 
@@ -1947,7 +2175,10 @@ adminRouter.delete('/users/:id', async (req, res, next) => {
       Notificacion: NotificacionModel,
     } = require('../config/database');
     const confirmationCode = String(req.body?.confirmation_code || '');
-    const expectedCode = process.env.ADMIN_DELETE_USER_CODE || '071020';
+    const expectedCode = process.env.ADMIN_DELETE_USER_CODE;
+    if (!expectedCode) {
+      return res.status(503).json({ success: false, message: 'Eliminación de usuarios deshabilitada: falta ADMIN_DELETE_USER_CODE en el servidor.' });
+    }
     const canDelete = req.user.email === 'admin@tratoya.com' || req.user.rol === 'superadmin';
 
     if (!canDelete) {

@@ -5,14 +5,16 @@ const PAYMENT_KEY = import.meta.env.VITE_MANUAL_PAYMENT_KEY || "0092187758";
 const QR_URL = import.meta.env.VITE_MANUAL_PAYMENT_QR_URL || "/nequi-breb-qr.png";
 const PAYMENT_NAME = import.meta.env.VITE_MANUAL_PAYMENT_NAME || "TratoYa";
 
-function CopyField({ label, value, hint, highlight }) {
+function CopyField({ label, value, hint, highlight, onCopyError }) {
   const [copied, setCopied] = useState(false);
   const copy = async () => {
     try {
       await navigator.clipboard.writeText(String(value));
       setCopied(true);
       setTimeout(() => setCopied(false), 1800);
-    } catch { /* silencioso */ }
+    } catch {
+      onCopyError?.("No pudimos copiar. Selecciona y copia manualmente.");
+    }
   };
   return (
     <div className={`pw-copy${highlight ? " pw-copy--key" : ""}`}>
@@ -28,20 +30,49 @@ function CopyField({ label, value, hint, highlight }) {
   );
 }
 
-export default function ManualPaymentBox({ amount, reference, busy, onReport }) {
+const MAX_RECEIPT_BYTES = 8 * 1024 * 1024;
+const ALLOWED_RECEIPT_TYPES = ["image/jpeg", "image/png", "image/webp", "application/pdf"];
+
+export default function ManualPaymentBox({ amount, reference, busy, onReport, toast }) {
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState(1);
   const [method, setMethod] = useState("breb");
   const [receipt, setReceipt] = useState(null);
+  const [receiptError, setReceiptError] = useState("");
+  const [transferAttested, setTransferAttested] = useState(false);
   const [notes, setNotes] = useState("");
   const [showQr, setShowQr] = useState(false);
 
-  const reset = () => { setStep(1); setReceipt(null); setNotes(""); setShowQr(false); };
+  const reset = () => {
+    setStep(1);
+    setReceipt(null);
+    setReceiptError("");
+    setTransferAttested(false);
+    setNotes("");
+    setShowQr(false);
+  };
   const close = () => { setOpen(false); reset(); };
 
   const submit = () => {
-    if (!receipt) return;
+    if (!receipt) { setReceiptError("Debes adjuntar el comprobante."); return; }
+    if (receiptError) return;
     onReport({ method, transactionRef: "", transferConcept: "", receipt, notes });
+  };
+
+  const pickReceipt = (file) => {
+    setReceiptError("");
+    if (!file) { setReceipt(null); return; }
+    if (!ALLOWED_RECEIPT_TYPES.includes(file.type)) {
+      setReceipt(null);
+      setReceiptError("Solo JPG, PNG, WebP o PDF.");
+      return;
+    }
+    if (file.size > MAX_RECEIPT_BYTES) {
+      setReceipt(null);
+      setReceiptError("El archivo supera 8 MB. Comprime la imagen o usa un PDF más liviano.");
+      return;
+    }
+    setReceipt(file);
   };
 
   if (!open) {
@@ -108,9 +139,9 @@ export default function ManualPaymentBox({ amount, reference, busy, onReport }) 
         {step === 2 && (
           <div className="pw-body">
             <div className="pw-warn">⚠️ Paga <b>únicamente</b> a esta cuenta oficial de TratoYa. Nunca transfieras directo al vendedor.</div>
-            <CopyField label="Transfiere a esta llave Nequi / Bre-B" value={PAYMENT_KEY} hint="Cópiala y pégala en tu app del banco" highlight />
-            <CopyField label="Monto exacto" value={fmt(amount)} />
-            <CopyField label="Referencia (ponla en el concepto)" value={reference} />
+            <CopyField label="Transfiere a esta llave Nequi / Bre-B" value={PAYMENT_KEY} hint="Cópiala y pégala en tu app del banco" highlight onCopyError={toast} />
+            <CopyField label="Monto exacto" value={fmt(amount)} onCopyError={toast} />
+            <CopyField label="Referencia (ponla en el concepto)" value={reference} onCopyError={toast} />
 
             <button type="button" className="pw-qr-toggle" onClick={() => setShowQr((v) => !v)}>
               {showQr ? "▾ Ocultar QR" : "▸ Prefiero escanear un código QR"}
@@ -128,9 +159,14 @@ export default function ManualPaymentBox({ amount, reference, busy, onReport }) 
               </div>
             )}
 
+            <label style={{ display: "flex", alignItems: "flex-start", gap: 9, marginTop: 12, fontSize: 13, color: "var(--s600)", cursor: "pointer" }}>
+              <input type="checkbox" checked={transferAttested} onChange={(e) => setTransferAttested(e.target.checked)} style={{ marginTop: 3 }} />
+              <span>Confirmo que ya transferí el <b>monto exacto</b> a la cuenta oficial de TratoYa con la referencia indicada.</span>
+            </label>
+
             <div className="pw-nav">
               <button className="btn bo" onClick={() => setStep(1)}>← Atrás</button>
-              <button className="btn bp" style={{ flex: 1 }} onClick={() => setStep(3)}>Ya transferí, subir comprobante →</button>
+              <button className="btn bp" style={{ flex: 1 }} disabled={!transferAttested} onClick={() => setStep(3)}>Ya transferí, subir comprobante →</button>
             </div>
           </div>
         )}
@@ -139,12 +175,13 @@ export default function ManualPaymentBox({ amount, reference, busy, onReport }) 
         {step === 3 && (
           <div className="pw-body">
             <p className="pw-step-help">Sube la <b>captura o PDF</b> de tu transferencia. Así verificamos tu pago.</p>
-            <label className={`pw-drop${receipt ? " has-file" : ""}`}>
-              <input type="file" accept="image/*,.pdf" onChange={(e) => setReceipt(e.target.files?.[0] || null)} />
+            <label className={`pw-drop${receipt ? " has-file" : ""}${receiptError ? " has-error" : ""}`} htmlFor="pw-receipt-input">
+              <input id="pw-receipt-input" type="file" accept="image/jpeg,image/png,image/webp,application/pdf,.pdf" onChange={(e) => pickReceipt(e.target.files?.[0] || null)} />
               <span className="pw-drop-ico">{receipt ? "✓" : "📎"}</span>
               <strong>{receipt?.name || "Toca para subir tu comprobante"}</strong>
               <em>{receipt ? "Archivo listo · toca para cambiarlo" : "Imagen (JPG, PNG) o PDF · máx 8 MB"}</em>
             </label>
+            {receiptError && <div className="pw-file-error">{receiptError}</div>}
 
             <div className="fg">
               <label className="fl">¿Con qué pagaste?</label>
@@ -161,7 +198,7 @@ export default function ManualPaymentBox({ amount, reference, busy, onReport }) 
 
             <div className="pw-nav">
               <button className="btn bo" onClick={() => setStep(2)}>← Atrás</button>
-              <button className="btn bp" style={{ flex: 1 }} onClick={submit} disabled={busy || !receipt}>
+              <button className="btn bp" style={{ flex: 1 }} onClick={submit} disabled={busy || !receipt || !!receiptError}>
                 {busy ? <div className="spin" /> : "Enviar comprobante"}
               </button>
             </div>

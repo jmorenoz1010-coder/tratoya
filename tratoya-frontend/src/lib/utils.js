@@ -247,18 +247,22 @@ export const accionPendiente = (t, userId) => {
   const soyV = t.vendedor?.id === userId;
   const soyC = t.comprador?.id === userId;
   if (t.estado === "borrador" && soyV) return "Comparte el link";
+  if (t.estado === "borrador" && soyC) return "Te toca: aceptar";
   if (t.estado === "activo" && soyC) return "Te toca: pagar";
+  if (t.estado === "pago_pendiente" && soyC) return "Pago en verificación";
+  if (t.estado === "pago_pendiente" && soyV) return "Verificando pago";
   if (t.estado === "pago_retenido" && soyV) return "Te toca: enviar";
   if (["en_entrega", "pendiente_confirmacion"].includes(t.estado) && soyC) return "Te toca: confirmar";
+  if (t.estado === "pendiente_confirmacion" && soyV) return "Esperando confirmación";
   return null;
 };
 
 export const DISPUTA_ESTADO = {
-  abierta:        { l: "Disputa abierta",     c: "or" },
-  en_revision:    { l: "En revisión",         c: "nb" },
-  esperando_info: { l: "Esperando información", c: "or" },
-  resuelta:       { l: "Resuelta",            c: "gn" },
-  cerrada:        { l: "Cerrada",             c: "gn" },
+  abierta:        { l: "Disputa abierta",     c: "or", desc: "Tu disputa fue registrada.", help: "Un mediador la revisará en máximo 72 horas." },
+  en_revision:    { l: "En revisión",         c: "nb", desc: "Estamos analizando la evidencia.", help: "Mantén disponible cualquier comprobante o foto." },
+  esperando_info: { l: "Esperando información", c: "or", desc: "Necesitamos más datos para decidir.", help: "Revisa el chat del trato por si soporte te contactó." },
+  resuelta:       { l: "Resuelta",            c: "gn", desc: "La disputa ya tiene resolución.", help: "Si hubo devolución, verás el estado en Pagos." },
+  cerrada:        { l: "Cerrada",             c: "gn", desc: "La disputa fue cerrada.", help: "Consulta el detalle del trato para ver el resultado." },
 };
 
 export const TIPO_ICO = {

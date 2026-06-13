@@ -169,7 +169,7 @@ export default function TratoDetalle({ tratoId, setPage, setDisputeTratoId, user
     { l: "Pago liberado", s: `${fmt(neto)} al vendedor`, done: trato.estado === "completado" },
   ];
 
-  const canPay = esC && ["activo", "pago_pendiente"].includes(trato.estado);
+  const canPay = esC && trato.estado === "activo";
   const canConfirm = esC && ["en_entrega","pendiente_confirmacion"].includes(trato.estado);
   const canShip = esV && trato.estado === "pago_retenido";
 
@@ -188,7 +188,7 @@ export default function TratoDetalle({ tratoId, setPage, setDisputeTratoId, user
           const PASO = {
             borrador: {
               V: { ico: "🔗", titulo: "Comparte el link del trato", desc: "Cópiale el link al comprador para que lo acepte y realice el pago. Sin ese paso, el trato no avanza.", cta: "Copiar link", ctaType: "copy" },
-              C: { ico: "⏳", titulo: "El vendedor está configurando el trato", desc: "Te llegará una notificación cuando el trato esté listo para que lo aceptes y pagues." },
+              C: { ico: "✅", titulo: "Acepta el trato para continuar", desc: "Debes aceptar este trato antes de poder pagar. Es el primer paso para proteger tu dinero.", cta: "Aceptar trato", ctaType: "accept" },
             },
             activo: {
               V: { ico: "⏳", titulo: "Esperando el pago del comprador", desc: "El comprador recibió el link. Cuando realice la transferencia y la reporte, verás el trato avanzar." },
@@ -207,7 +207,7 @@ export default function TratoDetalle({ tratoId, setPage, setDisputeTratoId, user
               C: { ico: "✅", titulo: "¿Ya recibiste el producto?", desc: "El vendedor registró la entrega. Cuando lo tengas en tus manos y todo esté bien, confírmalo para liberar el pago.", cta: "↓ Confirmar entrega", ctaType: "scroll" },
             },
             pendiente_confirmacion: {
-              V: { ico: "⏳", titulo: "Esperando que el comprador confirme", desc: "El comprador necesita confirmar la recepción. Puedes recordárselo por el chat del trato." },
+              V: { ico: "⏳", titulo: "Esperando que el comprador confirme", desc: `El comprador tiene hasta ${trato.dias_inspeccion || 7} días para confirmar la recepción. Puedes recordárselo por el chat del trato.` },
               C: { ico: "✅", titulo: "¡Confirma para liberar el pago al vendedor!", desc: "El vendedor marcó la entrega como realizada. Si recibiste todo lo acordado en perfecto estado, confírmalo ahora.", cta: "↓ Confirmar recepción", ctaType: "scroll" },
             },
             confirmado: {
@@ -256,8 +256,11 @@ export default function TratoDetalle({ tratoId, setPage, setDisputeTratoId, user
 
           const handleCta = () => {
             if (guia.ctaType === "copy") {
-              navigator.clipboard.writeText(publicTratoUrl(trato.link_compartir));
-              toast("Link copiado ✓", "success");
+              navigator.clipboard.writeText(publicTratoUrl(trato.link_compartir))
+                .then(() => toast("Link copiado ✓", "success"))
+                .catch(() => toast("No pudimos copiar. Copia el link manualmente.", "error"));
+            } else if (guia.ctaType === "accept") {
+              action(() => api.put(`/tratos/${tratoId}/activar`), "Trato aceptado. Ya puedes pagar.");
             } else {
               scrollToAction();
             }
@@ -420,7 +423,7 @@ export default function TratoDetalle({ tratoId, setPage, setDisputeTratoId, user
             {/* Acción del comprador: pagar */}
             {canPay && (
               <div ref={actionRef} style={{ marginTop: 11 }}>
-                <ManualPaymentBox amount={commissionCalc.totalPagar} reference={trato.codigo} busy={busy} onReport={reportarPagoManual} />
+                <ManualPaymentBox amount={commissionCalc.totalPagar} reference={trato.codigo} busy={busy} onReport={reportarPagoManual} toast={(m, t) => toast(m, t || "error")} />
                 {paymentReport?.reference && (
                   <div style={{ fontSize: 11, color: "var(--s600)", marginTop: 8 }}>Reporte: {paymentReport.reference}</div>
                 )}

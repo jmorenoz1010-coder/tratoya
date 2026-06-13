@@ -50,8 +50,11 @@ export default function Dashboard({ setPage, setTratoId, user, toast, setUser })
     for (const t of activos) {
       const soyVendedor = t.vendedor?.id === user?.id;
       const soyComprador = t.comprador?.id === user?.id;
+      if (t.estado === "borrador" && soyComprador) return { t, ico: "✅", txt: "Acepta el trato para poder pagar", cta: "Aceptar trato" };
       if (t.estado === "borrador" && soyVendedor) return { t, ico: "🔗", txt: "Comparte el link para que acepten tu trato", cta: "Ver trato" };
-      if (["activo", "pago_pendiente"].includes(t.estado) && soyComprador && t.estado === "activo") return { t, ico: "💰", txt: "Realiza el pago para proteger tu trato", cta: "Ir a pagar" };
+      if (t.estado === "activo" && soyComprador) return { t, ico: "💰", txt: "Realiza el pago para proteger tu trato", cta: "Ir a pagar" };
+      if (t.estado === "pago_pendiente" && soyComprador) return { t, ico: "🔍", txt: "Tu pago está siendo verificado (menos de 1 h)", cta: "Ver estado" };
+      if (t.estado === "pago_pendiente" && soyVendedor) return { t, ico: "🔍", txt: "Estamos verificando el pago del comprador", cta: "Ver trato" };
       if (t.estado === "pago_retenido" && soyVendedor) return { t, ico: "📦", txt: "El dinero está protegido: registra el envío", cta: "Registrar envío" };
       if (["en_entrega", "pendiente_confirmacion"].includes(t.estado) && soyComprador) return { t, ico: "✅", txt: "¿Ya recibiste? Confirma para liberar el pago", cta: "Confirmar entrega" };
     }

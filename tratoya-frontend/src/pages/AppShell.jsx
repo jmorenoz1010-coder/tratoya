@@ -419,6 +419,7 @@ export default function AppShell({ session, setSession, toast }) {
           onBack={goBack}
           onProfile={() => navigateTo("perfil")}
           onMenuOpen={() => setDrawerOpen(true)}
+          setTratoId={setTratoId}
         />
         <Suspense fallback={<div style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: 60 }}><div className="spin" /></div>}>
           <div key={page}>

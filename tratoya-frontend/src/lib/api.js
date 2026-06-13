@@ -70,6 +70,7 @@ export const api = {
           const rd = await rr.json().catch(() => ({}));
           if (rr.ok && rd.token) {
             sessionStore().setItem("ty_token", rd.token);
+            if (rd.refresh_token) sessionStore().setItem("ty_refresh", rd.refresh_token);
             return this.req(method, path, body, isForm);
           }
         } catch { /* sigue al cierre de sesión */ }
