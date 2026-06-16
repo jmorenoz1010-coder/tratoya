@@ -87,6 +87,29 @@ export default function Dashboard({ setPage, setTratoId, user, toast, setUser })
         </div>
       </div>
 
+      {!loading && (() => {
+        // Usuarios que entraron por Google/Apple llegan sin cédula/WhatsApp.
+        // Aviso no bloqueante para que completen su perfil y puedan operar bien.
+        const u = userStats || user || {};
+        const faltaCedula = !u.cedula;
+        const faltaTel = !u.telefono;
+        if (!faltaCedula && !faltaTel) return null;
+        const faltantes = [faltaCedula && "tu número de identificación", faltaTel && "tu WhatsApp"].filter(Boolean).join(" y ");
+        return (
+          <div className="perfil-incompleto fi" role="button" tabIndex={0}
+            onClick={() => setPage("perfil")}
+            onKeyDown={(e) => e.key === "Enter" && setPage("perfil")}
+          >
+            <span className="perfil-incompleto-ico" aria-hidden="true">👤</span>
+            <div className="perfil-incompleto-info">
+              <strong>Completa tu perfil</strong>
+              <span>Agrega {faltantes} para operar con seguridad y recibir tus pagos.</span>
+            </div>
+            <span className="perfil-incompleto-cta">Completar →</span>
+          </div>
+        );
+      })()}
+
       {(() => {
         if (loading || !nextAction) return null;
         const key = `${nextAction.t.id}:${nextAction.t.estado}`;
