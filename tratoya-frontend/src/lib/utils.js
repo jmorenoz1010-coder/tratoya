@@ -59,6 +59,27 @@ export const SOPORTE_EMAIL = "soporte@tratoya.com";
 export const PUBLIC_BASE_URL = "https://www.tratoya.com";
 export const publicTratoUrl = (link) => `${PUBLIC_BASE_URL}/t/${link}`;
 
+// Caducidad: los tratos sin concretar se cancelan a los 5 días de creados
+// (debe coincidir con cleanupStaleTratos del backend). Devuelve el timestamp
+// de caducidad o null si el trato ya no puede caducar.
+export const TRATO_CADUCIDAD_DIAS = 5;
+export const caducidadTrato = (trato) => {
+  if (!trato || !["borrador", "activo"].includes(trato.estado)) return null;
+  const base = new Date(trato.createdAt || trato.fecha_creado || 0).getTime();
+  if (!Number.isFinite(base) || base <= 0) return null;
+  return base + TRATO_CADUCIDAD_DIAS * 24 * 60 * 60 * 1000;
+};
+export const formatCuentaRegresiva = (ms) => {
+  if (ms <= 0) return "0m";
+  const d = Math.floor(ms / 86400000);
+  const h = Math.floor((ms % 86400000) / 3600000);
+  const m = Math.floor((ms % 3600000) / 60000);
+  const s = Math.floor((ms % 60000) / 1000);
+  if (d > 0) return `${d}d ${h}h ${m}m`;
+  if (h > 0) return `${h}h ${m}m ${s}s`;
+  return `${m}m ${s}s`;
+};
+
 // Próximo paso de un trato según estado + rol del usuario.
 // Devuelve { ico, txt, cta, actionable } o null si no hay paso pendiente.
 export const nextStepFor = (trato, userId) => {

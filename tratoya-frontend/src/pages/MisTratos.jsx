@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { api } from "../lib/api";
 import { fmt, fmtDate, ESTADO, TIPO_ICO, accionPendiente } from "../lib/utils";
 import { SkeletonList } from "../components/SkeletonCard";
+import CaducidadAviso from "../components/CaducidadAviso";
 
 let tratosCache = [];
 
@@ -103,6 +104,7 @@ export default function MisTratos({ setPage, setTratoId, user, toast, alertTrato
                     <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
                       <span className={`bdg ${ec.c}`} style={{ fontSize: 10 }}>{ec.l}</span>
                       {pendiente && <span className="bdg trato-chip-action" style={{ fontSize: 10 }}>{pendiente}</span>}
+                      <CaducidadAviso trato={t} compact />
                       <span style={{ fontSize: 11, color: "var(--s400)" }}>{rol} · {fmtDate(t.createdAt)}</span>
                       <span className="trato-row-arrow" aria-hidden="true">→</span>
                     </div>

@@ -6,6 +6,7 @@ import DealProgress from "../components/DealProgress";
 import StarRating from "../components/StarRating";
 import Avatar from "../components/Avatar";
 import ManualPaymentBox from "../components/ManualPaymentBox";
+import CaducidadAviso from "../components/CaducidadAviso";
 
 function ReviewBox({ tratoId, reviews, user, toast, onSaved }) {
   const mine = reviews.find((r) => r.autor_id === user?.id);
@@ -182,6 +183,7 @@ export default function TratoDetalle({ tratoId, setPage, setDisputeTratoId, user
           <span style={{ fontFamily: "Manrope", fontWeight: 700, fontSize: 12.5, color: "var(--g2)" }}>{trato.codigo}</span>
           <span className={`bdg ${ec.c}`}>{ec.l}</span>
         </div>
+        <CaducidadAviso trato={trato} />
         {/* ── Guía de próximo paso ────────────────────────── */}
         {!guideDismissed && (() => {
           // Definición de guías por estado + rol
