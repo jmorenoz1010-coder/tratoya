@@ -54,7 +54,7 @@ const SAFETY_SHOW = [
 const MINI_FAQ = [
   ["¿Y si el vendedor no entrega?", "Abres una disputa, revisamos la evidencia y si tienes razón te devolvemos el 100% de tu dinero."],
   ["¿El dinero está seguro?", "Sí. Queda en custodia y no se libera sin confirmación."],
-  ["¿Cuánto cuesta?", "4.5% + 4×1000 por trato exitoso. Sin costos ocultos."],
+  ["¿Cuánto cuesta?", "4.5% + IMP por trato exitoso. Sin costos ocultos."],
 ];
 
 const EARLY_PERKS = [
@@ -591,7 +591,7 @@ export default function Landing({ goAuth }) {
                   <span aria-hidden="true"><BoltIcon /></span> Simula tu trato
                 </p>
                 <h2 className="ty-mega ty-text-pulse">
-                  <span>4.5%</span> + 4×1000.
+                  <span>4.5%</span> + IMP.
                 </h2>
                 <p className="ty-sub ty-text-pulse ty-text-pulse--delay">La única comisión, solo si el trato se cumple. Simula el tuyo.</p>
                 <div className="ty-mini-calc">

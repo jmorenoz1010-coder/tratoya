@@ -54,10 +54,32 @@ export const normalizeHandle = (value) =>
     .slice(0, 24);
 
 export const MONTO_MINIMO_TRATO = 50000;
-export const MONTO_MAXIMO_TRATO = 50000000;
+export const MONTO_MAXIMO_TRATO = 25000000;
 export const SOPORTE_EMAIL = "soporte@tratoya.com";
 export const PUBLIC_BASE_URL = "https://www.tratoya.com";
 export const publicTratoUrl = (link) => `${PUBLIC_BASE_URL}/t/${link}`;
+
+// Próximo paso de un trato según estado + rol del usuario.
+// Devuelve { ico, txt, cta, actionable } o null si no hay paso pendiente.
+export const nextStepFor = (trato, userId) => {
+  if (!trato) return null;
+  const soyVendedor = trato.vendedor?.id === userId || trato.vendedor_id === userId;
+  const soyComprador = trato.comprador?.id === userId || trato.comprador_id === userId;
+  const e = trato.estado;
+  if (e === "borrador" && soyComprador) return { ico: "✅", txt: "Acepta el trato para poder pagar", cta: "Aceptar trato", actionable: true };
+  if (e === "borrador" && soyVendedor) return { ico: "🔗", txt: "Comparte el link para que acepten tu trato", cta: "Ver trato", actionable: true };
+  if (e === "activo" && soyComprador) return { ico: "💰", txt: "Realiza el pago para proteger tu trato", cta: "Ir a pagar", actionable: true };
+  if (e === "activo" && soyVendedor) return { ico: "⏳", txt: "Esperando el pago del comprador", cta: "Ver trato", actionable: false };
+  if (e === "pago_pendiente" && soyComprador) return { ico: "🔍", txt: "Tu pago está siendo verificado (menos de 1 h)", cta: "Ver estado", actionable: false };
+  if (e === "pago_pendiente" && soyVendedor) return { ico: "🔍", txt: "Estamos verificando el pago del comprador", cta: "Ver trato", actionable: false };
+  if (e === "pago_retenido" && soyVendedor) return { ico: "📦", txt: "El dinero está protegido: registra el envío", cta: "Registrar envío", actionable: true };
+  if (e === "pago_retenido" && soyComprador) return { ico: "🛡️", txt: "Pago protegido. El vendedor prepara la entrega", cta: "Ver trato", actionable: false };
+  if (["en_entrega", "pendiente_confirmacion"].includes(e) && soyComprador) return { ico: "✅", txt: "¿Ya recibiste? Confirma para liberar el pago", cta: "Confirmar entrega", actionable: true };
+  if (["en_entrega", "pendiente_confirmacion"].includes(e) && soyVendedor) return { ico: "🚚", txt: "Entrega registrada. Esperando confirmación del comprador", cta: "Ver trato", actionable: false };
+  if (e === "confirmado") return { ico: "🎉", txt: "Entrega confirmada. El pago se está liberando", cta: "Ver trato", actionable: false };
+  if (e === "disputado") return { ico: "⚖️", txt: "En revisión por disputa. Ten lista tu evidencia", cta: "Ver trato", actionable: false };
+  return null;
+};
 
 export const DOC_TYPES = [
   ["CC", "Cédula de ciudadanía"],
@@ -135,7 +157,7 @@ export const calcularCostoGmfUI = (totalCobrado, montoDesembolso) =>
 export const calcularComisionUI = (monto, quien = "comprador") => {
   let comisionTratoYa = 0;
   let label = "";
-  if (monto > 0 && monto <= 50000000) { comisionTratoYa = Math.round(monto * 0.045); label = "4.5% + 4×1000"; }
+  if (monto > 0 && monto <= 25000000) { comisionTratoYa = Math.round(monto * 0.045); label = "4.5% + IMP"; }
   else { comisionTratoYa = 0; label = "Negociable"; }
 
   let comision = comisionTratoYa;

@@ -25,6 +25,14 @@ export default function TratoYaApp() {
   const [authMode, setAuthMode] = useState(null);
   const toast = useCallback((m, type = "info") => show(m, type), [show]);
 
+  // Mensaje de cierre de sesión (se setea antes del redirect duro en logout).
+  useEffect(() => {
+    try {
+      const msg = window.sessionStorage.getItem("ty_logout_msg");
+      if (msg) { window.sessionStorage.removeItem("ty_logout_msg"); show(msg, "info"); }
+    } catch { /* noop */ }
+  }, [show]);
+
   const pathname = window.location.pathname;
   const isAdminRoute = pathname === ADMIN_ENTRY_PATH || pathname.startsWith(`${ADMIN_ENTRY_PATH}/`);
   const isWaitlistRoute = pathname === "/espera";

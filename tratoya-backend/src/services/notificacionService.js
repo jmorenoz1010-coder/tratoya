@@ -146,4 +146,33 @@ async function notificarAmbos(compradorId, vendedorId, tipo, compradorPayload, v
   ]);
 }
 
-module.exports = { notificar, notificarAmbos };
+/**
+ * Notifica a AMBAS partes el estado actual del trato + su próximo paso.
+ * Usa un único evento WhatsApp ('estado_trato') que se enruta por un solo
+ * template (tratoya_estado_trato). Llamar después de cada cambio de estado.
+ *
+ * @param {object} trato  Instancia/objeto del trato (debe traer estado, codigo, comprador_id, vendedor_id)
+ */
+async function notificarEstadoTrato(trato) {
+  if (!trato) return;
+  const { estadoLabel, pasoSiguiente } = require('../utils/tratoEstado');
+  const estado = estadoLabel(trato.estado);
+  const codigo = trato.codigo || 'tu trato';
+  const partes = [
+    { id: trato.comprador_id, rol: 'comprador' },
+    { id: trato.vendedor_id, rol: 'vendedor' },
+  ];
+  await Promise.all(partes.map(({ id, rol }) => {
+    if (!id) return Promise.resolve();
+    const paso = pasoSiguiente(trato.estado, rol);
+    return notificar(id, 'estado_trato', {
+      titulo: `Tu trato ${codigo}: ${estado}`,
+      cuerpo: `Próximo paso: ${paso}`,
+      metadata: { trato_id: trato.id, estado: trato.estado },
+      wa_evento: 'estado_trato',
+      wa_params: { codigo, estado, paso },
+    }).catch(() => {});
+  }));
+}
+
+module.exports = { notificar, notificarAmbos, notificarEstadoTrato };

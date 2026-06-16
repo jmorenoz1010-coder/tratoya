@@ -4,11 +4,11 @@
  */
 
 const TRAMOS = [
-  { max: 50000000, fijo: null, pct: 0.045, label: '4.5%' },
+  { max: 25000000, fijo: null, pct: 0.045, label: '4.5%' },
 ];
 
 const MONTO_MINIMO_TRATO = 50000;
-const MONTO_MAXIMO_AUTOMATICO = 50000000;
+const MONTO_MAXIMO_AUTOMATICO = 25000000;
 const GMF_RATE = 0.004;
 
 function calcularComisionTratoYa(monto) {
@@ -41,7 +41,7 @@ function calcularComision(monto, quienPaga = 'comprador') {
     throw err;
   }
   if (monto > MONTO_MAXIMO_AUTOMATICO) {
-    const err = new Error('Para tratos superiores a $50.000.000 COP la comisión es negociable. Contacta soporte.');
+    const err = new Error('Para tratos superiores a $25.000.000 COP la comisión es negociable. Contacta soporte.');
     err.statusCode = 400;
     err.expose = true;
     throw err;

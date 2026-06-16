@@ -130,7 +130,24 @@ export default function PublicTratoPage({ link, session, goAuth, toast }) {
               </div>
             </div>
           ) : canAccept ? (
-            <button className="btn bp blg" onClick={aceptar} disabled={busy}>{busy ? <div className="spin" /> : "Aceptar trato y continuar al pago"}</button>
+            <div className="accept-panel">
+              <div className="accept-panel-head">
+                <span className="accept-panel-shield" aria-hidden="true">🛡️</span>
+                <div>
+                  <div className="accept-panel-kicker">Trato protegido por TratoYa</div>
+                  <h3 className="accept-panel-title">Estás a un paso de tu compra segura</h3>
+                </div>
+              </div>
+              <ul className="accept-panel-list">
+                <li><span aria-hidden="true">🔒</span> Tu dinero queda <strong>en custodia</strong>, no se le entrega al vendedor todavía.</li>
+                <li><span aria-hidden="true">📦</span> El vendedor entrega y tú revisas con calma.</li>
+                <li><span aria-hidden="true">✅</span> El pago se libera <strong>solo cuando confirmas</strong> que recibiste bien.</li>
+              </ul>
+              <button className="accept-panel-cta" onClick={aceptar} disabled={busy}>
+                {busy ? <div className="spin" /> : <>Aceptar y continuar al pago <span aria-hidden="true">→</span></>}
+              </button>
+              <p className="accept-panel-note">Al aceptar verás los datos para pagar de forma segura a TratoYa. Nunca le transfieras directamente al vendedor.</p>
+            </div>
           ) : canPay ? (
             <div>
               <ManualPaymentBox amount={calcularComisionUI(montoTrato, quienComision).totalPagar} reference={trato.codigo} busy={busy} onReport={(payload) => reportarPago(payload)} />

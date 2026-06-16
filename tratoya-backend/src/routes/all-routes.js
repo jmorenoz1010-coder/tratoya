@@ -637,6 +637,11 @@ paymentsRouter.post('/manual/report', reportePagoLimiter, paymentUpload.single('
       require('../utils/logger').warn(`[PAYMENT] Notificación falló (no bloquea): ${e.message}`);
     }
 
+    try {
+      const { notificarEstadoTrato } = require('../services/notificacionService');
+      notificarEstadoTrato(trato).catch(() => {});
+    } catch { /* noop */ }
+
     res.json({
       success: true,
       ok: true,
@@ -1611,6 +1616,10 @@ adminRouter.post('/pagos/:id/confirmar', async (req, res, next) => {
         wa_params: { codigo: trato.codigo, titulo: trato.titulo },
       }
     ).catch(() => {});
+    try {
+      const { notificarEstadoTrato } = require('../services/notificacionService');
+      notificarEstadoTrato(trato).catch(() => {});
+    } catch { /* noop */ }
     res.json({ success: true, data: { pago, trato }, message: 'Pago confirmado y retenido' });
   } catch (err) { next(err); }
 });

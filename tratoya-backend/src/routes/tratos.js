@@ -12,7 +12,7 @@ const { crearTratoLimiter, uploadLimiter } = require('../middleware/rateLimiters
 const { toParticipantTrato } = require('../utils/tratoSerializer');
 const { Trato, User, Pago, Mensaje, AuditLog } = require('../config/database');
 const { calcularComision, MONTO_MINIMO_TRATO, MONTO_MAXIMO_AUTOMATICO } = require('../services/comisionService');
-const { notificar } = require('../services/notificacionService');
+const { notificar, notificarEstadoTrato } = require('../services/notificacionService');
 const { generarCodigo } = require('../utils/helpers');
 const logger = require('../utils/logger');
 const PUBLIC_FRONTEND_URL = 'https://www.tratoya.com';
@@ -110,15 +110,57 @@ router.put('/public/:link/activar', auth, async (req, res, next) => {
       wa_params: { codigo: trato.codigo, titulo: trato.titulo, monto: fmt(trato.monto) },
     });
 
+    notificarEstadoTrato(trato).catch(() => {});
     res.json({ success: true, message: 'Trato aceptado. Ya puedes proceder al pago.', data: toPublicTrato(trato) });
   } catch (err) { next(err); }
 });
 
 router.use(auth); // Todas las demás rutas requieren autenticación
 
+// ── Limpieza de tratos sin concretar (>5 días) ───────────
+// Elimina (soft-delete) tratos que nunca llegaron a custodia. Nunca toca
+// tratos con un pago aprobado. Se ejecuta de forma oportunista y throttleada
+// desde GET /tratos (sin depender de un cron) y queda exportada por si se
+// quiere disparar desde un job programado.
+const STALE_TRATO_MS = 5 * 24 * 60 * 60 * 1000; // 5 días
+let lastStaleCleanup = 0;
+
+async function cleanupStaleTratos() {
+  const cutoff = new Date(Date.now() - STALE_TRATO_MS);
+  const candidatos = await Trato.findAll({
+    where: {
+      estado: { [Op.in]: ['borrador', 'activo', 'expirado', 'cancelado'] },
+      createdAt: { [Op.lt]: cutoff },
+    },
+    attributes: ['id'],
+    limit: 300,
+  });
+  if (!candidatos.length) return 0;
+  const ids = candidatos.map((c) => c.id);
+  // Seguridad: nunca borrar un trato que tenga algún pago aprobado.
+  const conPago = await Pago.findAll({
+    where: { trato_id: { [Op.in]: ids }, estado: 'aprobado' },
+    attributes: ['trato_id'],
+  });
+  const protegidos = new Set(conPago.map((p) => p.trato_id));
+  const borrables = ids.filter((id) => !protegidos.has(id));
+  if (!borrables.length) return 0;
+  const n = await Trato.destroy({ where: { id: { [Op.in]: borrables } } });
+  logger.info(`[CLEANUP] ${n} trato(s) sin concretar eliminados (> 5 días)`);
+  return n;
+}
+
+function maybeCleanupStaleTratos() {
+  const SIX_HOURS = 6 * 60 * 60 * 1000;
+  if (Date.now() - lastStaleCleanup < SIX_HOURS) return;
+  lastStaleCleanup = Date.now();
+  cleanupStaleTratos().catch((e) => logger.warn(`[CLEANUP] fallo: ${e.message}`));
+}
+
 // ── GET /api/tratos ──────────────────────────
 router.get('/', async (req, res, next) => {
   try {
+    maybeCleanupStaleTratos(); // fire-and-forget, throttleado
     const { estado, rol, page = 1, limit = 20 } = req.query;
     const offset = (page - 1) * limit;
     const where = {};
@@ -283,6 +325,7 @@ router.put('/:id/activar', async (req, res, next) => {
       wa_params: { codigo: trato.codigo, titulo: trato.titulo, monto: fmt(trato.monto) },
     });
 
+    notificarEstadoTrato(trato).catch(() => {});
     res.json({ success: true, message: 'Trato activado. El comprador puede proceder al pago.', data: trato });
   } catch (err) { next(err); }
 });
@@ -390,6 +433,7 @@ router.post('/:id/registrar-guia', async (req, res, next) => {
       wa_params: { codigo: trato.codigo, detalle: mensajeComprador },
     });
 
+    notificarEstadoTrato(trato).catch(() => {});
     res.json({ success: true, message: 'Envío registrado', data: { medio_envio, fecha_limite } });
   } catch (err) { next(err); }
 });
@@ -437,6 +481,7 @@ router.post('/:id/confirmar', async (req, res, next) => {
       }),
     ]);
 
+    notificarEstadoTrato(trato).catch(() => {});
     res.json({ success: true, message: 'Entrega confirmada. TratoYA realizará la consignación manual al vendedor.' });
   } catch (err) { next(err); }
 });
@@ -463,8 +508,10 @@ router.post('/:id/cancelar', [
         metadata: { trato_id: trato.id },
       }).catch(() => {});
     }
+    notificarEstadoTrato(trato).catch(() => {});
     res.json({ success: true, message: 'Trato cancelado' });
   } catch (err) { next(err); }
 });
 
 module.exports = router;
+module.exports.cleanupStaleTratos = cleanupStaleTratos;

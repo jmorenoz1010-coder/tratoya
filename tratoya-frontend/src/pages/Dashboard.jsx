@@ -11,6 +11,9 @@ export default function Dashboard({ setPage, setTratoId, user, toast, setUser })
   const [notifs, setNotifs] = useState(cached?.notifs || []);
   const [loading, setLoading] = useState(!cached);
   const [userStats, setUserStats] = useState(cached?.userStats || user);
+  const [dismissedKey, setDismissedKey] = useState(() => {
+    try { return sessionStorage.getItem("ty_next_dismissed") || ""; } catch { return ""; }
+  });
 
   const loadDashboard = useCallback(async (silent = false) => {
     try {
@@ -84,20 +87,32 @@ export default function Dashboard({ setPage, setTratoId, user, toast, setUser })
         </div>
       </div>
 
-      {!loading && nextAction && (
-        <div className="dash-next fi" role="button" tabIndex={0}
-          onClick={() => { setTratoId(nextAction.t.id); setPage("detalle"); }}
-          onKeyDown={(e) => e.key === "Enter" && (setTratoId(nextAction.t.id), setPage("detalle"))}
-        >
-          <span className="dash-next-ico">{nextAction.ico}</span>
-          <div className="dash-next-info">
-            <span className="dash-next-label">Tu próximo paso</span>
-            <strong>{nextAction.txt}</strong>
-            <em>{nextAction.t.titulo} · {fmt(nextAction.t.monto)}</em>
+      {(() => {
+        if (loading || !nextAction) return null;
+        const key = `${nextAction.t.id}:${nextAction.t.estado}`;
+        if (dismissedKey === key) return null;
+        const go = () => { setTratoId(nextAction.t.id); setPage("detalle"); };
+        const dismiss = (e) => {
+          e.stopPropagation();
+          setDismissedKey(key);
+          try { sessionStorage.setItem("ty_next_dismissed", key); } catch { /* noop */ }
+        };
+        return (
+          <div className="dash-next fi" role="button" tabIndex={0}
+            onClick={go}
+            onKeyDown={(e) => e.key === "Enter" && go()}
+          >
+            <span className="dash-next-ico">{nextAction.ico}</span>
+            <div className="dash-next-info">
+              <span className="dash-next-label">Tu próximo paso</span>
+              <strong>{nextAction.txt}</strong>
+              <em>{nextAction.t.titulo} · {fmt(nextAction.t.monto)}</em>
+            </div>
+            <span className="dash-next-cta">{nextAction.cta} →</span>
+            <button type="button" className="dash-next-close" onClick={dismiss} aria-label="Ocultar próximo paso">×</button>
           </div>
-          <span className="dash-next-cta">{nextAction.cta} →</span>
-        </div>
-      )}
+        );
+      })()}
 
       {loading ? (
         <SkeletonKpiGrid />

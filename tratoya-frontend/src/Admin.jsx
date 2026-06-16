@@ -1332,7 +1332,7 @@ function AdminTratoDetailModal({ detail, loading, onClose, onRefresh, onLiberar,
                       <span>Comprador debe pagar a TratoYA: {fmt(adminCalc.totalPagar)}.</span>
                       <span>Vendedor debe asumir/descontar: {fmt(adminCalc.vendedorComision)}.</span>
                       <span>Valor exacto a transferir al vendedor al liberar: {fmt(adminCalc.vendedorRecibe)}.</span>
-                      <span>TratoYA conserva libre el 4.5% base: {fmt(adminCalc.comisionTratoYa)}; el IMP/4x1000 queda cubierto dentro de la comisión total.</span>
+                      <span>TratoYA conserva libre el 4.5% base: {fmt(adminCalc.comisionTratoYa)}; el IMP queda cubierto dentro de la comisión total.</span>
                     </div>
                   )}
                 </div>
@@ -1972,8 +1972,8 @@ function PagosAdmin({ toast }) {
               {selected.Trato?.monto ? (() => {
                 const montoTrato = Number(selected.Trato.monto || 0);
                 const comisionTratoya = Math.round(montoTrato * 0.045);
-                const gmf4x1000 = Math.round(montoTrato * 0.004);  // 4x1000 al transferir al vendedor
-                const netaTratoya = comisionTratoya - gmf4x1000;
+                const impLiberacion = Math.round(montoTrato * 0.004);  // IMP al transferir al vendedor
+                const netaTratoya = comisionTratoya - impLiberacion;
                 const vendedorRecibe = sellerAmount(selected);
                 return (
                   <div style={{ marginTop: 10, background: "var(--cr)", border: "1.5px solid rgba(168,196,0,.3)", borderRadius: 10, padding: "13px 15px" }}>
@@ -1990,8 +1990,8 @@ function PagosAdmin({ toast }) {
                         <strong style={{ color: "var(--g2)" }}>+ {fmt(comisionTratoya)}</strong>
                       </div>
                       <div style={{ display: "flex", justifyContent: "space-between", paddingTop: 5, borderTop: "1px dashed rgba(0,0,0,.1)", marginTop: 2 }}>
-                        <span style={{ color: "var(--s600)" }}>GMF 4x1000 al liberar (0.4%)</span>
-                        <strong style={{ color: "var(--or)" }}>− {fmt(gmf4x1000)}</strong>
+                        <span style={{ color: "var(--s600)" }}>IMP al liberar (0.4%)</span>
+                        <strong style={{ color: "var(--or)" }}>− {fmt(impLiberacion)}</strong>
                       </div>
                       <div style={{ display: "flex", justifyContent: "space-between", paddingTop: 6, borderTop: "2px solid rgba(168,196,0,.35)", marginTop: 2 }}>
                         <span style={{ fontWeight: 800, color: "var(--n)" }}>TratoYa NETO</span>
@@ -2003,7 +2003,7 @@ function PagosAdmin({ toast }) {
                       </div>
                     </div>
                     <div style={{ fontSize: 11, color: "var(--s400)", marginTop: 8, lineHeight: 1.5 }}>
-                      El GMF 4x1000 es cobrado por el banco a TratoYa al momento de transferir al vendedor.
+                      El IMP es cobrado por el banco a TratoYa al momento de transferir al vendedor.
                     </div>
                   </div>
                 );

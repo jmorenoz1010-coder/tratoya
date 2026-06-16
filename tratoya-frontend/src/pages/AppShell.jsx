@@ -260,11 +260,20 @@ export default function AppShell({ session, setSession, toast }) {
   }, [showFloatingNote, estadoLabel, showCompletionCelebration]);
 
   const logout = useCallback((message = "Sesión cerrada") => {
-    api.post("/auth/logout").catch(() => {});
+    // Cierre determinista en un solo intento: limpiamos sesión y hacemos una
+    // salida dura a la home. Esto evita el "trap" de historial (pushState/popstate)
+    // y limpia toda la caché en memoria (dashboard, pagos, intervalos, SSE) que
+    // antes obligaba a cerrar sesión dos veces.
+    try { api.post("/auth/logout").catch(() => {}); } catch { /* best-effort */ }
     clearSession();
+    try {
+      const msg = typeof message === "string" ? message : "Sesión cerrada";
+      sessionStorage.setItem("ty_logout_msg", msg);
+    } catch { /* noop */ }
     setSession(null);
-    toast(typeof message === "string" ? message : "Sesión cerrada", "info");
-  }, [setSession, toast]);
+    try { window.history.replaceState(null, "", "/"); } catch { /* noop */ }
+    window.location.replace("/");
+  }, [setSession]);
 
   const updateUser = (u) => setSession((s) => ({ ...s, user: u }));
 

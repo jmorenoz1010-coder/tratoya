@@ -146,6 +146,7 @@ const TEMPLATE_PARAM_KEYS = {
   entrega_confirmada_vendedor: ['nombre', 'codigo', 'neto', 'app_url'],
   disputa_abierta: ['nombre', 'codigo', 'app_url'],
   trato_completado: ['nombre', 'codigo', 'app_url'],
+  estado_trato: ['nombre', 'codigo', 'estado', 'paso', 'app_url'],
 };
 
 const TEMPLATE_NAMES = {
@@ -225,6 +226,12 @@ const MENSAJES = {
 
   trato_completado: ({ nombre, codigo }) =>
     `🏆 *TratoYa — ¡Trato completado!*\n\nHola ${nombre},\n\nEl trato *${codigo}* se completó exitosamente. ¡Gracias por usar TratoYa!\n\nSi quedaste satisfecho, deja una reseña desde tu perfil. 🌟\n\n→ ${APP_URL()}`,
+
+  // Mensaje genérico de seguimiento: dice en qué punto va el trato y el paso a
+  // seguir. Pensado para enrutarse por UN solo template (tratoya_estado_trato),
+  // así basta aprobar una plantilla en Meta para cubrir todo el ciclo.
+  estado_trato: ({ nombre, codigo, estado, paso }) =>
+    `📦 *TratoYa — Tu trato ${codigo}*\n\nHola ${nombre},\n\n*Estado actual:* ${estado}\n*Tu próximo paso:* ${paso}\n\n→ ${APP_URL()}`,
 };
 
 /* ── Función principal de notificación ─────────────────────── */
