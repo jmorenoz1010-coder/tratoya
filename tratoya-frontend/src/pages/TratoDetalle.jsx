@@ -7,6 +7,7 @@ import StarRating from "../components/StarRating";
 import Avatar from "../components/Avatar";
 import ManualPaymentBox from "../components/ManualPaymentBox";
 import CaducidadAviso from "../components/CaducidadAviso";
+import { ShieldIcon, ScaleIcon, CashIcon, LockIcon, PersonIcon, BoltIcon, FlagIcon } from "../components/LandingIcons";
 
 function ReviewBox({ tratoId, reviews, user, toast, onSaved }) {
   const mine = reviews.find((r) => r.autor_id === user?.id);
@@ -189,44 +190,44 @@ export default function TratoDetalle({ tratoId, setPage, setDisputeTratoId, user
           // Definición de guías por estado + rol
           const PASO = {
             borrador: {
-              V: { ico: "🔗", titulo: "Comparte el link del trato", desc: "Cópiale el link al comprador para que lo acepte y realice el pago. Sin ese paso, el trato no avanza.", cta: "Copiar link", ctaType: "copy" },
-              C: { ico: "✅", titulo: "Acepta el trato para continuar", desc: "Debes aceptar este trato antes de poder pagar. Es el primer paso para proteger tu dinero.", cta: "Aceptar trato", ctaType: "accept" },
+              V: { Icon: BoltIcon, titulo: "Comparte el link del trato", desc: "Cópiale el link al comprador para que lo acepte y realice el pago. Sin ese paso, el trato no avanza.", cta: "Copiar link", ctaType: "copy" },
+              C: { Icon: ShieldIcon, titulo: "Acepta el trato para continuar", desc: "Debes aceptar este trato antes de poder pagar. Es el primer paso para proteger tu dinero.", cta: "Aceptar trato", ctaType: "accept" },
             },
             activo: {
-              V: { ico: "⏳", titulo: "Esperando el pago del comprador", desc: "El comprador recibió el link. Cuando realice la transferencia y la reporte, verás el trato avanzar." },
-              C: { ico: "💰", titulo: "¡Realiza el pago para activar el trato!", desc: "Transfiere el monto exacto con la referencia indicada y sube el comprobante. Verificamos en menos de 1 hora.", cta: "↓ Ir a pagar", ctaType: "scroll" },
+              V: { Icon: PersonIcon, titulo: "Esperando el pago del comprador", desc: "El comprador recibió el link. Cuando realice la transferencia y la reporte, verás el trato avanzar." },
+              C: { Icon: CashIcon, titulo: "¡Realiza el pago para activar el trato!", desc: "Transfiere el monto exacto con la referencia indicada y sube el comprobante. Verificamos en menos de 1 hora.", cta: "Ir a pagar", ctaType: "scroll" },
             },
             pago_pendiente: {
-              V: { ico: "🔍", titulo: "Verificando el pago del comprador", desc: "El comprador ya reportó el pago. Nuestro equipo lo está revisando. Te notificamos en cuanto esté confirmado." },
-              C: { ico: "🔍", titulo: "Tu pago está siendo verificado", desc: "Estamos revisando tu transferencia. Tiempo estimado: menos de 1 hora. Recibirás notificación cuando esté listo. No necesitas hacer nada más." },
+              V: { Icon: ScaleIcon, titulo: "Verificando el pago del comprador", desc: "El comprador ya reportó el pago. Nuestro equipo lo está revisando. Te notificamos en cuanto esté confirmado." },
+              C: { Icon: ScaleIcon, titulo: "Tu pago está siendo verificado", desc: "Estamos revisando tu transferencia. Tiempo estimado: menos de 1 hora. Recibirás notificación cuando esté listo. No necesitas hacer nada más." },
             },
             pago_retenido: {
-              V: { ico: "📦", titulo: "¡Dinero protegido — ya puedes entregar!", desc: "El pago está en custodia de TratoYa. Registra el envío con guía, datos del domiciliario o punto de encuentro.", cta: "↓ Registrar envío", ctaType: "scroll" },
-              C: { ico: "🛡️", titulo: "El dinero está protegido en TratoYa", desc: "El vendedor procederá a entregar el producto o servicio. Recibirás notificación cuando registre el envío." },
+              V: { Icon: LockIcon, titulo: "¡Dinero protegido — ya puedes entregar!", desc: "El pago está en custodia de TratoYa. Registra el envío con guía, datos del domiciliario o punto de encuentro.", cta: "Registrar envío", ctaType: "scroll" },
+              C: { Icon: ShieldIcon, titulo: "El dinero está protegido en TratoYa", desc: "El vendedor procederá a entregar el producto o servicio. Recibirás notificación cuando registre el envío." },
             },
             en_entrega: {
-              V: { ico: "🚚", titulo: "Entrega registrada — esperando confirmación", desc: "Ya registraste el envío. Cuando el comprador reciba el producto y lo confirme, el pago será liberado automáticamente." },
-              C: { ico: "✅", titulo: "¿Ya recibiste el producto?", desc: "El vendedor registró la entrega. Cuando lo tengas en tus manos y todo esté bien, confírmalo para liberar el pago.", cta: "↓ Confirmar entrega", ctaType: "scroll" },
+              V: { Icon: BoltIcon, titulo: "Entrega registrada — esperando confirmación", desc: "Ya registraste el envío. Cuando el comprador reciba el producto y lo confirme, el pago será liberado automáticamente." },
+              C: { Icon: ShieldIcon, titulo: "¿Ya recibiste el producto?", desc: "El vendedor registró la entrega. Cuando lo tengas en tus manos y todo esté bien, confírmalo para liberar el pago.", cta: "Confirmar entrega", ctaType: "scroll" },
             },
             pendiente_confirmacion: {
-              V: { ico: "⏳", titulo: "Esperando que el comprador confirme", desc: `El comprador tiene hasta ${trato.dias_inspeccion || 7} días para confirmar la recepción. Puedes recordárselo por el chat del trato.` },
-              C: { ico: "✅", titulo: "¡Confirma para liberar el pago al vendedor!", desc: "El vendedor marcó la entrega como realizada. Si recibiste todo lo acordado en perfecto estado, confírmalo ahora.", cta: "↓ Confirmar recepción", ctaType: "scroll" },
+              V: { Icon: PersonIcon, titulo: "Esperando que el comprador confirme", desc: `El comprador tiene hasta ${trato.dias_inspeccion || 7} días para confirmar la recepción. Puedes recordárselo por el chat del trato.` },
+              C: { Icon: ShieldIcon, titulo: "¡Confirma para liberar el pago al vendedor!", desc: "El vendedor marcó la entrega como realizada. Si recibiste todo lo acordado en perfecto estado, confírmalo ahora.", cta: "Confirmar recepción", ctaType: "scroll" },
             },
             confirmado: {
-              V: { ico: "🎉", titulo: "¡El comprador confirmó — pago siendo liberado!", desc: "Tu pago está en proceso de liberación. Lo recibirás en máximo 24 horas hábiles." },
-              C: { ico: "🎉", titulo: "¡Trato casi completado!", desc: "Confirmaste la entrega. El pago al vendedor está siendo procesado." },
+              V: { Icon: ShieldIcon, titulo: "¡El comprador confirmó — pago siendo liberado!", desc: "Tu pago está en proceso de liberación. Lo recibirás en máximo 24 horas hábiles." },
+              C: { Icon: ShieldIcon, titulo: "¡Trato casi completado!", desc: "Confirmaste la entrega. El pago al vendedor está siendo procesado." },
             },
             completado: {
-              all: { ico: "⭐", titulo: "¡Trato completado con éxito!", desc: "Todo salió bien. Si quieres, deja una reseña para que otros usuarios conozcan tu experiencia.", cta: "↓ Dejar reseña", ctaType: "scroll-review" },
+              all: { Icon: ShieldIcon, titulo: "¡Trato completado con éxito!", desc: "Todo salió bien. Si quieres, deja una reseña para que otros usuarios conozcan tu experiencia.", cta: "Dejar reseña", ctaType: "scroll-review" },
             },
             disputado: {
-              all: { ico: "⚖️", titulo: "En revisión por disputa", desc: "Nuestro equipo está analizando la situación. Te notificaremos cuando haya una resolución. Mantén disponible cualquier evidencia." },
+              all: { Icon: ScaleIcon, titulo: "En revisión por disputa", desc: "Nuestro equipo está analizando la situación. Te notificaremos cuando haya una resolución. Mantén disponible cualquier evidencia." },
             },
             cancelado: {
-              all: { ico: "❌", titulo: "Trato cancelado", desc: "Este trato no se completó. Si necesitas hacer una nueva transacción, puedes crear un nuevo trato." },
+              all: { Icon: FlagIcon, titulo: "Trato cancelado", desc: "Este trato no se completó. Si necesitas hacer una nueva transacción, puedes crear un nuevo trato." },
             },
             expirado: {
-              all: { ico: "⏰", titulo: "Trato vencido", desc: "Este trato venció sin completarse. Coordina con tu contraparte y crea uno nuevo si lo necesitan." },
+              all: { Icon: PersonIcon, titulo: "Trato vencido", desc: "Este trato venció sin completarse. Coordina con tu contraparte y crea uno nuevo si lo necesitan." },
             },
           };
           const rol = esV ? "V" : "C";
@@ -234,6 +235,7 @@ export default function TratoDetalle({ tratoId, setPage, setDisputeTratoId, user
           if (!guiasEstado) return null;
           const guia = guiasEstado[rol] || guiasEstado.all;
           if (!guia) return null;
+          const GuiaIcon = guia.Icon;
 
           const isActive = !["completado","cancelado","disputado","expirado"].includes(trato.estado);
           const isWaiting = ["pago_pendiente","confirmado"].includes(trato.estado)
@@ -272,7 +274,7 @@ export default function TratoDetalle({ tratoId, setPage, setDisputeTratoId, user
             <div className={`nsg-card ${isUrgent ? "nsg-urgent" : isWaiting ? "nsg-waiting" : "nsg-neutral"}`}>
               <button className="nsg-close" onClick={() => setGuideDismissed(true)} aria-label="Cerrar guía">×</button>
               <div className="nsg-head">
-                <span className="nsg-ico">{guia.ico}</span>
+                <span className="nsg-ico">{GuiaIcon ? <GuiaIcon /> : null}</span>
                 <div>
                   <div className="nsg-label">{isUrgent ? "Tu próximo paso" : isWaiting ? "Estado actual" : "Información"}</div>
                   <div className="nsg-title">{guia.titulo}</div>

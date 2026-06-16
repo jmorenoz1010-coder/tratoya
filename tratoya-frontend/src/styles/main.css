@@ -2060,69 +2060,52 @@ tbody tr:hover td{background:var(--s50)}
 .mob-drawer-item.danger{color:var(--re)}
 .mob-drawer-item span{font-size:22px;line-height:1;flex-shrink:0}
 
-/* ── Next Step Guide (TratoDetalle) ─────────────────────────────── */
+/* ── Next Step Guide (TratoDetalle) — mismo estilo que aviso de estado ── */
 .nsg-card{
   position:relative;
-  border-radius:14px;
-  padding:14px 42px 14px 16px;
+  background:var(--cr);
+  border:1px solid var(--s100);
+  border-radius:10px;
+  padding:12px 42px 12px 14px;
   margin-bottom:14px;
   animation:fi .3s ease both;
 }
-.nsg-urgent{
-  background:linear-gradient(135deg,#071819 0%,#0b2927 100%);
-  border:1.5px solid rgba(169,235,27,.28);
-  box-shadow:0 8px 28px rgba(7,24,25,.22);
-  color:#fff;
-}
-.nsg-waiting{
-  background:linear-gradient(135deg,#f0f8ff,#e8f5e9);
-  border:1.5px solid rgba(71,152,24,.2);
-}
-.nsg-neutral{
-  background:var(--s50);
-  border:1.5px solid var(--s100);
+.nsg-urgent,.nsg-waiting,.nsg-neutral{
+  background:var(--cr);
+  border:1px solid var(--s100);
+  box-shadow:none;
+  color:var(--n);
 }
 .nsg-close{
   position:absolute;top:10px;right:12px;
   width:22px;height:22px;border-radius:50%;
-  border:0;background:rgba(0,0,0,.12);
-  color:inherit;font-size:14px;font-weight:700;
+  border:0;background:rgba(0,0,0,.06);
+  color:var(--s500);font-size:14px;font-weight:700;
   cursor:pointer;display:grid;place-items:center;
-  opacity:.65;transition:opacity .15s;
+  opacity:.75;transition:opacity .15s,background .15s;
   line-height:1;
 }
-.nsg-close:hover{opacity:1}
+.nsg-close:hover{opacity:1;background:rgba(0,0,0,.1)}
 .nsg-head{display:flex;align-items:flex-start;gap:12px;margin-bottom:8px}
-.nsg-ico{font-size:22px;line-height:1;flex-shrink:0;margin-top:1px}
+.nsg-ico{font-size:22px;line-height:1;flex-shrink:0;margin-top:1px;color:var(--g2)}
 .nsg-label{
   font-size:10px;font-weight:900;letter-spacing:.1em;
-  text-transform:uppercase;opacity:.6;margin-bottom:3px;
+  text-transform:uppercase;color:var(--g2);margin-bottom:3px;
 }
-.nsg-urgent .nsg-label{color:#9ed819}
-.nsg-waiting .nsg-label{color:var(--g2)}
-.nsg-neutral .nsg-label{color:var(--s600)}
 .nsg-title{
   font-family:'Manrope',sans-serif;
   font-size:14.5px;font-weight:800;line-height:1.25;
+  color:var(--n);
 }
-.nsg-urgent .nsg-title{color:#fff}
-.nsg-waiting .nsg-title,.nsg-neutral .nsg-title{color:var(--n)}
 .nsg-desc{
-  margin:0 0 10px;font-size:13px;line-height:1.6;
+  margin:0 0 10px;font-size:13px;line-height:1.55;
+  color:var(--s600);
 }
-.nsg-urgent .nsg-desc{color:rgba(255,255,255,.75)}
-.nsg-waiting .nsg-desc,.nsg-neutral .nsg-desc{color:var(--s600)}
 .nsg-cta{
   border:0;border-radius:8px;
   padding:8px 16px;
   font-family:'Nunito Sans',sans-serif;font-size:13px;font-weight:800;
   cursor:pointer;transition:transform .15s,box-shadow .15s;
-}
-.nsg-urgent .nsg-cta{
-  background:#dfff36;color:#071819;
-  box-shadow:0 4px 14px rgba(169,235,27,.28);
-}
-.nsg-waiting .nsg-cta,.nsg-neutral .nsg-cta{
   background:var(--g);color:var(--n);
   box-shadow:0 4px 12px rgba(168,196,0,.25);
 }
@@ -3217,20 +3200,20 @@ tbody tr:hover td{background:var(--s50)}
 .caduca-aviso-txt span { font-size: 12px; color: var(--s600); line-height: 1.45; }
 .caduca-chip { display: inline-flex; align-items: center; gap: 4px; font-size: 10px; font-weight: 700; color: var(--or, #E07B00); background: var(--orb, #FFF3E0); border: 1px solid rgba(224,123,0,.28); border-radius: 999px; padding: 2px 8px; white-space: nowrap; }
 
-/* ── Panel de aceptación de trato (PublicTratoPage) — estética landing ── */
-.accept-panel { background: radial-gradient(circle at 85% 0%, rgba(168,196,0,.18), transparent 42%), linear-gradient(160deg, #071819 0%, #0b2927 60%, #061112 100%); border: 1px solid rgba(168,196,0,.18); border-radius: 18px; padding: 22px 22px 18px; box-shadow: 0 18px 44px rgba(7,25,47,.28); }
-.accept-panel-head { display: flex; align-items: center; gap: 13px; margin-bottom: 15px; }
-.accept-panel-shield { width: 46px; height: 46px; flex-shrink: 0; border-radius: 13px; background: rgba(168,196,0,.16); display: flex; align-items: center; justify-content: center; font-size: 24px; }
-.accept-panel-kicker { font-size: 10.5px; font-weight: 900; letter-spacing: .7px; text-transform: uppercase; color: #9ed819; margin-bottom: 3px; }
-.accept-panel-title { font-size: 19px; line-height: 1.2; color: #fff; margin: 0; }
-.accept-panel-list { list-style: none; margin: 0 0 18px; padding: 0; display: flex; flex-direction: column; gap: 9px; }
-.accept-panel-list li { display: flex; align-items: flex-start; gap: 9px; font-size: 13.5px; line-height: 1.45; color: rgba(255,255,255,.82); }
-.accept-panel-list li strong { color: #fff; font-weight: 800; }
-.accept-panel-list li span { flex-shrink: 0; }
-.accept-panel-cta { width: 100%; border: none; cursor: pointer; border-radius: 12px; padding: 15px 18px; font-family: 'Manrope', sans-serif; font-weight: 800; font-size: 15.5px; color: #07192F; background: linear-gradient(135deg, #b5e400 0%, #a8c400 100%); display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 10px 26px rgba(168,196,0,.32); transition: transform .16s, box-shadow .16s; }
-.accept-panel-cta:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 14px 32px rgba(168,196,0,.4); }
+/* ── Panel de aceptación de trato (PublicTratoPage) — mismo estilo que aviso de estado ── */
+.accept-panel { background: var(--cr); border: 1px solid var(--s100); border-radius: 10px; padding: 13px 14px; }
+.accept-panel-head { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+.accept-panel-shield { width: 40px; height: 40px; flex-shrink: 0; border-radius: 11px; background: rgba(168,196,0,.18); display: flex; align-items: center; justify-content: center; font-size: 22px; color: var(--g2); }
+.accept-panel-kicker { font-size: 10px; font-weight: 900; letter-spacing: .1em; text-transform: uppercase; color: var(--g2); margin-bottom: 3px; }
+.accept-panel-title { font-family: 'Manrope', sans-serif; font-size: 16px; line-height: 1.25; font-weight: 800; color: var(--n); margin: 0; }
+.accept-panel-list { list-style: none; margin: 0 0 14px; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.accept-panel-list li { display: flex; align-items: flex-start; gap: 9px; font-size: 13px; line-height: 1.55; color: var(--s600); }
+.accept-panel-list li strong { color: var(--n); font-weight: 700; }
+.accept-panel-list li span { flex-shrink: 0; font-size: 18px; color: var(--g2); margin-top: 1px; }
+.accept-panel-cta { width: 100%; border: none; cursor: pointer; border-radius: 10px; padding: 13px 16px; font-family: 'Manrope', sans-serif; font-weight: 800; font-size: 14.5px; color: var(--n); background: var(--g); display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 12px rgba(168,196,0,.25); transition: transform .15s, box-shadow .15s; }
+.accept-panel-cta:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(168,196,0,.32); }
 .accept-panel-cta:disabled { opacity: .7; cursor: default; }
-.accept-panel-note { margin: 12px 2px 0; font-size: 11.5px; line-height: 1.5; color: rgba(255,255,255,.55); text-align: center; }
+.accept-panel-note { margin: 10px 2px 0; font-size: 12px; line-height: 1.5; color: var(--s600); text-align: center; }
 
 @media (max-width: 800px) {
   .notif-bell-btn { background: rgba(255,255,255,.08); border-color: rgba(255,255,255,.12); }

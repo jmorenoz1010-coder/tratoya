@@ -3,6 +3,7 @@ import { api } from "../lib/api";
 import { ESTADO, calcularComisionUI, parseCopAmount } from "../lib/utils";
 import CommissionBreakdown from "../components/CommissionBreakdown";
 import ManualPaymentBox from "../components/ManualPaymentBox";
+import { ShieldIcon, LockIcon, PersonIcon } from "../components/LandingIcons";
 import logo from "../assets/tratoya-logo.png";
 
 export default function PublicTratoPage({ link, session, goAuth, toast }) {
@@ -132,16 +133,16 @@ export default function PublicTratoPage({ link, session, goAuth, toast }) {
           ) : canAccept ? (
             <div className="accept-panel">
               <div className="accept-panel-head">
-                <span className="accept-panel-shield" aria-hidden="true">🛡️</span>
+                <span className="accept-panel-shield" aria-hidden="true"><ShieldIcon /></span>
                 <div>
                   <div className="accept-panel-kicker">Trato protegido por TratoYa</div>
                   <h3 className="accept-panel-title">Estás a un paso de tu compra segura</h3>
                 </div>
               </div>
               <ul className="accept-panel-list">
-                <li><span aria-hidden="true">🔒</span> Tu dinero queda <strong>en custodia</strong>, no se le entrega al vendedor todavía.</li>
-                <li><span aria-hidden="true">📦</span> El vendedor entrega y tú revisas con calma.</li>
-                <li><span aria-hidden="true">✅</span> El pago se libera <strong>solo cuando confirmas</strong> que recibiste bien.</li>
+                <li><span aria-hidden="true"><LockIcon /></span> Tu dinero queda <strong>en custodia</strong>, no se le entrega al vendedor todavía.</li>
+                <li><span aria-hidden="true"><PersonIcon /></span> El vendedor entrega y tú revisas con calma.</li>
+                <li><span aria-hidden="true"><ShieldIcon /></span> El pago se libera <strong>solo cuando confirmas</strong> que recibiste bien.</li>
               </ul>
               <button className="accept-panel-cta" onClick={aceptar} disabled={busy}>
                 {busy ? <div className="spin" /> : <>Aceptar y continuar al pago <span aria-hidden="true">→</span></>}
