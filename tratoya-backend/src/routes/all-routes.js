@@ -503,10 +503,12 @@ paymentsRouter.get('/status', async (req, res, next) => {
 });
 
 paymentsRouter.post('/manual/report', reportePagoLimiter, paymentUpload.single('receipt'), async (req, res, next) => {
+  let step = 'inicio';
   try {
     const { dealId, transactionRef = '', transferConcept = '', method = 'breb', notes = '' } = req.body || {};
     if (!dealId) return res.status(400).json({ success: false, message: 'dealId requerido' });
 
+    step = 'find_trato';
     const trato = await Trato.findByPk(dealId);
     if (!trato) return res.status(404).json({ success: false, message: 'Trato no encontrado' });
     if (trato.comprador_id !== req.user.id) {
@@ -566,6 +568,7 @@ paymentsRouter.post('/manual/report', reportePagoLimiter, paymentUpload.single('
       review_sla_hours: 1,
     };
 
+    step = 'crear_payment_intent';
     const intent = await PaymentIntent.create({
       provider: 'manual',
       reference,
@@ -578,6 +581,7 @@ paymentsRouter.post('/manual/report', reportePagoLimiter, paymentUpload.single('
       raw_response: paymentMetadata,
     });
 
+    step = 'crear_pago';
     await Pago.create({
       trato_id: trato.id,
       usuario_id: req.user.id,
@@ -593,6 +597,7 @@ paymentsRouter.post('/manual/report', reportePagoLimiter, paymentUpload.single('
       metadata: { ...paymentMetadata, payment_intent_id: intent.id },
     });
 
+    step = 'actualizar_trato';
     await trato.update({
       estado: 'pago_pendiente',
       metadata: {
@@ -654,7 +659,10 @@ paymentsRouter.post('/manual/report', reportePagoLimiter, paymentUpload.single('
         status: 'PAYMENT_REPORTED',
       },
     });
-  } catch (err) { next(err); }
+  } catch (err) {
+    console.error(`MANUAL_REPORT_FAIL step=${step} name=${err?.name || '-'} code=${err?.parent?.code || '-'} msg=${err?.message || '-'} detail=${err?.parent?.message || '-'}`);
+    next(err);
+  }
 });
 
 paymentsRouter.post('/create-order/:trato_id', async (req, res, next) => {

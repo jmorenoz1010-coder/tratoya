@@ -35,12 +35,14 @@ const toPublicTrato = (trato) => {
   if (!trato) return null;
   const t = typeof trato.toJSON === 'function' ? trato.toJSON() : trato;
   const persona = (u) => (u ? {
+    id: u.id,
     nombre: u.nombre,
     apellido: u.apellido,
     reputacion: u.reputacion,
     kyc_nivel: u.kyc_nivel,
   } : null);
   return {
+    id: t.id,
     codigo: t.codigo,
     titulo: t.titulo,
     descripcion: t.descripcion,
