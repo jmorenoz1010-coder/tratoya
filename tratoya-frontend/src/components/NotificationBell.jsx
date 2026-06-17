@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { api } from "../lib/api";
 import { timeAgo, fmt, nextStepFor, ESTADO } from "../lib/utils";
+import { BellIcon, STEP_ICONS } from "./LandingIcons";
 
 export default function NotificationBell({ setPage, setTratoId }) {
   const [open, setOpen] = useState(false);
@@ -73,7 +74,7 @@ export default function NotificationBell({ setPage, setTratoId }) {
         onClick={() => { setOpen((v) => !v); if (!open) load(); }}
         aria-label={`Notificaciones${unread ? `, ${unread} sin leer` : ""}`}
       >
-        🔔
+        <span className="notif-bell-ico" aria-hidden="true"><BellIcon /></span>
         {unread > 0 && <span className="notif-bell-badge">{unread > 9 ? "9+" : unread}</span>}
       </button>
       {open && (
@@ -105,9 +106,15 @@ export default function NotificationBell({ setPage, setTratoId }) {
                       {ec ? `${ec.l} · ` : ""}{trato.titulo} · {fmt(trato.monto)}
                     </span>
                   )}
-                  {step && (
-                    <span className="notif-step">{step.ico} Próximo paso: {step.txt}</span>
-                  )}
+                  {step && (() => {
+                    const StepIcon = STEP_ICONS[step.icon];
+                    return (
+                      <span className="notif-step">
+                        {StepIcon ? <span className="notif-step-ico" aria-hidden="true"><StepIcon /></span> : null}
+                        Próximo paso: {step.txt}
+                      </span>
+                    );
+                  })()}
                   <em>{timeAgo(n.createdAt)}</em>
                 </button>
               );

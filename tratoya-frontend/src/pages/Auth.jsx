@@ -206,7 +206,7 @@ export default function Auth({ setSession, toast, initialMode = "login" }) {
   };
 
   return (
-    <div className="auth-slide-app">
+    <div className={`auth-slide-app${mode === "login" && !forgotMode ? " auth-compact" : ""}`}>
       <div className="auth-ambient" aria-hidden="true">
         <div className="auth-grid" />
         <div className="auth-orb auth-orb--1" />
@@ -634,7 +634,7 @@ function TrustShieldIcon() {
 function TrustClockIcon() {
   return (
     <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <circle cx="12" cy="12" r="9" fill="#5eb8ff" />
+      <circle cx="12" cy="12" r="9" fill="rgba(158,216,25,0.2)" stroke="#9ed819" strokeWidth="1.6" />
       <path d="M12 7v5l3.5 2" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" />
     </svg>
   );
@@ -643,8 +643,8 @@ function TrustClockIcon() {
 function TrustScaleIcon() {
   return (
     <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path d="M12 4v16M6 8h12" stroke="#ffb347" strokeWidth="1.8" strokeLinecap="round" />
-      <path d="M5 8l-2 5h4l-2-5ZM19 8l-2 5h4l-2-5Z" fill="#f4a340" />
+      <path d="M12 4v15M6 8h12" stroke="#9ed819" strokeWidth="1.7" strokeLinecap="round" />
+      <path d="M5 8 2.8 13a2.6 2.6 0 0 0 4.4 0L5 8ZM19 8l-2.2 5a2.6 2.6 0 0 0 4.4 0L19 8Z" fill="rgba(158,216,25,0.16)" stroke="#9ed819" strokeWidth="1.5" strokeLinejoin="round" />
     </svg>
   );
 }

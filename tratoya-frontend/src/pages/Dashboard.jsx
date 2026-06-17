@@ -2,14 +2,13 @@ import { useState, useEffect, useCallback } from "react";
 import { api } from "../lib/api";
 import { fmt, fmtDate, timeAgo, ESTADO, TIPO_ICO } from "../lib/utils";
 import { SkeletonKpiGrid, SkeletonList } from "../components/SkeletonCard";
-import { ShieldIcon, LockIcon, CashIcon, FlagIcon, ScaleIcon, BoltIcon, BankIcon } from "../components/LandingIcons";
+import { ShieldIcon, LockIcon, CashIcon, FlagIcon, ScaleIcon, BoltIcon, BankIcon, PersonIcon } from "../components/LandingIcons";
 
-let dashboardCache = null; // { tratos, notifs, userStats }
+let dashboardCache = null;
 
 export default function Dashboard({ setPage, setTratoId, user, toast, setUser }) {
   const cached = dashboardCache;
   const [tratos, setTratos] = useState(cached?.tratos || []);
-  const [notifs, setNotifs] = useState(cached?.notifs || []);
   const [loading, setLoading] = useState(!cached);
   const [userStats, setUserStats] = useState(cached?.userStats || user);
   const [dismissedKey, setDismissedKey] = useState(() => {
@@ -18,17 +17,14 @@ export default function Dashboard({ setPage, setTratoId, user, toast, setUser })
 
   const loadDashboard = useCallback(async (silent = false) => {
     try {
-      const [t, n, me] = await Promise.all([
+      const [t, me] = await Promise.all([
         api.get("/tratos?limit=6"),
-        api.get("/users/notifications"),
         api.get("/auth/me"),
       ]);
       const newTratos = t.data || [];
-      const newNotifs = (n.data || []).slice(0, 5);
       const newUserStats = me.data || userStats;
-      dashboardCache = { tratos: newTratos, notifs: newNotifs, userStats: newUserStats };
+      dashboardCache = { tratos: newTratos, userStats: newUserStats };
       setTratos(newTratos);
-      setNotifs(newNotifs);
       if (me.data) { setUserStats(me.data); setUser?.(me.data); }
     } catch (e) {
       if (!silent) toast(e?.message || "Error cargando inicio", "error");
@@ -77,7 +73,7 @@ export default function Dashboard({ setPage, setTratoId, user, toast, setUser })
       <div className="dashboard-head" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 18 }}>
         <div>
           <h1 className="page-hd" style={{ fontSize: 21, marginBottom: 2 }}>
-            Hola, {userStats?.nombre || user?.nombre} 👋
+            Hola, {userStats?.nombre || user?.nombre}
           </h1>
           <p className="page-sub" style={{ fontSize: 13 }}>Resumen de tu cuenta</p>
         </div>
@@ -101,7 +97,7 @@ export default function Dashboard({ setPage, setTratoId, user, toast, setUser })
             onClick={() => setPage("perfil")}
             onKeyDown={(e) => e.key === "Enter" && setPage("perfil")}
           >
-            <span className="perfil-incompleto-ico" aria-hidden="true">👤</span>
+            <span className="perfil-incompleto-ico" aria-hidden="true"><PersonIcon /></span>
             <div className="perfil-incompleto-info">
               <strong>Completa tu perfil</strong>
               <span>Agrega {faltantes} para operar con seguridad y recibir tus pagos.</span>
@@ -175,7 +171,7 @@ export default function Dashboard({ setPage, setTratoId, user, toast, setUser })
           ) : activos.length === 0 ? (
             <div className="card" style={{ padding: 32 }}>
               <div className="empty">
-                <div className="empty-ico">🤝</div>
+                <div className="empty-ico" aria-hidden="true"><ShieldIcon /></div>
                 <div className="empty-t">Sin tratos activos</div>
                 <div className="empty-d">Crea tu primer trato seguro</div>
                 <button className="btn bp" style={{ marginTop: 14 }} onClick={() => setPage("crear")}>

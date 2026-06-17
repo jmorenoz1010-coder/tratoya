@@ -1,10 +1,14 @@
 import { useState, useEffect } from "react";
+import { motion } from "framer-motion";
 import { api } from "../lib/api";
 import { ESTADO, calcularComisionUI, parseCopAmount } from "../lib/utils";
 import CommissionBreakdown from "../components/CommissionBreakdown";
 import ManualPaymentBox from "../components/ManualPaymentBox";
 import { ShieldIcon, LockIcon, CashIcon, FlagIcon } from "../components/LandingIcons";
 import logo from "../assets/tratoya-logo.png";
+import "../styles/auth-slide.css";
+
+const EASE = [0.22, 1, 0.36, 1];
 
 export default function PublicTratoPage({ link, session, goAuth, toast }) {
   const [trato, setTrato] = useState(null);
@@ -47,31 +51,31 @@ export default function PublicTratoPage({ link, session, goAuth, toast }) {
     setBusy(true);
     try {
       const r = await api.put(`/tratos/public/${link}/activar`);
-      const accepted = r.data;
-      setTrato(accepted);
+      setTrato(r.data);
       toast("Trato aceptado. Continúa con el pago seguro.", "success");
-      setBusy(false);
-      return;
     } catch (e) { toast(e.message, "error"); }
     setBusy(false);
   };
 
-  if (loading) return (
-    <div style={{ minHeight: "100vh", display: "grid", placeItems: "center" }}>
-      <div className="spin" style={{ color: "var(--s400)" }} />
-    </div>
-  );
-
-  if (!trato) return (
-    <div style={{ minHeight: "100vh", display: "grid", placeItems: "center", padding: 24 }}>
-      <div className="card" style={{ padding: "32px 36px", textAlign: "center", maxWidth: 400 }}>
-        <div style={{ fontSize: 42, marginBottom: 12 }}>🔍</div>
-        <h2>Trato no encontrado</h2>
-        <p style={{ color: "var(--s600)", marginTop: 8 }}>Este link puede haber expirado o ya fue utilizado.</p>
-        <button className="btn bp" style={{ marginTop: 18 }} onClick={() => window.location.href = "/"}>Ir al inicio</button>
+  if (loading) {
+    return (
+      <div className="auth-slide-app ty-checkout-app" style={{ display: "grid", placeItems: "center" }}>
+        <div className="spin" style={{ color: "var(--auth-neon)" }} />
       </div>
-    </div>
-  );
+    );
+  }
+
+  if (!trato) {
+    return (
+      <div className="auth-slide-app ty-checkout-app" style={{ display: "grid", placeItems: "center", padding: 24 }}>
+        <div className="auth-glass-card ty-checkout-card" style={{ textAlign: "center", maxWidth: 400 }}>
+          <h2 style={{ marginBottom: 8 }}>Trato no encontrado</h2>
+          <p style={{ color: "rgba(255,255,255,.58)", marginBottom: 18 }}>Este link puede haber expirado o ya fue utilizado.</p>
+          <button className="auth-neon-btn" type="button" onClick={() => { window.location.href = "/"; }}>Ir al inicio</button>
+        </div>
+      </div>
+    );
+  }
 
   const ec = ESTADO[trato.estado] || ESTADO.borrador;
   const montoTrato = parseCopAmount(trato.monto);
@@ -82,56 +86,64 @@ export default function PublicTratoPage({ link, session, goAuth, toast }) {
   const canPay = session && !isSeller && trato.estado === "activo";
 
   return (
-    <div className="land">
-      <nav className="lnav">
-        <div className="logo-row">
-          <button className="public-checkout-back" onClick={() => { window.location.href = "/"; }} title="Volver al inicio" aria-label="Volver al inicio">←</button>
-          <button className="public-checkout-logo" onClick={() => { window.location.href = "/"; }} title="Ir al inicio">
-            <img src={logo} alt="TratoYA" />
-          </button>
-        </div>
+    <div className="auth-slide-app ty-checkout-app">
+      <div className="auth-ambient" aria-hidden="true">
+        <div className="auth-grid" />
+        <div className="auth-orb auth-orb--1" />
+        <div className="auth-orb auth-orb--2" />
+        <div className="auth-scanline" />
+      </div>
+
+      <header className="ty-checkout-top">
+        <button type="button" className="auth-back-btn ty-checkout-back" onClick={() => { window.location.href = "/"; }} aria-label="Volver">←</button>
+        <a className="ty-checkout-logo" href="/" aria-label="TratoYa">
+          <img src={logo} alt="TratoYa" />
+        </a>
         {!session && (
-          <div style={{ display: "flex", gap: 9 }}>
-            <button className="btn bg_" style={{ color: "rgba(255,255,255,.72)" }} onClick={() => goAuth("login")}>Iniciar sesión</button>
-            <button className="btn bp" onClick={() => goAuth("register")}>Crear cuenta</button>
+          <div className="ty-checkout-auth-btns">
+            <button type="button" className="ty-checkout-ghost" onClick={() => goAuth("login")}>Iniciar sesión</button>
+            <button type="button" className="ty-checkout-neon-sm" onClick={() => goAuth("register")}>Crear cuenta</button>
           </div>
         )}
-      </nav>
+      </header>
 
-      <main style={{ maxWidth: 760, margin: "0 auto", padding: "38px 20px" }}>
-        <div className="card" style={{ padding: "24px 26px" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 16, marginBottom: 18 }}>
+      <main className="ty-checkout-main">
+        <motion.div
+          className="auth-glass-card ty-checkout-card"
+          initial={{ opacity: 0, y: 28, scale: 0.96 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          transition={{ duration: 0.5, ease: EASE }}
+        >
+          <div className="ty-checkout-head">
             <div>
-              <div style={{ fontFamily: "Manrope", fontWeight: 800, color: "var(--g2)", fontSize: 12, marginBottom: 5 }}>{trato.codigo}</div>
-              <h1 style={{ fontSize: 27, marginBottom: 7 }}>{trato.titulo}</h1>
-              <div style={{ color: "var(--s600)", fontSize: 13 }}>Creado por {vendedor}</div>
+              <div className="ty-checkout-code">{trato.codigo}</div>
+              <h1>{trato.titulo}</h1>
+              <p>Creado por {vendedor}</p>
             </div>
-            <span className={`bdg ${ec.c}`}>{ec.l}</span>
+            <span className={`bdg ${ec.c} ty-checkout-badge`}>{ec.l}</span>
           </div>
 
           {trato.descripcion && (
-            <p style={{ color: "var(--s600)", fontSize: 14, lineHeight: 1.6, marginBottom: 18 }}>{trato.descripcion}</p>
+            <p className="ty-checkout-desc">{trato.descripcion}</p>
           )}
 
-          <div style={{ marginBottom: 18 }}>
+          <div className="ty-checkout-breakdown">
             <CommissionBreakdown monto={montoTrato} quien={quienComision} variant="dark" note="Este es el valor exacto que debes transferir para activar el pago protegido TratoYa." />
           </div>
 
           {!session ? (
-            <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-              <button className="btn bp blg" onClick={() => goAuth("register")}>Crear cuenta y aceptar</button>
-              <button className="btn bo blg" onClick={() => goAuth("login")}>Ya tengo cuenta</button>
+            <div className="ty-checkout-actions">
+              <button type="button" className="auth-neon-btn" onClick={() => goAuth("register")}>Crear cuenta y aceptar</button>
+              <button type="button" className="ty-checkout-ghost-full" onClick={() => goAuth("login")}>Ya tengo cuenta</button>
             </div>
           ) : isSeller ? (
-            <div style={{ background: "var(--cr)", padding: 13, borderRadius: 10, fontSize: 13, color: "var(--s600)" }}>
-              <div style={{ fontWeight: 700, color: "var(--n)", marginBottom: 4 }}>Este link es para que tu contraparte acepte y pague.</div>
-              <div style={{ marginBottom: 12 }}>Comparte este link con tu comprador para que lo acepte y pague de forma protegida.</div>
-              <div style={{ display: "flex", gap: 9, flexWrap: "wrap" }}>
-                <button className="btn bo" onClick={() => { window.location.href = "/"; }}>Ir a mi inicio</button>
-              </div>
+            <div className="ty-checkout-info">
+              <strong>Este link es para que tu contraparte acepte y pague.</strong>
+              <p>Comparte este link con tu comprador para que lo acepte y pague de forma protegida.</p>
+              <button type="button" className="ty-checkout-ghost-full" onClick={() => { window.location.href = "/"; }}>Ir a mi inicio</button>
             </div>
           ) : canAccept ? (
-            <div className="accept-panel">
+            <div className="accept-panel ty-glass-panel">
               <div className="accept-panel-head">
                 <span className="accept-panel-shield" aria-hidden="true"><ShieldIcon /></span>
                 <div>
@@ -144,22 +156,23 @@ export default function PublicTratoPage({ link, session, goAuth, toast }) {
                 <li><span className="accept-panel-bico" aria-hidden="true"><CashIcon /></span> El vendedor entrega y tú revisas con calma.</li>
                 <li><span className="accept-panel-bico" aria-hidden="true"><FlagIcon /></span> El pago se libera <strong>solo cuando confirmas</strong> que recibiste bien.</li>
               </ul>
-              <button className="accept-panel-cta" onClick={aceptar} disabled={busy}>
+              <button type="button" className="accept-panel-cta auth-neon-btn" onClick={aceptar} disabled={busy}>
                 {busy ? <div className="spin" /> : <>Aceptar y continuar al pago <span aria-hidden="true">→</span></>}
               </button>
               <p className="accept-panel-note">Al aceptar verás los datos para pagar de forma segura a TratoYa. Nunca le transfieras directamente al vendedor.</p>
             </div>
           ) : canPay ? (
-            <div>
-              <ManualPaymentBox amount={calcularComisionUI(montoTrato, quienComision).totalPagar} reference={trato.codigo} busy={busy} onReport={(payload) => reportarPago(payload)} />
-              {paymentReport?.reference && <div style={{ fontSize: 11, color: "var(--s600)", marginTop: 8 }}>Reporte: {paymentReport.reference}</div>}
+            <div className="ty-checkout-pay">
+              <ManualPaymentBox amount={calcularComisionUI(montoTrato, quienComision).totalPagar} reference={trato.codigo} busy={busy} onReport={(payload) => reportarPago(payload)} toast={toast} />
+              {paymentReport?.reference && <div className="ty-checkout-pay-note">Reporte: {paymentReport.reference}</div>}
             </div>
           ) : (
-            <div style={{ background: "var(--cr)", padding: 13, borderRadius: 10, fontSize: 13, color: "var(--s600)" }}>
-              Este trato está en estado {ec.l}. Puedes verlo desde tu panel.
+            <div className="ty-checkout-info">
+              <p>Este trato está en estado <strong>{ec.l}</strong>. Puedes verlo desde tu panel.</p>
+              <button type="button" className="ty-checkout-ghost-full" onClick={() => { window.location.href = "/"; }}>Ir a mi inicio</button>
             </div>
           )}
-        </div>
+        </motion.div>
       </main>
     </div>
   );

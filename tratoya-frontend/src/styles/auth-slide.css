@@ -727,6 +727,21 @@
 
 /* ── Responsive ──────────────────────────────────────────── */
 @media (max-width: 960px) {
+  .auth-slide-app.auth-compact {
+    min-height: 100dvh;
+    max-height: 100dvh;
+    overflow: hidden;
+  }
+
+  .auth-slide-app.auth-compact .auth-layout {
+    min-height: 100dvh;
+    max-height: 100dvh;
+    overflow-y: auto;
+    overflow-x: hidden;
+    align-content: start;
+    padding-top: 2px;
+  }
+
   .auth-layout {
     grid-template-columns: 1fr;
   }
@@ -734,7 +749,7 @@
   /* Todo en una sola pantalla: hero reducido a una franja con el logo */
   .auth-hero {
     min-height: auto;
-    padding: 12px 20px 4px;
+    padding: 8px 16px 2px;
     border-left: 0;
     border-bottom: 0;
     align-items: center;
@@ -777,12 +792,21 @@
 
   /* Aire entre el botón principal y "o continúa con" */
   .auth-divider {
-    margin: 22px 0 12px;
+    margin: 40px 0 18px;
     font-size: 10px;
+    line-height: 1.6;
   }
 
-  .auth-panel {
-    padding: 4px 14px 16px;
+  .auth-neon-btn {
+    margin-bottom: 8px;
+  }
+
+  .auth-slide-app.auth-compact .auth-glass-card {
+    animation: none;
+  }
+
+  .auth-slide-app.auth-compact .auth-panel {
+    padding: 0 14px 10px;
     align-items: flex-start;
   }
 
@@ -880,5 +904,208 @@
   .auth-kicker::before,
   .auth-glass-card {
     animation: none;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   CHECKOUT PÚBLICO — mismo shell que login
+   ═══════════════════════════════════════════════════════════ */
+.ty-checkout-app {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+.ty-checkout-top {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 18px 8px;
+  padding-left: 64px;
+}
+
+.ty-checkout-back {
+  position: fixed;
+  top: 14px;
+  left: 14px;
+}
+
+.ty-checkout-logo img {
+  width: 88px;
+  height: auto;
+  filter: drop-shadow(0 0 20px rgba(158, 216, 25, 0.28));
+}
+
+.ty-checkout-auth-btns {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.ty-checkout-ghost,
+.ty-checkout-ghost-full {
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(0, 0, 0, 0.28);
+  color: rgba(255, 255, 255, 0.88);
+  border-radius: 999px;
+  padding: 9px 14px;
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: border-color 0.2s, transform 0.2s;
+}
+
+.ty-checkout-ghost-full {
+  width: 100%;
+  margin-top: 8px;
+  border-radius: 12px;
+  min-height: 46px;
+}
+
+.ty-checkout-ghost:hover,
+.ty-checkout-ghost-full:hover {
+  border-color: var(--auth-neon);
+  transform: translateY(-1px);
+}
+
+.ty-checkout-neon-sm {
+  border: 0;
+  border-radius: 999px;
+  padding: 9px 14px;
+  background: linear-gradient(135deg, var(--auth-green-bright), var(--auth-neon));
+  color: #fff;
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 0 24px rgba(158, 216, 25, 0.28);
+}
+
+.ty-checkout-main {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 8px 16px 28px;
+  overflow-y: auto;
+}
+
+.ty-checkout-card {
+  width: min(520px, 100%);
+  margin-top: 0;
+}
+
+.ty-checkout-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+.ty-checkout-code {
+  font-family: "Manrope", sans-serif;
+  font-weight: 800;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--auth-neon);
+  margin-bottom: 6px;
+}
+
+.ty-checkout-head h1 {
+  margin: 0 0 6px;
+  font-family: "Manrope", sans-serif;
+  font-size: clamp(22px, 5vw, 28px);
+  font-weight: 900;
+  line-height: 1.15;
+  color: #fff !important;
+}
+
+.ty-checkout-head p {
+  margin: 0;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.58);
+}
+
+.ty-checkout-badge {
+  flex-shrink: 0;
+  margin-top: 4px;
+}
+
+.ty-checkout-desc {
+  margin: 0 0 14px;
+  font-size: 14px;
+  line-height: 1.55;
+  color: rgba(255, 255, 255, 0.68);
+}
+
+.ty-checkout-breakdown {
+  margin-bottom: 16px;
+}
+
+.ty-checkout-actions {
+  display: grid;
+  gap: 10px;
+}
+
+.ty-checkout-info {
+  padding: 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(158, 216, 25, 0.2);
+  background: rgba(158, 216, 25, 0.08);
+  font-size: 13px;
+  line-height: 1.55;
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.ty-checkout-info strong {
+  display: block;
+  color: #fff;
+  margin-bottom: 6px;
+}
+
+.ty-checkout-info p {
+  margin: 0 0 10px;
+}
+
+.ty-checkout-pay-note {
+  margin-top: 8px;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.ty-checkout-app .ty-glass-panel {
+  background: rgba(158, 216, 25, 0.08);
+  border: 1px solid rgba(158, 216, 25, 0.22);
+  border-radius: 16px;
+  padding: 14px;
+}
+
+.ty-checkout-app .accept-panel-kicker { color: var(--auth-neon); }
+.ty-checkout-app .accept-panel-title { color: #fff !important; }
+.ty-checkout-app .accept-panel-list li { color: rgba(255, 255, 255, 0.72); }
+.ty-checkout-app .accept-panel-list li strong { color: #fff; }
+.ty-checkout-app .accept-panel-note { color: rgba(255, 255, 255, 0.5); }
+.ty-checkout-app .accept-panel-cta { margin-top: 4px; }
+
+@media (max-width: 800px) {
+  .ty-checkout-top {
+    padding: 10px 14px 4px;
+    padding-left: 56px;
+  }
+
+  .ty-checkout-logo img {
+    width: 72px;
+  }
+
+  .ty-checkout-auth-btns .ty-checkout-ghost {
+    display: none;
   }
 }

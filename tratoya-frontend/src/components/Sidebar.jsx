@@ -1,14 +1,15 @@
 import Av from "./Avatar";
 import logo from "../assets/tratoya-logo.png";
+import { ShieldIcon, ScaleIcon, BoltIcon, CashIcon, BankIcon, PersonIcon, FlagIcon } from "./LandingIcons";
 
 const NAV = [
-  ["dashboard", "🏠", "Inicio"],
-  ["tratos",    "📋", "Mis Tratos"],
-  ["crear",     "⚡", "Crear trato"],
-  ["pagos",     "💳", "Pagos"],
-  ["disputas",  "⚖️", "Disputas"],
+  ["dashboard", ShieldIcon, "Inicio"],
+  ["tratos",    ScaleIcon, "Mis Tratos"],
+  ["crear",     BoltIcon, "Crear trato"],
+  ["pagos",     BankIcon, "Pagos"],
+  ["disputas",  ScaleIcon, "Disputas"],
 ];
-const BOT = [["reputacion", "⭐", "Reputación"], ["perfil", "👤", "Perfil"]];
+const BOT = [["reputacion", FlagIcon, "Reputación"], ["perfil", PersonIcon, "Perfil"]];
 
 export default function Sidebar({ page, setPage, user, onLogout, onMenuOpen, hasPendingTratos = false }) {
   const nom = user ? `${user.nombre} ${user.apellido}` : "";
@@ -25,14 +26,14 @@ export default function Sidebar({ page, setPage, user, onLogout, onMenuOpen, has
 
       <nav className="sb-nav">
         <div className="nav-lbl">Principal</div>
-        {NAV.map(([id, ic, l]) => (
+        {NAV.map(([id, Icon, l]) => (
           <div
             key={id}
             className={`ni ${id === "crear" ? "nav-create" : ""} ${id === "disputas" ? "nav-disputas" : ""} ${page === id ? "act" : ""}`}
             onClick={() => setPage(id)}
             title={id === "tratos" && hasPendingTratos ? "Tienes tratos sin concretar" : undefined}
           >
-            <span style={{ fontSize: 15 }}>{ic}</span>
+            <span className="nav-ico" aria-hidden="true"><Icon /></span>
             <span className="nav-text">{l}</span>
             {id === "tratos" && hasPendingTratos && (
               <span className="nav-bubble" aria-label="Tienes tratos sin concretar">!</span>
@@ -40,17 +41,17 @@ export default function Sidebar({ page, setPage, user, onLogout, onMenuOpen, has
           </div>
         ))}
         <div className="nav-lbl" style={{ marginTop: 8 }}>Cuenta</div>
-        {BOT.map(([id, ic, l]) => (
+        {BOT.map(([id, Icon, l]) => (
           <div
             key={id}
             className={`ni nav-perfil ${page === id ? "act" : ""}`}
             onClick={() => setPage(id)}
           >
-            <span style={{ fontSize: 15 }}>{ic}</span> {l}
+            <span className="nav-ico" aria-hidden="true"><Icon /></span> {l}
           </div>
         ))}
         <div className="ni nav-logout" onClick={onLogout} style={{ marginTop: 6 }}>
-          <span style={{ fontSize: 15 }}>🚪</span> Cerrar sesión
+          <span className="nav-ico nav-ico--logout" aria-hidden="true">↗</span> Cerrar sesión
         </div>
         {/* Hamburger — solo visible en mobile nav */}
         <div className="ni nav-menu" onClick={onMenuOpen} role="button" aria-label="Abrir menú">
