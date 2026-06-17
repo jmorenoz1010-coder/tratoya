@@ -220,7 +220,7 @@ router.post('/', crearTratoLimiter, kycRequired, [
     const montoNumero = parseFloat(monto);
     const diasInspeccion = Math.min(7, Math.max(1, parseInt(dias_inspeccion, 10) || 7));
     const { porcentaje, monto_comision, monto_neto } = calcularComision(montoNumero, quien_paga_comision);
-    const codigo = await generarCodigo();
+    let codigo = await generarCodigo();
     let contraparte = null;
     const handle = String(contraparte_usuario_unico || '').toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 24);
     if (handle) {
@@ -229,25 +229,40 @@ router.post('/', crearTratoLimiter, kycRequired, [
       if (contraparte.id === req.user.id) return res.status(400).json({ success: false, message: 'No puedes enviarte un trato a ti mismo' });
     }
 
-    const trato = await Trato.create({
-      codigo,
-      titulo, descripcion, tipo,
-      vendedor_id: req.user.id,
-      comprador_id: contraparte?.id || null,
-      monto,
-      comision_pct: porcentaje,
-      comision_monto: monto_comision,
-      monto_neto,
-      quien_paga_comision,
-      dias_inspeccion: diasInspeccion,
-      notas,
-      estado: contraparte ? 'activo' : 'borrador',
-      link_compartir: uuidv4().replace(/-/g, '').substring(0, 16),
-      fecha_activado: contraparte ? new Date() : null,
-      fecha_expiracion: dayjs().add(12, 'hour').toDate(),
-      ip_creacion: req.ip,
-      metadata: contraparte ? { invitacion_directa: true, contraparte_usuario_unico: contraparte.usuario_unico } : {},
-    });
+    // Reintento ante colisión de codigo/link_compartir (únicos). Regenera y
+    // reintenta para que un código duplicado no bloquee la creación del trato.
+    let trato = null;
+    for (let intento = 0; intento < 5; intento += 1) {
+      try {
+        trato = await Trato.create({
+          codigo,
+          titulo, descripcion, tipo,
+          vendedor_id: req.user.id,
+          comprador_id: contraparte?.id || null,
+          monto,
+          comision_pct: porcentaje,
+          comision_monto: monto_comision,
+          monto_neto,
+          quien_paga_comision,
+          dias_inspeccion: diasInspeccion,
+          notas,
+          estado: contraparte ? 'activo' : 'borrador',
+          link_compartir: uuidv4().replace(/-/g, '').substring(0, 16),
+          fecha_activado: contraparte ? new Date() : null,
+          fecha_expiracion: dayjs().add(12, 'hour').toDate(),
+          ip_creacion: req.ip,
+          metadata: contraparte ? { invitacion_directa: true, contraparte_usuario_unico: contraparte.usuario_unico } : {},
+        });
+        break;
+      } catch (e) {
+        if (e && e.name === 'SequelizeUniqueConstraintError' && intento < 4) {
+          const n = parseInt(String(codigo).replace(/[^0-9]/g, ''), 10) || 0;
+          codigo = `TY-${String(n + 1).padStart(5, '0')}`; // bump y reintenta
+          continue;
+        }
+        throw e;
+      }
+    }
 
     await notificar(req.user.id, 'trato_creado', {
       titulo: '¡Trato creado!',
