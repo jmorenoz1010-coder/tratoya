@@ -236,7 +236,7 @@ tbody tr:hover td{background:var(--s50)}
   .crear-trato-page .wz-l.a{color:#9ed819}
   .crear-trato-page .wz-ln{background:var(--s100)}
 }
-.ty-coin-emoji{font-size:1.15em;line-height:1;display:inline-block;vertical-align:-0.08em}
+.ty-nav-emoji,.ty-coin-emoji{font-size:1.15em;line-height:1;display:inline-block;vertical-align:-0.08em}
 .estado-pill-ico .ty-coin-emoji{font-size:14px;line-height:1}
 .ty-bell-emoji{font-size:1.2em;line-height:1;display:inline-block;vertical-align:-0.06em}
 
@@ -685,10 +685,8 @@ tbody tr:hover td{background:var(--s50)}
 .sb-nav{flex:1;padding:8px 7px;overflow-y:auto}
 .nav-lbl{font-size:9.5px;font-weight:900;color:rgba(169,235,27,.52);letter-spacing:1.2px;text-transform:uppercase;padding:9px 9px 4px}
 .ni{display:flex;align-items:center;gap:8px;padding:10px 11px;border-radius:12px;cursor:pointer;font-size:13px;font-weight:800;color:rgba(244,255,249,.68);transition:all .15s;margin-bottom:3px;user-select:none;position:relative;border:1px solid transparent}
-.ni .nav-ico{font-size:18px;line-height:1;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0}
-.ni.nav-pagos .nav-ico{font-size:22px;line-height:1}
-.ni.nav-pagos .ty-coin-emoji{font-size:1.35em}
-.ty-coin-emoji{font-size:1.15em;line-height:1;display:inline-block;vertical-align:-0.08em}
+.ni .nav-ico{font-size:22px;line-height:1;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0}
+.ni .nav-ico .ty-nav-emoji,.ni .nav-ico .ty-coin-emoji{font-size:1.35em}
 .ni .nav-ico--logout{font-size:15px;font-weight:800;opacity:.85}
 .ni:hover{background:rgba(255,255,255,.08);color:#fff;border-color:rgba(255,255,255,.08)}
 .ni.act{background:linear-gradient(135deg,rgba(169,235,27,.2),rgba(72,165,28,.13));color:#dfff60;font-weight:900;border-color:rgba(169,235,27,.25);box-shadow:0 12px 26px rgba(117,205,22,.13)}
@@ -803,8 +801,8 @@ tbody tr:hover td{background:var(--s50)}
     color:rgba(244,255,249,.74);
     box-sizing:border-box;
   }
-  .ni .nav-ico{font-size:22px!important;line-height:1!important;flex-shrink:0!important}
-  .ni.nav-menu .nav-menu-ico{font-size:22px!important;line-height:1!important}
+  .ni .nav-ico{font-size:24px!important;line-height:1!important;flex-shrink:0!important}
+  .ni .nav-ico .ty-nav-emoji,.ni .nav-ico .ty-coin-emoji{font-size:1.4em!important}
   .ni .nav-text{font-size:10px!important;max-width:100%;line-height:1.2!important;flex-shrink:0!important}
   .ni .nav-bubble{position:absolute;top:5px;right:9px;margin-left:0;min-width:15px;height:15px;padding:0 4px;font-size:9px!important;box-shadow:0 0 0 2px rgba(224,123,0,.18)}
   /* Crear trato, disputas, perfil y cerrar sesión se ocultan en el nav mobile — accesibles via FAB y drawer */
@@ -837,8 +835,6 @@ tbody tr:hover td{background:var(--s50)}
   .crear-trato-page .crear-cancel-btn{display:none}
   .mis-tratos-title{margin-bottom:18px!important;font-size:21px!important;padding-bottom:2px}
   .mis-tratos-page .trato-filters-row{margin-top:12px}
-  .ni.nav-pagos .nav-ico{font-size:24px!important;line-height:1!important}
-  .ni.nav-pagos .ty-coin-emoji{font-size:1.4em!important}
   .topbar .topbar-user-chip{background:rgba(255,255,255,.1)!important;border-color:rgba(255,255,255,.12)!important;color:#fff!important}
   .topbar-user-name{display:none}
   .topbar-menu-arrow{display:inline;opacity:.55;font-size:18px;line-height:1}

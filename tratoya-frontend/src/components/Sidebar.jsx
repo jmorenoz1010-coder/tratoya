@@ -1,15 +1,18 @@
 import Av from "./Avatar";
 import logo from "../assets/tratoya-logo.png";
-import { ShieldIcon, ScaleIcon, BoltIcon, CashIcon, CoinIcon, PersonIcon, FlagIcon } from "./LandingIcons";
+
+function NavEmoji({ children }) {
+  return <span className="ty-nav-emoji" aria-hidden="true">{children}</span>;
+}
 
 const NAV = [
-  ["dashboard", ShieldIcon, "Inicio"],
-  ["tratos",    ScaleIcon, "Mis Tratos"],
-  ["crear",     BoltIcon, "Crear trato"],
-  ["pagos",     CoinIcon, "Pagos"],
-  ["disputas",  ScaleIcon, "Disputas"],
+  ["dashboard", "🏠", "Inicio"],
+  ["tratos", "🤝", "Mis Tratos"],
+  ["crear", "⚡", "Crear trato"],
+  ["pagos", "💰", "Pagos"],
+  ["disputas", "⚖️", "Disputas"],
 ];
-const BOT = [["reputacion", FlagIcon, "Reputación"], ["perfil", PersonIcon, "Perfil"]];
+const BOT = [["reputacion", "🏆", "Reputación"], ["perfil", "👤", "Perfil"]];
 
 export default function Sidebar({ page, setPage, user, onLogout, onMenuOpen, hasPendingTratos = false }) {
   const nom = user ? `${user.nombre} ${user.apellido}` : "";
@@ -26,14 +29,14 @@ export default function Sidebar({ page, setPage, user, onLogout, onMenuOpen, has
 
       <nav className="sb-nav">
         <div className="nav-lbl">Principal</div>
-        {NAV.map(([id, Icon, l]) => (
+        {NAV.map(([id, emoji, l]) => (
           <div
             key={id}
             className={`ni ${id === "pagos" ? "nav-pagos" : ""} ${id === "crear" ? "nav-create" : ""} ${id === "disputas" ? "nav-disputas" : ""} ${page === id ? "act" : ""}`}
             onClick={() => setPage(id)}
             title={id === "tratos" && hasPendingTratos ? "Tienes tratos sin concretar" : undefined}
           >
-            <span className="nav-ico" aria-hidden="true"><Icon /></span>
+            <span className="nav-ico" aria-hidden="true"><NavEmoji>{emoji}</NavEmoji></span>
             <span className="nav-text">{l}</span>
             {id === "tratos" && hasPendingTratos && (
               <span className="nav-bubble" aria-label="Tienes tratos sin concretar">!</span>
@@ -41,13 +44,13 @@ export default function Sidebar({ page, setPage, user, onLogout, onMenuOpen, has
           </div>
         ))}
         <div className="nav-lbl" style={{ marginTop: 8 }}>Cuenta</div>
-        {BOT.map(([id, Icon, l]) => (
+        {BOT.map(([id, emoji, l]) => (
           <div
             key={id}
             className={`ni nav-perfil ${page === id ? "act" : ""}`}
             onClick={() => setPage(id)}
           >
-            <span className="nav-ico" aria-hidden="true"><Icon /></span> {l}
+            <span className="nav-ico" aria-hidden="true"><NavEmoji>{emoji}</NavEmoji></span> {l}
           </div>
         ))}
         <div className="ni nav-logout" onClick={onLogout} style={{ marginTop: 6 }}>
@@ -55,7 +58,7 @@ export default function Sidebar({ page, setPage, user, onLogout, onMenuOpen, has
         </div>
         {/* Hamburger — solo visible en mobile nav */}
         <div className="ni nav-menu" onClick={onMenuOpen} role="button" aria-label="Abrir menú">
-          <span className="nav-menu-ico">☰</span>
+          <span className="nav-ico" aria-hidden="true"><NavEmoji>☰</NavEmoji></span>
           <span className="nav-text">Más</span>
         </div>
       </nav>
