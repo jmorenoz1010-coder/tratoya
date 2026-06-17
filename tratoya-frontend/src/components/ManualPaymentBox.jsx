@@ -130,7 +130,7 @@ export default function ManualPaymentBox({ amount, reference, busy, onReport, to
               <li><span>2</span> Subes el comprobante de tu transferencia.</li>
               <li><span>3</span> Verificamos el pago en menos de 1 hora y avisamos al vendedor.</li>
             </ul>
-            <button className="btn bp blg" style={{ width: "100%" }} onClick={() => setStep(2)}>
+            <button className="btn btn-dark-cta blg" style={{ width: "100%" }} onClick={() => setStep(2)}>
               Tengo claro, ¿cómo pago? →
             </button>
           </div>

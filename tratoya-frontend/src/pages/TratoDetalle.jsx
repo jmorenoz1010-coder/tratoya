@@ -182,11 +182,13 @@ export default function TratoDetalle({ tratoId, setPage, setDisputeTratoId, user
 
   return (
     <div className="page fi">
-      <div style={{ marginBottom: 16 }}>
+      <div className="page-head-zone">
         <div className="page-subhead">
           <button type="button" className="page-back-link" onClick={() => setPage("tratos")}>← Volver</button>
           <span className="page-ref-code">{trato.codigo}</span>
         </div>
+      </div>
+      <div className="page-below-head">
         <CaducidadAviso trato={trato} />
         {/* ── Guía de próximo paso ────────────────────────── */}
         {!guideDismissed && (() => {
@@ -318,7 +320,7 @@ export default function TratoDetalle({ tratoId, setPage, setDisputeTratoId, user
             </div>
 
             {/* Progreso visual */}
-            <DealProgress steps={steps} />
+            <DealProgress steps={steps} variant="dark" />
 
             <details className="td-comm-toggle">
               <summary>Ver detalles del trato</summary>

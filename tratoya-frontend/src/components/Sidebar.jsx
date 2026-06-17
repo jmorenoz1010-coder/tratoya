@@ -29,7 +29,7 @@ export default function Sidebar({ page, setPage, user, onLogout, onMenuOpen, has
         {NAV.map(([id, Icon, l]) => (
           <div
             key={id}
-            className={`ni ${id === "crear" ? "nav-create" : ""} ${id === "disputas" ? "nav-disputas" : ""} ${page === id ? "act" : ""}`}
+            className={`ni ${id === "pagos" ? "nav-pagos" : ""} ${id === "crear" ? "nav-create" : ""} ${id === "disputas" ? "nav-disputas" : ""} ${page === id ? "act" : ""}`}
             onClick={() => setPage(id)}
             title={id === "tratos" && hasPendingTratos ? "Tienes tratos sin concretar" : undefined}
           >

@@ -36,8 +36,8 @@ export default function MisTratos({ setPage, setTratoId, user, toast, alertTrato
   });
 
   return (
-    <div className="page fi">
-      <h1 className="page-hd" style={{ fontSize: 21, marginBottom: 14 }}>Mis Tratos</h1>
+    <div className="page mis-tratos-page fi">
+      <h1 className="page-hd mis-tratos-title">Mis Tratos</h1>
 
       <div className="trato-filters-row">
         <div className="pt">

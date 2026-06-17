@@ -116,7 +116,7 @@ export default function PublicTratoPage({ link, session, goAuth, toast }) {
           transition={{ duration: 0.5, ease: EASE }}
         >
           <div className="ty-checkout-head">
-            <div>
+            <div className="ty-checkout-head-main">
               <div className="ty-checkout-code">{trato.codigo}</div>
               <h1>{trato.titulo}</h1>
               <EstadoPill estado={trato.estado} className="ty-checkout-estado" />

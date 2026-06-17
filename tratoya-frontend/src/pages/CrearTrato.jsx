@@ -119,11 +119,10 @@ export default function CrearTrato({ setPage, toast, user }) {
   );
 
   return (
-    <div className="page">
-      <div style={{ display: "flex", alignItems: "center", gap: 9, marginBottom: 20 }}>
-        <button className="btn bg_ bsm" onClick={() => setPage("dashboard")}>✕ Cancelar</button>
-        <div style={{ flex: 1 }} />
-        <div className="wz">
+    <div className="page crear-trato-page">
+      <div className="crear-trato-head">
+        <button type="button" className="crear-cancel-btn" onClick={() => setPage("dashboard")}>Cancelar</button>
+        <div className="wz crear-trato-wz">
           {["Detalles", "Condiciones", "Confirmar"].map((l, i) => (
             <div key={i} style={{ display: "flex", alignItems: "center" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
@@ -198,7 +197,7 @@ export default function CrearTrato({ setPage, toast, user }) {
               <textarea className="inp" rows="2" placeholder="Condiciones especiales, detalles del envío, etc." value={f.notas} onChange={(e) => sf("notas", e.target.value)} maxLength={500} />
             </div>
             <button
-              className="btn bp blg"
+              className="btn btn-dark-cta blg"
               style={{ width: "100%", marginTop: 6, opacity: excedeMaximo ? 0.55 : 1 }}
               disabled={excedeMaximo}
               onClick={() => {
@@ -256,7 +255,7 @@ export default function CrearTrato({ setPage, toast, user }) {
               </div>
             )}
             <CommissionBreakdown monto={monto} quien={f.quien} />
-            <button className="btn bp blg" style={{ width: "100%", marginTop: 14 }} onClick={() => {
+            <button className="btn btn-dark-cta blg" style={{ width: "100%", marginTop: 14 }} onClick={() => {
               if (!["comprador", "vendedor", "compartida"].includes(f.quien)) { toast("Define quién paga la comisión.", "error"); return; }
               setStep(3);
             }}>
@@ -280,7 +279,7 @@ export default function CrearTrato({ setPage, toast, user }) {
             <CommissionBreakdown monto={monto} quien={f.quien} />
             <div style={{ marginTop: 14, display: "flex", gap: 9 }}>
               <button className="btn bo blg" style={{ flex: 1 }} onClick={() => setStep(1)}>Editar</button>
-              <button className="btn bp blg create-glow-btn" style={{ flex: "0 1 280px", margin: "0 auto" }} onClick={create} disabled={loading}>
+              <button className="btn btn-dark-cta blg create-glow-btn" style={{ flex: "0 1 280px", margin: "0 auto" }} onClick={create} disabled={loading}>
                 {loading ? <><div className="spin" /> Creando...</> : "🔒 Crear trato seguro"}
               </button>
             </div>

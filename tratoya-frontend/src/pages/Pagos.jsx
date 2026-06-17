@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { api } from "../lib/api";
-import { fmt, fmtDate, PAGO_ESTADO } from "../lib/utils";
+import { fmt, fmtDateTime, PAGO_ESTADO, formatPaymentRef, pagoIconKey } from "../lib/utils";
 import EstadoPill from "../components/EstadoPill";
 
 let pagosCache = [];
@@ -24,7 +24,7 @@ export default function Pagos({ toast }) {
   }, []);
 
   return (
-    <div className="page fi">
+    <div className="page fi pagos-page">
       <h1 className="page-hd" style={{ fontSize: 21, marginBottom: 18 }}>Historial de pagos</h1>
 
       {selected && createPortal(
@@ -33,7 +33,7 @@ export default function Pagos({ toast }) {
             <div className="modal-hd">
               <div>
                 <h3>Detalle de la operación</h3>
-                <p style={{ fontSize: 12, color: "var(--s500)" }}>{selected.Trato?.codigo || "Trato"} · {selected.Trato?.titulo || ""}</p>
+                <p style={{ fontSize: 12, color: "var(--s500)" }}>{formatPaymentRef(selected)} · {selected.Trato?.titulo || ""}</p>
               </div>
               <button className="btn bg_ bsm" onClick={() => setSelected(null)}>×</button>
             </div>
@@ -41,17 +41,17 @@ export default function Pagos({ toast }) {
               {(() => {
                 const st = PAGO_ESTADO[selected.estado];
                 return st ? (
-                  <div className="payment-status-panel">
-                    <span className="estado-pill-wrap" style={{ marginBottom: 6, display: "inline-block" }}><EstadoPill label={st.l} icon="dollar" /></span>
-                    <p style={{ margin: 0, fontSize: 13, color: "var(--s600)", lineHeight: 1.55 }}>{st.desc}</p>
-                    {st.help && <p style={{ margin: "5px 0 0", fontSize: 12, color: "var(--g2)", fontWeight: 600 }}>{st.help}</p>}
+                  <div className="payment-status-panel payment-status-panel--dark">
+                    <EstadoPill label={st.l} icon={pagoIconKey(selected.estado)} tone={st.c} />
+                    <p>{st.desc}</p>
+                    {st.help && <p className="payment-status-help">{st.help}</p>}
                   </div>
                 ) : null;
               })()}
-              <div className="flow-steps">
+              <div className="flow-steps flow-steps--dark">
                 {[
                   ["Pago registrado", "El comprador registró el pago en TratoYa", true],
-                  ["Verificando pago", "TratoYa comprueba que el pago fue recibido", ["procesando", "aprobado"].includes(selected.estado)],
+                  ["Verificando pago", "TratoYa comprueba que el pago fue recibido", ["procesando", "aprobado", "pendiente"].includes(selected.estado)],
                   ["Pago aprobado", "El dinero está protegido en TratoYa", selected.estado === "aprobado"],
                   ["Pago liberado", "El dinero fue enviado al vendedor", selected.tipo === "liberacion" || selected.Trato?.estado === "completado"],
                 ].map(([t, d, ok], i, arr) => (
@@ -66,9 +66,10 @@ export default function Pagos({ toast }) {
                   <div className="flow-declined">El pago no fue aprobado. El comprador debe intentar nuevamente.</div>
                 )}
               </div>
-              <div style={{ padding: "0 18px 18px", display: "grid", gap: 8 }}>
+              <div className="payment-detail-meta">
                 <div><b>Monto:</b> {fmt(selected.monto)}</div>
-                <div><b>Referencia:</b> {selected.referencia || selected.pasarela_ref || "—"}</div>
+                <div><b>Referencia:</b> {formatPaymentRef(selected)}</div>
+                <div><b>Fecha:</b> {fmtDateTime(selected.createdAt)}</div>
               </div>
             </div>
           </div>
@@ -96,7 +97,7 @@ export default function Pagos({ toast }) {
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 9 }}>
           {pagos.map((p, i) => {
-            const st = PAGO_ESTADO[p.estado] || { l: p.estado || "—", c: "or" };
+            const st = PAGO_ESTADO[p.estado] || { l: p.estado || "—", c: "bg", icon: "dollar" };
             return (
               <div
                 key={i}
@@ -105,14 +106,14 @@ export default function Pagos({ toast }) {
               >
                 <div className="pago-card-top">
                   <div className="pago-card-trato-info">
-                    <span className="pago-card-codigo">{p.Trato?.codigo || "—"}</span>
+                    <span className="pago-card-codigo">{formatPaymentRef(p)}</span>
                     <span className="pago-card-titulo">{p.Trato?.titulo || "Pago"}</span>
-                    <EstadoPill label={st.l} icon="dollar" />
+                    <EstadoPill label={st.l} icon={pagoIconKey(p.estado)} tone={st.c} />
                   </div>
                 </div>
                 <div className="pago-card-bottom">
                   <span className="pago-card-amount">{fmt(p.monto)}</span>
-                  <span className="pago-card-date">{fmtDate(p.createdAt)}</span>
+                  <span className="pago-card-date">{fmtDateTime(p.createdAt)}</span>
                 </div>
               </div>
             );

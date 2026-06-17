@@ -106,8 +106,16 @@ export function LockIconDark() {
 export function DollarIcon() {
   return (
     <Ic>
-      <circle cx="12" cy="12" r="8.5" fill="rgba(158,216,25,0.14)" stroke="#9ed819" strokeWidth="1.6" />
-      <path d="M12 6.8v10.4M9.4 9.1c0-1 .9-1.7 2-1.7h1.2c1.2 0 2.1.7 2.1 1.7 0 1.2-2.1 1.3-2.1 2.8 0 1 .9 1.7 2.1 1.7h1.1c1.2 0 2.1-.7 2.1-1.7" stroke="#fff" strokeWidth="1.55" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+      <circle cx="12" cy="12" r="9" fill="#0b2927" stroke="#9ed819" strokeWidth="1.8" />
+      <path
+        d="M13.4 7.2H11.2c-1.05 0-1.9.62-1.9 1.45s.85 1.35 2.05 1.35 2.05.62 2.05 1.5-.9 1.45-2.05 1.45H10.6"
+        stroke="#9ed819"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        fill="none"
+      />
+      <path d="M12 6.3v11.4" stroke="#9ed819" strokeWidth="2" strokeLinecap="round" />
     </Ic>
   );
 }

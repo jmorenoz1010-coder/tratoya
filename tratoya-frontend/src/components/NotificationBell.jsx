@@ -82,7 +82,7 @@ export default function NotificationBell({ setPage, setTratoId }) {
     <div className="notif-bell" ref={ref}>
       <button
         type="button"
-        className="notif-bell-btn"
+        className={`notif-bell-btn${unread > 0 ? " has-unread" : ""}`}
         onClick={() => { setOpen((v) => !v); if (!open) load(); }}
         aria-label={`Notificaciones${unread ? `, ${unread} sin leer` : ""}`}
       >

@@ -1,8 +1,6 @@
-// Progreso visual mejorado del trato con animaciones
-
-export default function DealProgress({ steps }) {
+export default function DealProgress({ steps, variant = "light" }) {
   return (
-    <div className="deal-progress">
+    <div className={`deal-progress${variant === "dark" ? " deal-progress--dark" : ""}`}>
       {steps.map((step, i) => (
         <div
           key={i}

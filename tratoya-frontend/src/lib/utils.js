@@ -34,6 +34,31 @@ export const fmtDate = (d) =>
       })
     : "—";
 
+export const fmtDateTime = (d) =>
+  d
+    ? new Date(d).toLocaleString("es-CO", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      })
+    : "—";
+
+/** Referencia visible al usuario — nunca "manual"; prioriza código TY del trato. */
+export const formatPaymentRef = (p) => {
+  const codigo = p?.Trato?.codigo;
+  if (codigo && /^TY/i.test(String(codigo))) return codigo;
+  const candidates = [p?.referencia_externa, p?.pasarela_ref, p?.referencia].filter(Boolean);
+  for (const raw of candidates) {
+    const s = String(raw).trim();
+    if (/^TY[- ]/i.test(s)) return s;
+    if (/manual/i.test(s)) continue;
+    if (s.length >= 4) return s;
+  }
+  return codigo || "—";
+};
+
 export const timeAgo = (d) => {
   if (!d) return "";
   const diff = Date.now() - new Date(d);
@@ -291,15 +316,28 @@ export const ESTADO = {
 };
 
 export const PAGO_ESTADO = {
-  creado:      { l: "Pago registrado",          c: "nb", desc: "El comprador registró un pago en TratoYa.", help: "El pago fue registrado y queda pendiente de revisión." },
-  procesando:  { l: "Verificando pago",          c: "nb", desc: "TratoYa está revisando que el pago haya sido recibido correctamente.", help: "Estamos comprobando la transferencia o el comprobante de pago." },
-  aprobado:    { l: "Pago aprobado y protegido", c: "gn", desc: "El pago fue verificado y el dinero está protegido en TratoYa.", help: "El dinero ya fue confirmado y está protegido hasta que se cumpla el trato." },
-  pendiente:   { l: "Pendiente de verificación", c: "or", desc: "El pago aún está en espera de revisión o confirmación.", help: "El pago todavía no ha sido confirmado." },
-  rechazado:   { l: "Pago no aprobado",          c: "rd", desc: "El pago o comprobante no pudo ser validado. El comprador debe intentarlo nuevamente.", help: "No pudimos validar este pago. El comprador debe cargar un nuevo comprobante o intentar nuevamente." },
-  anulado:     { l: "Pago anulado",              c: "bg", desc: "El registro de pago fue cancelado o dejado sin efecto.", help: "Este registro de pago ya no está activo." },
-  reembolsado: { l: "Dinero devuelto",           c: "nb", desc: "El dinero fue devuelto al comprador.", help: "El pago fue devuelto al comprador." },
-  error:       { l: "Error en pago",             c: "rd", desc: "Ocurrió un error procesando el pago.", help: "Contacta a soporte si el problema persiste." },
+  creado:      { l: "Pago registrado",          c: "nb", icon: "cash",    desc: "El comprador registró un pago en TratoYa.", help: "El pago fue registrado y queda pendiente de revisión." },
+  procesando:  { l: "Verificando pago",          c: "or", icon: "scale",   desc: "TratoYa está revisando que el pago haya sido recibido correctamente.", help: "Estamos comprobando la transferencia o el comprobante de pago." },
+  aprobado:    { l: "Pago aprobado y protegido", c: "gn", icon: "lock",    desc: "El pago fue verificado y el dinero está protegido en TratoYa.", help: "El dinero ya fue confirmado y está protegido hasta que se cumpla el trato." },
+  pendiente:   { l: "Pendiente de verificación", c: "or", icon: "scale",   desc: "El pago aún está en espera de revisión o confirmación.", help: "El pago todavía no ha sido confirmado." },
+  rechazado:   { l: "Pago no aprobado",          c: "rd", icon: "flag",    desc: "El pago o comprobante no pudo ser validado. El comprador debe intentarlo nuevamente.", help: "No pudimos validar este pago. El comprador debe cargar un nuevo comprobante o intentar nuevamente." },
+  anulado:     { l: "Pago anulado",              c: "bg", icon: "flag",    desc: "El registro de pago fue cancelado o dejado sin efecto.", help: "Este registro de pago ya no está activo." },
+  reembolsado: { l: "Dinero devuelto",           c: "nb", icon: "shield",  desc: "El dinero fue devuelto al comprador.", help: "El pago fue devuelto al comprador." },
+  error:       { l: "Error en pago",             c: "rd", icon: "bolt",    desc: "Ocurrió un error procesando el pago.", help: "Contacta a soporte si el problema persiste." },
 };
+
+export const PAGO_ICON = {
+  creado: "cash",
+  procesando: "scale",
+  pendiente: "scale",
+  aprobado: "lock",
+  rechazado: "flag",
+  anulado: "flag",
+  reembolsado: "shield",
+  error: "bolt",
+};
+
+export const pagoIconKey = (estado) => PAGO_ICON[estado] || "dollar";
 
 // Acción pendiente del usuario en un trato (para chips "Te toca a ti")
 export const accionPendiente = (t, userId) => {
