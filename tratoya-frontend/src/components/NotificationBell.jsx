@@ -1,25 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { api } from "../lib/api";
 import { timeAgo, fmt, nextStepFor, ESTADO } from "../lib/utils";
-import { BellIcon, STEP_ICONS, ShieldIcon, CashIcon, LockIcon } from "./LandingIcons";
-
-const TIPO_ICO = {
-  pago: CashIcon,
-  pago_recibido: CashIcon,
-  trato: ShieldIcon,
-  trato_aceptado: ShieldIcon,
-  entrega: LockIcon,
-  disputa: ShieldIcon,
-};
-
-function notifIcon(n, step) {
-  if (step?.icon && STEP_ICONS[step.icon]) return STEP_ICONS[step.icon];
-  const tipo = (n.tipo || "").toLowerCase();
-  for (const [key, Icon] of Object.entries(TIPO_ICO)) {
-    if (tipo.includes(key)) return Icon;
-  }
-  return BellIcon;
-}
+import { BellIcon, STEP_ICONS } from "./LandingIcons";
 
 export default function NotificationBell({ setPage, setTratoId }) {
   const [open, setOpen] = useState(false);
@@ -104,21 +86,13 @@ export default function NotificationBell({ setPage, setTratoId }) {
             )}
           </div>
           <div className="notif-panel-body">
-            {loading && items.length === 0 && (
-              <div className="notif-empty">Cargando tus avisos...</div>
-            )}
-            {!loading && items.length === 0 && (
-              <div className="notif-empty">
-                <div className="notif-empty-ico" aria-hidden="true"><BellIcon /></div>
-                <strong className="notif-empty-title">Todo al día</strong>
-                Aquí verás avisos de pagos, entregas y pasos pendientes en tus tratos.
-              </div>
-            )}
+            {loading && items.length === 0 && <div className="notif-empty">Cargando...</div>}
+            {!loading && items.length === 0 && <div className="notif-empty">Sin notificaciones aún</div>}
             {items.slice(0, 20).map((n) => {
               const trato = tratosById[tratoIdOf(n)];
               const step = trato ? nextStepFor(trato, meId) : null;
               const ec = trato ? (ESTADO[trato.estado] || null) : null;
-              const ItemIcon = notifIcon(n, step);
+              const StepIcon = step?.icon ? STEP_ICONS[step.icon] : null;
               return (
                 <button
                   key={n.id}
@@ -126,26 +100,20 @@ export default function NotificationBell({ setPage, setTratoId }) {
                   className={`notif-item${n.leida ? "" : " unread"}`}
                   onClick={() => openItem(n)}
                 >
-                  <span className="notif-item-ico" aria-hidden="true"><ItemIcon /></span>
-                  <div className="notif-item-body">
-                    <strong>{n.titulo || n.tipo}</strong>
-                    {(n.cuerpo || n.mensaje) && <span>{n.cuerpo || n.mensaje}</span>}
-                    {trato && (
-                      <span className="notif-trato">
-                        {ec ? `${ec.l} · ` : ""}{trato.titulo} · {fmt(trato.monto)}
-                      </span>
-                    )}
-                    {step && (() => {
-                      const StepIcon = STEP_ICONS[step.icon];
-                      return (
-                        <span className="notif-step">
-                          {StepIcon ? <span className="notif-step-ico" aria-hidden="true"><StepIcon /></span> : null}
-                          {step.txt}
-                        </span>
-                      );
-                    })()}
-                    <em>{timeAgo(n.createdAt)}</em>
-                  </div>
+                  <strong>{n.titulo || n.tipo}</strong>
+                  <span>{n.cuerpo || n.mensaje || ""}</span>
+                  {trato && (
+                    <span className="notif-trato">
+                      {ec ? `${ec.l} · ` : ""}{trato.titulo} · {fmt(trato.monto)}
+                    </span>
+                  )}
+                  {step && (
+                    <span className="notif-step">
+                      {StepIcon ? <span className="notif-step-ico" aria-hidden="true"><StepIcon /></span> : null}
+                      Próximo paso: {step.txt}
+                    </span>
+                  )}
+                  <em>{timeAgo(n.createdAt)}</em>
                 </button>
               );
             })}

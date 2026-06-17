@@ -147,7 +147,7 @@ export default function Dashboard({ setPage, setTratoId, user, toast, setUser })
               tabIndex={k.action ? 0 : undefined}
               onKeyDown={k.action ? (e) => e.key === "Enter" && k.action() : undefined}
             >
-              <div className="kpi-icon" aria-hidden="true">
+              <div className="kpi-icon" aria-hidden="true" style={{ width: 34, height: 34, borderRadius: 10, background: "linear-gradient(135deg,#0b2927,#071819)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, marginBottom: 8 }}>
                 <k.Icon />
               </div>
               <div style={{ fontSize: 10, fontWeight: 600, color: "var(--s400)", textTransform: "uppercase", letterSpacing: ".5px", marginBottom: 5 }}>
@@ -180,7 +180,7 @@ export default function Dashboard({ setPage, setTratoId, user, toast, setUser })
               </div>
             </div>
           ) : (
-            <div className="deal-list list-stack" style={{ display: "flex", flexDirection: "column", gap: 9 }}>
+            <div className="deal-list" style={{ display: "flex", flexDirection: "column", gap: 9 }}>
               {activos.map((t) => {
                 const ec = ESTADO[t.estado] || ESTADO.borrador;
                 const cp = t.vendedor?.id === user?.id ? t.comprador : t.vendedor;
@@ -190,19 +190,19 @@ export default function Dashboard({ setPage, setTratoId, user, toast, setUser })
                     className="tc"
                     onClick={() => { setTratoId(t.id); setPage("detalle"); }}
                   >
-                    <div className="deal-icon ico-dark">
+                    <div className="deal-icon" style={{ width: 40, height: 40, borderRadius: 10, background: "var(--cr)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, flexShrink: 0 }}>
                       {TIPO_ICO[t.tipo] || "📋"}
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div className="tc-title" style={{ fontWeight: 700, fontSize: 13.5, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", marginBottom: 2 }}>
+                      <div style={{ fontWeight: 700, fontSize: 13.5, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", marginBottom: 2 }}>
                         {t.titulo}
                       </div>
-                      <div className="tc-sub" style={{ fontSize: 12, color: "var(--s600)" }}>
+                      <div style={{ fontSize: 12, color: "var(--s600)" }}>
                         {cp ? `${cp.nombre} ${cp.apellido}` : "Esperando contraparte"}
                       </div>
                     </div>
                     <div style={{ textAlign: "right", flexShrink: 0 }}>
-                      <div className="tc-amount" style={{ fontFamily: "Manrope", fontWeight: 800, fontSize: 13.5, marginBottom: 3 }}>
+                      <div style={{ fontFamily: "Manrope", fontWeight: 800, fontSize: 13.5, marginBottom: 3 }}>
                         {fmt(t.monto)}
                       </div>
                       <span className={`bdg ${ec.c}`} style={{ fontSize: 10 }}>{ec.l}</span>

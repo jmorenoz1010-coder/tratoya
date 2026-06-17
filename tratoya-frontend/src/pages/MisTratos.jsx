@@ -35,11 +35,8 @@ export default function MisTratos({ setPage, setTratoId, user, toast, alertTrato
   });
 
   return (
-    <div className="page page-list fi">
-      <div className="page-band">
-        <h1 className="page-hd" style={{ fontSize: 21, marginBottom: 0 }}>Mis Tratos</h1>
-        <p className="page-sub">Seguimiento y gestión de todos tus tratos</p>
-      </div>
+    <div className="page fi">
+      <h1 className="page-hd" style={{ fontSize: 21, marginBottom: 14 }}>Mis Tratos</h1>
 
       <div className="trato-filters-row">
         <div className="pt">
@@ -72,7 +69,7 @@ export default function MisTratos({ setPage, setTratoId, user, toast, alertTrato
           </button>
         </div>
       ) : (
-        <div className="list-stack">
+        <div style={{ display: "flex", flexDirection: "column", gap: 9 }}>
           {filtered.map((t, idx) => {
             const ec = ESTADO[t.estado] || ESTADO.borrador;
             const rol = t.vendedor?.id === user?.id ? "Vendedor" : "Comprador";
@@ -90,22 +87,22 @@ export default function MisTratos({ setPage, setTratoId, user, toast, alertTrato
                 onKeyDown={(e) => e.key === "Enter" && (setTratoId(t.id), setPage("detalle"))}
               >
                 <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
-                  <div className="trato-row-icon ico-dark">
+                  <div style={{ width: 40, height: 40, borderRadius: 11, background: "var(--cr)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, flexShrink: 0 }}>
                     {TIPO_ICO[t.tipo] || "📋"}
                   </div>
 
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 3 }}>
-                      <div className="trato-row-title" style={{ fontWeight: 700, fontSize: 14, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1, minWidth: 0 }}>
+                      <div style={{ fontWeight: 700, fontSize: 14, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1, minWidth: 0 }}>
                         {t.titulo}
                       </div>
                       {hasAlert && <span style={{ fontSize: 11, flexShrink: 0 }} title="Tienes notificaciones sin leer">⚠️</span>}
-                      <span className="trato-row-amount" style={{ fontFamily: "Manrope", fontWeight: 800, fontSize: 14, flexShrink: 0 }}>
+                      <span style={{ fontFamily: "Manrope", fontWeight: 800, fontSize: 14, flexShrink: 0 }}>
                         {fmt(t.monto)}
                       </span>
                     </div>
 
-                    <div className="trato-row-meta" style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
                       {/* Si hay acción pendiente mostramos solo el chip animado (evita el duplicado con el estado) */}
                       {pendiente
                         ? <span className={`bdg trato-chip-action tono-${tono}`} style={{ fontSize: 10 }}>{pendiente}</span>

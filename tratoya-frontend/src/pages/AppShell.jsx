@@ -4,7 +4,6 @@ import { ESTADO, isSupportNotification } from "../lib/utils";
 import { API_URL } from "../lib/api";
 import Sidebar from "../components/Sidebar";
 import Topbar from "../components/Topbar";
-import MobileCreateFab from "../components/MobileCreateFab";
 import Av from "../components/Avatar";
 
 const Dashboard   = lazy(() => import("./Dashboard"));
@@ -446,7 +445,15 @@ export default function AppShell({ session, setSession, toast }) {
       </div>
 
       {page !== "crear" && (
-        <MobileCreateFab onClick={() => navigateTo("crear")} />
+        <button
+          className="mobile-create-fab"
+          type="button"
+          onClick={() => navigateTo("crear")}
+          aria-label="Crear trato"
+        >
+          <span className="fab-plus" aria-hidden="true">+</span>
+          <span className="fab-label">Crear trato</span>
+        </button>
       )}
 
       <MobileDrawer

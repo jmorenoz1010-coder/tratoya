@@ -727,21 +727,6 @@
 
 /* ── Responsive ──────────────────────────────────────────── */
 @media (max-width: 960px) {
-  .auth-slide-app.auth-compact {
-    min-height: 100dvh;
-    max-height: 100dvh;
-    overflow: hidden;
-  }
-
-  .auth-slide-app.auth-compact .auth-layout {
-    min-height: 100dvh;
-    max-height: 100dvh;
-    overflow-y: auto;
-    overflow-x: hidden;
-    align-content: start;
-    padding-top: 2px;
-  }
-
   .auth-layout {
     grid-template-columns: 1fr;
   }
@@ -749,7 +734,7 @@
   /* Todo en una sola pantalla: hero reducido a una franja con el logo */
   .auth-hero {
     min-height: auto;
-    padding: 8px 16px 2px;
+    padding: 12px 20px 4px;
     border-left: 0;
     border-bottom: 0;
     align-items: center;
@@ -792,21 +777,12 @@
 
   /* Aire entre el botón principal y "o continúa con" */
   .auth-divider {
-    margin: 40px 0 18px;
+    margin: 22px 0 12px;
     font-size: 10px;
-    line-height: 1.6;
   }
 
-  .auth-neon-btn {
-    margin-bottom: 8px;
-  }
-
-  .auth-slide-app.auth-compact .auth-glass-card {
-    animation: none;
-  }
-
-  .auth-slide-app.auth-compact .auth-panel {
-    padding: 0 14px 10px;
+  .auth-panel {
+    padding: 4px 14px 16px;
     align-items: flex-start;
   }
 
