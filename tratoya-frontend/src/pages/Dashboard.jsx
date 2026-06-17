@@ -147,7 +147,7 @@ export default function Dashboard({ setPage, setTratoId, user, toast, setUser })
               tabIndex={k.action ? 0 : undefined}
               onKeyDown={k.action ? (e) => e.key === "Enter" && k.action() : undefined}
             >
-              <div className="kpi-icon" aria-hidden="true" style={{ width: 34, height: 34, borderRadius: 10, background: "linear-gradient(135deg,#0b2927,#071819)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, marginBottom: 8 }}>
+              <div className="kpi-icon" aria-hidden="true">
                 <k.Icon />
               </div>
               <div style={{ fontSize: 10, fontWeight: 600, color: "var(--s400)", textTransform: "uppercase", letterSpacing: ".5px", marginBottom: 5 }}>
