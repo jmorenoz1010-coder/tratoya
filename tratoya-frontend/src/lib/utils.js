@@ -292,12 +292,20 @@ export const accionPendiente = (t, userId) => {
   if (t.estado === "borrador" && soyV) return "Comparte el link";
   if (t.estado === "borrador" && soyC) return "Te toca: aceptar";
   if (t.estado === "activo" && soyC) return "Te toca: pagar";
-  if (t.estado === "pago_pendiente" && soyC) return "Pago en verificación";
-  if (t.estado === "pago_pendiente" && soyV) return "Verificando pago";
+  if (t.estado === "pago_pendiente") return "Verificando pago";
   if (t.estado === "pago_retenido" && soyV) return "Te toca: enviar";
   if (["en_entrega", "pendiente_confirmacion"].includes(t.estado) && soyC) return "Te toca: confirmar";
   if (t.estado === "pendiente_confirmacion" && soyV) return "Esperando confirmación";
   return null;
+};
+
+// Tono del chip de acción según la etapa de la timeline (solo verdes, sin navy).
+// 'do' = la acción depende de ti (lima vivo); 'wait' = estás esperando (verde suave).
+export const accionTono = (t, userId) => {
+  const soyV = t.vendedor?.id === userId;
+  if (t.estado === "pago_pendiente") return "wait";
+  if (t.estado === "pendiente_confirmacion" && soyV) return "wait";
+  return "do";
 };
 
 export const DISPUTA_ESTADO = {

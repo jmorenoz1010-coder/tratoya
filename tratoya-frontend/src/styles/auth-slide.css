@@ -406,7 +406,7 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  margin: 0 0 18px;
+  margin: 24px 0 18px;
   font-family: "Space Grotesk", sans-serif;
   font-size: 11px;
   font-weight: 700;
@@ -777,7 +777,7 @@
 
   /* Aire entre el botón principal y "o continúa con" */
   .auth-divider {
-    margin: 14px 0 10px;
+    margin: 22px 0 12px;
     font-size: 10px;
   }
 

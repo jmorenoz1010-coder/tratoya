@@ -3,7 +3,7 @@ import { api } from "../lib/api";
 import { ESTADO, calcularComisionUI, parseCopAmount } from "../lib/utils";
 import CommissionBreakdown from "../components/CommissionBreakdown";
 import ManualPaymentBox from "../components/ManualPaymentBox";
-import { ShieldIcon, LockIcon, PersonIcon } from "../components/LandingIcons";
+import { ShieldIcon, LockIcon, CashIcon, FlagIcon } from "../components/LandingIcons";
 import logo from "../assets/tratoya-logo.png";
 
 export default function PublicTratoPage({ link, session, goAuth, toast }) {
@@ -114,7 +114,7 @@ export default function PublicTratoPage({ link, session, goAuth, toast }) {
           )}
 
           <div style={{ marginBottom: 18 }}>
-            <CommissionBreakdown monto={montoTrato} quien={quienComision} note="Este es el valor exacto que debes transferir para activar el pago protegido TratoYa." />
+            <CommissionBreakdown monto={montoTrato} quien={quienComision} variant="dark" note="Este es el valor exacto que debes transferir para activar el pago protegido TratoYa." />
           </div>
 
           {!session ? (
@@ -140,9 +140,9 @@ export default function PublicTratoPage({ link, session, goAuth, toast }) {
                 </div>
               </div>
               <ul className="accept-panel-list">
-                <li><span aria-hidden="true"><LockIcon /></span> Tu dinero queda <strong>en custodia</strong>, no se le entrega al vendedor todavía.</li>
-                <li><span aria-hidden="true"><PersonIcon /></span> El vendedor entrega y tú revisas con calma.</li>
-                <li><span aria-hidden="true"><ShieldIcon /></span> El pago se libera <strong>solo cuando confirmas</strong> que recibiste bien.</li>
+                <li><span className="accept-panel-bico" aria-hidden="true"><LockIcon /></span> Tu dinero queda <strong>en custodia</strong>, no se le entrega al vendedor todavía.</li>
+                <li><span className="accept-panel-bico" aria-hidden="true"><CashIcon /></span> El vendedor entrega y tú revisas con calma.</li>
+                <li><span className="accept-panel-bico" aria-hidden="true"><FlagIcon /></span> El pago se libera <strong>solo cuando confirmas</strong> que recibiste bien.</li>
               </ul>
               <button className="accept-panel-cta" onClick={aceptar} disabled={busy}>
                 {busy ? <div className="spin" /> : <>Aceptar y continuar al pago <span aria-hidden="true">→</span></>}

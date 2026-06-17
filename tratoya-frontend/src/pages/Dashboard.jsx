@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { api } from "../lib/api";
 import { fmt, fmtDate, timeAgo, ESTADO, TIPO_ICO } from "../lib/utils";
 import { SkeletonKpiGrid, SkeletonList } from "../components/SkeletonCard";
+import { ShieldIcon, LockIcon, CashIcon, FlagIcon, ScaleIcon, BoltIcon, BankIcon } from "../components/LandingIcons";
 
 let dashboardCache = null; // { tratos, notifs, userStats }
 
@@ -53,22 +54,22 @@ export default function Dashboard({ setPage, setTratoId, user, toast, setUser })
     for (const t of activos) {
       const soyVendedor = t.vendedor?.id === user?.id;
       const soyComprador = t.comprador?.id === user?.id;
-      if (t.estado === "borrador" && soyComprador) return { t, ico: "✅", txt: "Acepta el trato para poder pagar", cta: "Aceptar trato" };
-      if (t.estado === "borrador" && soyVendedor) return { t, ico: "🔗", txt: "Comparte el link para que acepten tu trato", cta: "Ver trato" };
-      if (t.estado === "activo" && soyComprador) return { t, ico: "💰", txt: "Realiza el pago para proteger tu trato", cta: "Ir a pagar" };
-      if (t.estado === "pago_pendiente" && soyComprador) return { t, ico: "🔍", txt: "Tu pago está siendo verificado (menos de 1 h)", cta: "Ver estado" };
-      if (t.estado === "pago_pendiente" && soyVendedor) return { t, ico: "🔍", txt: "Estamos verificando el pago del comprador", cta: "Ver trato" };
-      if (t.estado === "pago_retenido" && soyVendedor) return { t, ico: "📦", txt: "El dinero está protegido: registra el envío", cta: "Registrar envío" };
-      if (["en_entrega", "pendiente_confirmacion"].includes(t.estado) && soyComprador) return { t, ico: "✅", txt: "¿Ya recibiste? Confirma para liberar el pago", cta: "Confirmar entrega" };
+      if (t.estado === "borrador" && soyComprador) return { t, Icon: ShieldIcon, txt: "Acepta el trato para poder pagar", cta: "Aceptar trato" };
+      if (t.estado === "borrador" && soyVendedor) return { t, Icon: BoltIcon, txt: "Comparte el link para que acepten tu trato", cta: "Ver trato" };
+      if (t.estado === "activo" && soyComprador) return { t, Icon: CashIcon, txt: "Realiza el pago para proteger tu trato", cta: "Ir a pagar" };
+      if (t.estado === "pago_pendiente" && soyComprador) return { t, Icon: LockIcon, txt: "Tu pago está siendo verificado (menos de 1 h)", cta: "Ver estado" };
+      if (t.estado === "pago_pendiente" && soyVendedor) return { t, Icon: LockIcon, txt: "Estamos verificando el pago del comprador", cta: "Ver trato" };
+      if (t.estado === "pago_retenido" && soyVendedor) return { t, Icon: BankIcon, txt: "El dinero está protegido: registra el envío", cta: "Registrar envío" };
+      if (["en_entrega", "pendiente_confirmacion"].includes(t.estado) && soyComprador) return { t, Icon: ShieldIcon, txt: "¿Ya recibiste? Confirma para liberar el pago", cta: "Confirmar entrega" };
     }
     return null;
   })();
 
   const kpis = [
-    { ico: "📋", bg: "var(--cr)", l: "Tratos activos",   v: activos.length,   action: () => setPage("tratos") },
-    { ico: "🔒", bg: "var(--cr)", l: "Dinero protegido", v: fmt(protegido),   action: () => setPage("tratos") },
-    { ico: "✅", bg: "var(--cr)", l: "Completados",      v: completados,       action: () => setPage("tratos") },
-    { ico: "⭐", bg: "var(--cr)", l: "Reputación",       v: parseFloat(userStats?.reputacion || 0).toFixed(1) || "—", action: null },
+    { Icon: ScaleIcon, l: "Tratos activos",   v: activos.length,   action: () => setPage("tratos") },
+    { Icon: LockIcon,  l: "Dinero protegido", v: fmt(protegido),   action: () => setPage("tratos") },
+    { Icon: ShieldIcon, l: "Completados",     v: completados,      action: () => setPage("tratos") },
+    { Icon: FlagIcon,  l: "Reputación",       v: parseFloat(userStats?.reputacion || 0).toFixed(1) || "—", action: null },
   ];
 
   return (
@@ -125,7 +126,7 @@ export default function Dashboard({ setPage, setTratoId, user, toast, setUser })
             onClick={go}
             onKeyDown={(e) => e.key === "Enter" && go()}
           >
-            <span className="dash-next-ico">{nextAction.ico}</span>
+            <span className="dash-next-ico" aria-hidden="true"><nextAction.Icon /></span>
             <div className="dash-next-info">
               <span className="dash-next-label">Tu próximo paso</span>
               <strong>{nextAction.txt}</strong>
@@ -150,8 +151,8 @@ export default function Dashboard({ setPage, setTratoId, user, toast, setUser })
               tabIndex={k.action ? 0 : undefined}
               onKeyDown={k.action ? (e) => e.key === "Enter" && k.action() : undefined}
             >
-              <div className="kpi-icon" style={{ width: 32, height: 32, borderRadius: 9, background: k.bg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15, marginBottom: 8 }}>
-                {k.ico}
+              <div className="kpi-icon" aria-hidden="true" style={{ width: 34, height: 34, borderRadius: 10, background: "linear-gradient(135deg,#0b2927,#071819)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, marginBottom: 8 }}>
+                <k.Icon />
               </div>
               <div style={{ fontSize: 10, fontWeight: 600, color: "var(--s400)", textTransform: "uppercase", letterSpacing: ".5px", marginBottom: 5 }}>
                 {k.l}
@@ -163,8 +164,8 @@ export default function Dashboard({ setPage, setTratoId, user, toast, setUser })
         </div>
       )}
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 290px", gap: 14 }}>
-        <div className="fi2">
+      <div className="fi2">
+        <div>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 11 }}>
             <h2 style={{ fontSize: 15 }}>Tratos activos</h2>
             <button className="btn bg_ bsm" onClick={() => setPage("tratos")}>Ver todos →</button>
@@ -215,27 +216,6 @@ export default function Dashboard({ setPage, setTratoId, user, toast, setUser })
               })}
             </div>
           )}
-        </div>
-
-        <div className="fi3">
-          <h2 style={{ fontSize: 15, marginBottom: 11 }}>Actividad reciente</h2>
-          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            {notifs.length === 0 && !loading && (
-              <div className="card" style={{ padding: 18, textAlign: "center", color: "var(--s400)", fontSize: 13 }}>
-                Sin movimientos recientes
-              </div>
-            )}
-            {notifs.map((n, i) => (
-              <div
-                key={i}
-                style={{ background: n.leida ? "#fff" : "var(--cr2)", border: "1px solid var(--s100)", borderRadius: 11, padding: "10px 13px" }}
-              >
-                <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 1 }}>{n.titulo}</div>
-                <div style={{ fontSize: 12, color: "var(--s600)", marginBottom: 2 }}>{n.cuerpo}</div>
-                <div style={{ fontSize: 10.5, color: "var(--s400)" }}>{timeAgo(n.createdAt)}</div>
-              </div>
-            ))}
-          </div>
         </div>
       </div>
     </div>

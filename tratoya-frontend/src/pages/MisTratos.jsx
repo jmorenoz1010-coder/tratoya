@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { api } from "../lib/api";
-import { fmt, fmtDate, ESTADO, TIPO_ICO, accionPendiente } from "../lib/utils";
+import { fmt, fmtDate, ESTADO, TIPO_ICO, accionPendiente, accionTono } from "../lib/utils";
 import { SkeletonList } from "../components/SkeletonCard";
 import CaducidadAviso from "../components/CaducidadAviso";
 
@@ -75,6 +75,7 @@ export default function MisTratos({ setPage, setTratoId, user, toast, alertTrato
             const rol = t.vendedor?.id === user?.id ? "Vendedor" : "Comprador";
             const hasAlert = alertTratoIds?.has(t.id);
             const pendiente = accionPendiente(t, user?.id);
+            const tono = accionTono(t, user?.id);
             return (
               <div
                 key={t.id}
@@ -102,8 +103,10 @@ export default function MisTratos({ setPage, setTratoId, user, toast, alertTrato
                     </div>
 
                     <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-                      <span className={`bdg ${ec.c}`} style={{ fontSize: 10 }}>{ec.l}</span>
-                      {pendiente && <span className="bdg trato-chip-action" style={{ fontSize: 10 }}>{pendiente}</span>}
+                      {/* Si hay acción pendiente mostramos solo el chip animado (evita el duplicado con el estado) */}
+                      {pendiente
+                        ? <span className={`bdg trato-chip-action tono-${tono}`} style={{ fontSize: 10 }}>{pendiente}</span>
+                        : <span className={`bdg ${ec.c}`} style={{ fontSize: 10 }}>{ec.l}</span>}
                       <CaducidadAviso trato={t} compact />
                       <span style={{ fontSize: 11, color: "var(--s400)" }}>{rol} · {fmtDate(t.createdAt)}</span>
                       <span className="trato-row-arrow" aria-hidden="true">→</span>

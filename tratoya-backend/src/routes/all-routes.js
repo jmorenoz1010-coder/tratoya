@@ -893,10 +893,15 @@ messagesRouter.post('/:trato_id', chatLimiter, [
     });
     if (!trato) return res.status(404).json({ success: false, message: 'Trato no encontrado' });
 
+    // Seguridad escrow: censurar teléfonos, correos y enlaces para que las
+    // partes no se salgan de la plataforma.
+    const { censurarTexto } = require('../utils/censura');
+    const { texto: contenidoSeguro, censurado } = censurarTexto(req.body.contenido);
+
     const msg = await Mensaje.create({
       trato_id: req.params.trato_id,
       remitente_id: req.user.id,
-      contenido: req.body.contenido,
+      contenido: contenidoSeguro,
       tipo: req.body.tipo || 'texto',
     });
     const receptor = trato.comprador_id === req.user.id ? trato.vendedor_id : trato.comprador_id;
@@ -904,11 +909,11 @@ messagesRouter.post('/:trato_id', chatLimiter, [
       const { notificar } = require('../services/notificacionService');
       await notificar(receptor, 'mensaje_trato', {
         titulo: `Nuevo mensaje en ${trato.codigo}`,
-        cuerpo: req.body.contenido.slice(0, 160),
+        cuerpo: contenidoSeguro.slice(0, 160),
         metadata: { trato_id: trato.id, mensaje_id: msg.id },
       }).catch(() => {});
     }
-    res.status(201).json({ success: true, data: msg });
+    res.status(201).json({ success: true, data: msg, censored: censurado });
   } catch (err) { next(err); }
 });
 

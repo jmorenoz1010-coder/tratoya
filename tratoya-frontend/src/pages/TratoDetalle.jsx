@@ -108,8 +108,12 @@ export default function TratoDetalle({ tratoId, setPage, setDisputeTratoId, user
 
   const sendMsg = async () => {
     if (!msg.trim()) return;
-    try { await api.post(`/messages/${tratoId}`, { contenido: msg }); setMsg(""); load(); }
-    catch (e) { toast(e.message, "error"); }
+    try {
+      const r = await api.post(`/messages/${tratoId}`, { contenido: msg });
+      setMsg("");
+      if (r?.censored) toast("Por tu seguridad ocultamos datos de contacto. Mantén el trato dentro de TratoYa.", "warn");
+      load();
+    } catch (e) { toast(e.message, "error"); }
   };
 
   const action = async (fn, successMsg) => {
