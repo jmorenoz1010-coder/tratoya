@@ -1,12 +1,12 @@
 import Av from "./Avatar";
 import logo from "../assets/tratoya-logo.png";
-import { ShieldIcon, ScaleIcon, BoltIcon, CashIcon, BankIcon, PersonIcon, FlagIcon } from "./LandingIcons";
+import { ShieldIcon, ScaleIcon, BoltIcon, CashIcon, DollarIcon, PersonIcon, FlagIcon } from "./LandingIcons";
 
 const NAV = [
   ["dashboard", ShieldIcon, "Inicio"],
   ["tratos",    ScaleIcon, "Mis Tratos"],
   ["crear",     BoltIcon, "Crear trato"],
-  ["pagos",     BankIcon, "Pagos"],
+  ["pagos",     DollarIcon, "Pagos"],
   ["disputas",  ScaleIcon, "Disputas"],
 ];
 const BOT = [["reputacion", FlagIcon, "Reputación"], ["perfil", PersonIcon, "Perfil"]];

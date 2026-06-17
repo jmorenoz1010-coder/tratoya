@@ -1064,12 +1064,10 @@
   padding: 14px;
 }
 
+.ty-checkout-app .accept-panel--compact .accept-panel-head { margin-bottom: 14px; }
 .ty-checkout-app .accept-panel-kicker { color: var(--auth-neon); }
 .ty-checkout-app .accept-panel-title { color: #fff !important; }
-.ty-checkout-app .accept-panel-list li { color: rgba(255, 255, 255, 0.72); }
-.ty-checkout-app .accept-panel-list li strong { color: #fff; }
-.ty-checkout-app .accept-panel-note { color: rgba(255, 255, 255, 0.5); }
-.ty-checkout-app .accept-panel-cta { margin-top: 4px; }
+.ty-checkout-app .accept-panel-cta { margin-top: 0; }
 
 @media (max-width: 800px) {
   .ty-checkout-top {

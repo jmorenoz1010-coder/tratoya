@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { api } from "../lib/api";
 import { fmt, fmtDate, timeAgo, ESTADO, TIPO_ICO } from "../lib/utils";
 import { SkeletonKpiGrid, SkeletonList } from "../components/SkeletonCard";
-import { ShieldIcon, LockIcon, CashIcon, FlagIcon, ScaleIcon, BoltIcon, BankIcon, PersonIcon } from "../components/LandingIcons";
+import { ShieldIcon, LockIcon, CashIcon, FlagIcon, ScaleIcon, BoltIcon, DollarIcon, PersonIcon } from "../components/LandingIcons";
 
 let dashboardCache = null;
 
@@ -55,7 +55,7 @@ export default function Dashboard({ setPage, setTratoId, user, toast, setUser })
       if (t.estado === "activo" && soyComprador) return { t, Icon: CashIcon, txt: "Realiza el pago para proteger tu trato", cta: "Ir a pagar" };
       if (t.estado === "pago_pendiente" && soyComprador) return { t, Icon: LockIcon, txt: "Tu pago está siendo verificado (menos de 1 h)", cta: "Ver estado" };
       if (t.estado === "pago_pendiente" && soyVendedor) return { t, Icon: LockIcon, txt: "Estamos verificando el pago del comprador", cta: "Ver trato" };
-      if (t.estado === "pago_retenido" && soyVendedor) return { t, Icon: BankIcon, txt: "El dinero está protegido: registra el envío", cta: "Registrar envío" };
+      if (t.estado === "pago_retenido" && soyVendedor) return { t, Icon: DollarIcon, txt: "El dinero está protegido: registra el envío", cta: "Registrar envío" };
       if (["en_entrega", "pendiente_confirmacion"].includes(t.estado) && soyComprador) return { t, Icon: ShieldIcon, txt: "¿Ya recibiste? Confirma para liberar el pago", cta: "Confirmar entrega" };
     }
     return null;
@@ -93,7 +93,7 @@ export default function Dashboard({ setPage, setTratoId, user, toast, setUser })
         if (!faltaCedula && !faltaTel) return null;
         const faltantes = [faltaCedula && "tu número de identificación", faltaTel && "tu WhatsApp"].filter(Boolean).join(" y ");
         return (
-          <div className="perfil-incompleto fi" role="button" tabIndex={0}
+          <div className="perfil-incompleto banner-dark fi" role="button" tabIndex={0}
             onClick={() => setPage("perfil")}
             onKeyDown={(e) => e.key === "Enter" && setPage("perfil")}
           >
@@ -147,7 +147,7 @@ export default function Dashboard({ setPage, setTratoId, user, toast, setUser })
               tabIndex={k.action ? 0 : undefined}
               onKeyDown={k.action ? (e) => e.key === "Enter" && k.action() : undefined}
             >
-              <div className="kpi-icon" aria-hidden="true" style={{ width: 34, height: 34, borderRadius: 10, background: "linear-gradient(135deg,#0b2927,#071819)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, marginBottom: 8 }}>
+              <div className="kpi-icon" aria-hidden="true">
                 <k.Icon />
               </div>
               <div style={{ fontSize: 10, fontWeight: 600, color: "var(--s400)", textTransform: "uppercase", letterSpacing: ".5px", marginBottom: 5 }}>

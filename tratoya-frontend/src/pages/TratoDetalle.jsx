@@ -275,7 +275,7 @@ export default function TratoDetalle({ tratoId, setPage, setDisputeTratoId, user
           };
 
           return (
-            <div className={`nsg-card ${isUrgent ? "nsg-urgent" : isWaiting ? "nsg-waiting" : "nsg-neutral"}`}>
+            <div className={`nsg-card banner-dark ${isUrgent ? "nsg-urgent" : isWaiting ? "nsg-waiting" : "nsg-neutral"}`}>
               <button className="nsg-close" onClick={() => setGuideDismissed(true)} aria-label="Cerrar guía">×</button>
               <div className="nsg-head">
                 <span className="nsg-ico">{GuiaIcon ? <GuiaIcon /> : null}</span>

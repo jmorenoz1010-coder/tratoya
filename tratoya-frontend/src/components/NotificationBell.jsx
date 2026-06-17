@@ -1,7 +1,20 @@
 import { useState, useEffect, useRef } from "react";
 import { api } from "../lib/api";
 import { timeAgo, fmt, nextStepFor, ESTADO } from "../lib/utils";
-import { BellIcon, STEP_ICONS } from "./LandingIcons";
+import { BellIcon, STEP_ICONS, DollarIcon } from "./LandingIcons";
+
+function targetFor(n, trato, step) {
+  const tipo = (n.tipo || "").toLowerCase();
+  if (!trato) {
+    if (tipo.includes("pago")) return "pagos";
+    if (tipo.includes("disputa")) return "disputas";
+    return "tratos";
+  }
+  if (tipo.includes("disputa")) return "detalle";
+  if (step?.cta === "Ir a pagar" || step?.cta === "Aceptar trato" || step?.actionable) return "detalle";
+  if (tipo.includes("pago") && !step?.actionable) return "pagos";
+  return "detalle";
+}
 
 export default function NotificationBell({ setPage, setTratoId }) {
   const [open, setOpen] = useState(false);
@@ -50,12 +63,11 @@ export default function NotificationBell({ setPage, setTratoId }) {
       setItems((prev) => prev.map((x) => (x.id === n.id ? { ...x, leida: true } : x)));
     }
     const tratoId = tratoIdOf(n);
-    if (tratoId && setTratoId) {
-      setTratoId(tratoId);
-      setPage?.("detalle");
-    } else {
-      setPage?.("dashboard");
-    }
+    const trato = tratosById[tratoId];
+    const step = trato ? nextStepFor(trato, meId) : null;
+    const page = targetFor(n, trato, step);
+    if (tratoId && setTratoId && page === "detalle") setTratoId(tratoId);
+    setPage?.(page);
     setOpen(false);
   };
 
@@ -93,6 +105,8 @@ export default function NotificationBell({ setPage, setTratoId }) {
               const step = trato ? nextStepFor(trato, meId) : null;
               const ec = trato ? (ESTADO[trato.estado] || null) : null;
               const StepIcon = step?.icon ? STEP_ICONS[step.icon] : null;
+              const tipo = (n.tipo || "").toLowerCase();
+              const ItemIcon = StepIcon || (tipo.includes("pago") ? DollarIcon : BellIcon);
               return (
                 <button
                   key={n.id}
@@ -100,20 +114,23 @@ export default function NotificationBell({ setPage, setTratoId }) {
                   className={`notif-item${n.leida ? "" : " unread"}`}
                   onClick={() => openItem(n)}
                 >
-                  <strong>{n.titulo || n.tipo}</strong>
-                  <span>{n.cuerpo || n.mensaje || ""}</span>
-                  {trato && (
-                    <span className="notif-trato">
-                      {ec ? `${ec.l} · ` : ""}{trato.titulo} · {fmt(trato.monto)}
-                    </span>
-                  )}
-                  {step && (
-                    <span className="notif-step">
-                      {StepIcon ? <span className="notif-step-ico" aria-hidden="true"><StepIcon /></span> : null}
-                      Próximo paso: {step.txt}
-                    </span>
-                  )}
-                  <em>{timeAgo(n.createdAt)}</em>
+                  <span className="notif-item-ico" aria-hidden="true"><ItemIcon /></span>
+                  <div className="notif-item-body">
+                    <strong>{n.titulo || n.tipo}</strong>
+                    {(n.cuerpo || n.mensaje) && <span>{n.cuerpo || n.mensaje}</span>}
+                    {trato && (
+                      <span className="notif-trato">
+                        {ec ? `${ec.l} · ` : ""}{trato.titulo} · {fmt(trato.monto)}
+                      </span>
+                    )}
+                    {step && (
+                      <span className="notif-step">
+                        {StepIcon ? <span className="notif-step-ico" aria-hidden="true"><StepIcon /></span> : null}
+                        {step.txt}
+                      </span>
+                    )}
+                    <em>{timeAgo(n.createdAt)}</em>
+                  </div>
                 </button>
               );
             })}

@@ -93,7 +93,7 @@ export const nextStepFor = (trato, userId) => {
   if (e === "activo" && soyVendedor) return { icon: "person", txt: "Esperando el pago del comprador", cta: "Ver trato", actionable: false };
   if (e === "pago_pendiente" && soyComprador) return { icon: "scale", txt: "Tu pago está siendo verificado (menos de 1 h)", cta: "Ver estado", actionable: false };
   if (e === "pago_pendiente" && soyVendedor) return { icon: "scale", txt: "Estamos verificando el pago del comprador", cta: "Ver trato", actionable: false };
-  if (e === "pago_retenido" && soyVendedor) return { icon: "bank", txt: "El dinero está protegido: registra el envío", cta: "Registrar envío", actionable: true };
+  if (e === "pago_retenido" && soyVendedor) return { icon: "dollar", txt: "El dinero está protegido: registra el envío", cta: "Registrar envío", actionable: true };
   if (e === "pago_retenido" && soyComprador) return { icon: "shield", txt: "Pago protegido. El vendedor prepara la entrega", cta: "Ver trato", actionable: false };
   if (["en_entrega", "pendiente_confirmacion"].includes(e) && soyComprador) return { icon: "shield", txt: "¿Ya recibiste? Confirma para liberar el pago", cta: "Confirmar entrega", actionable: true };
   if (["en_entrega", "pendiente_confirmacion"].includes(e) && soyVendedor) return { icon: "bolt", txt: "Entrega registrada. Esperando confirmación del comprador", cta: "Ver trato", actionable: false };

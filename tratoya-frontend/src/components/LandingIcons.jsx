@@ -92,6 +92,26 @@ export function FlagIcon() {
   );
 }
 
+export function LockIconDark() {
+  return (
+    <Ic>
+      <rect x="5.5" y="10" width="13" height="10" rx="2.6" fill="rgba(11,41,39,0.25)" stroke="#0b2927" strokeWidth="1.7" />
+      <path d="M8.5 10V7.5a3.5 3.5 0 0 1 7 0V10" stroke="#0b2927" strokeWidth="1.7" strokeLinecap="round" />
+      <circle cx="12" cy="14.4" r="1.5" fill="#479818" />
+      <path d="M12 15.6v1.8" stroke="#0b2927" strokeWidth="1.5" strokeLinecap="round" />
+    </Ic>
+  );
+}
+
+export function DollarIcon() {
+  return (
+    <Ic>
+      <circle cx="12" cy="12" r="8.5" fill="rgba(158,216,25,0.14)" stroke="#9ed819" strokeWidth="1.6" />
+      <path d="M12 7.2v9.6M9.8 9.4c0-1.1 1-1.9 2.2-1.9s2.2.7 2.2 1.8c0 1.3-2.2 1.4-2.2 3 0 1.1 1 1.9 2.2 1.9s2.2-.8 2.2-1.9" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    </Ic>
+  );
+}
+
 export function BankIcon() {
   return (
     <Ic>
@@ -118,6 +138,8 @@ export const STEP_ICONS = {
   lock: LockIcon,
   scale: ScaleIcon,
   bank: BankIcon,
+  dollar: DollarIcon,
+  lockDark: LockIconDark,
   person: PersonIcon,
   flag: FlagIcon,
 };

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { fmt } from "../lib/utils";
-import { LockIcon } from "./LandingIcons";
+import { LockIconDark } from "./LandingIcons";
 
 const PAYMENT_KEY = import.meta.env.VITE_MANUAL_PAYMENT_KEY || "0092187758";
 const QR_URL = import.meta.env.VITE_MANUAL_PAYMENT_QR_URL || "/nequi-breb-qr.png";
@@ -79,7 +79,7 @@ export default function ManualPaymentBox({ amount, reference, busy, onReport, to
   if (!open) {
     return (
       <button className="secure-pay-btn" onClick={() => setOpen(true)} disabled={busy}>
-        <span className="secure-pay-ico" aria-hidden="true"><LockIcon /></span>
+        <span className="secure-pay-ico" aria-hidden="true"><LockIconDark /></span>
         <span className="secure-pay-copy">
           <strong>Pagar de forma segura con TratoYa</strong>
           <em>Transfiere y adjunta tu comprobante</em>
@@ -122,7 +122,7 @@ export default function ManualPaymentBox({ amount, reference, busy, onReport, to
               <em>a {PAYMENT_NAME}, no al vendedor</em>
             </div>
             <div className="pw-shield">
-              <span className="pw-shield-ico" aria-hidden="true"><LockIcon /></span>
+              <span className="pw-shield-ico" aria-hidden="true"><LockIconDark /></span>
               <p>Tu dinero queda <b>protegido en TratoYa</b> hasta que confirmes que recibiste lo acordado. Si algo sale mal, lo recuperas.</p>
             </div>
             <ul className="pw-points">
