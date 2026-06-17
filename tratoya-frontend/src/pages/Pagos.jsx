@@ -23,8 +23,11 @@ export default function Pagos({ toast }) {
   }, []);
 
   return (
-    <div className="page fi">
-      <h1 className="page-hd" style={{ fontSize: 21, marginBottom: 18 }}>Historial de pagos</h1>
+    <div className="page page-list fi">
+      <div className="page-band page-band--soft">
+        <h1 className="page-hd" style={{ fontSize: 21, marginBottom: 0 }}>Historial de pagos</h1>
+        <p className="page-sub">Movimientos, verificaciones y liberaciones de tus tratos</p>
+      </div>
 
       {selected && createPortal(
         <div className="overlay payment-flow-overlay payment-detail-overlay" onClick={() => setSelected(null)}>
@@ -93,7 +96,7 @@ export default function Pagos({ toast }) {
           <div className="empty-d">Tus pagos aparecerán aquí</div>
         </div>
       ) : (
-        <div style={{ display: "flex", flexDirection: "column", gap: 9 }}>
+        <div className="list-stack">
           {pagos.map((p, i) => {
             const st = PAGO_ESTADO[p.estado] || { l: p.estado || "—", c: "or" };
             return (

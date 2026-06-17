@@ -110,7 +110,7 @@ export default function NotificationBell({ setPage, setTratoId }) {
             {!loading && items.length === 0 && (
               <div className="notif-empty">
                 <div className="notif-empty-ico" aria-hidden="true"><BellIcon /></div>
-                <strong style={{ display: "block", color: "var(--n)", marginBottom: 4 }}>Todo al día</strong>
+                <strong className="notif-empty-title">Todo al día</strong>
                 Aquí verás avisos de pagos, entregas y pasos pendientes en tus tratos.
               </div>
             )}
