@@ -3,7 +3,7 @@ import { api } from "../lib/api";
 import { fmt, fmtDate, timeAgo, ESTADO, TIPO_ICO } from "../lib/utils";
 import EstadoPill from "../components/EstadoPill";
 import { SkeletonKpiGrid, SkeletonList } from "../components/SkeletonCard";
-import { ShieldIcon, LockIcon, CashIcon, FlagIcon, ScaleIcon, BoltIcon, DollarIcon, PersonIcon } from "../components/LandingIcons";
+import { ShieldIcon, LockIcon, CashIcon, FlagIcon, ScaleIcon, BoltIcon, CoinIcon, PersonIcon } from "../components/LandingIcons";
 
 let dashboardCache = null;
 
@@ -56,7 +56,7 @@ export default function Dashboard({ setPage, setTratoId, user, toast, setUser })
       if (t.estado === "activo" && soyComprador) return { t, Icon: CashIcon, txt: "Realiza el pago para proteger tu trato", cta: "Ir a pagar" };
       if (t.estado === "pago_pendiente" && soyComprador) return { t, Icon: LockIcon, txt: "Tu pago está siendo verificado (menos de 1 h)", cta: "Ver estado" };
       if (t.estado === "pago_pendiente" && soyVendedor) return { t, Icon: LockIcon, txt: "Estamos verificando el pago del comprador", cta: "Ver trato" };
-      if (t.estado === "pago_retenido" && soyVendedor) return { t, Icon: DollarIcon, txt: "El dinero está protegido: registra el envío", cta: "Registrar envío" };
+      if (t.estado === "pago_retenido" && soyVendedor) return { t, Icon: CoinIcon, txt: "El dinero está protegido: registra el envío", cta: "Registrar envío" };
       if (["en_entrega", "pendiente_confirmacion"].includes(t.estado) && soyComprador) return { t, Icon: ShieldIcon, txt: "¿Ya recibiste? Confirma para liberar el pago", cta: "Confirmar entrega" };
     }
     return null;

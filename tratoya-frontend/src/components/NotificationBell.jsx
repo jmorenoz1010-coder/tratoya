@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { api } from "../lib/api";
 import { timeAgo, fmt, nextStepFor, ESTADO } from "../lib/utils";
-import { BellIcon, STEP_ICONS, DollarIcon } from "./LandingIcons";
+import { BellIcon, STEP_ICONS, CoinIcon } from "./LandingIcons";
 
 function targetFor(n, trato, step) {
   const tipo = (n.tipo || "").toLowerCase();
@@ -106,7 +106,7 @@ export default function NotificationBell({ setPage, setTratoId }) {
               const ec = trato ? (ESTADO[trato.estado] || null) : null;
               const StepIcon = step?.icon ? STEP_ICONS[step.icon] : null;
               const tipo = (n.tipo || "").toLowerCase();
-              const ItemIcon = StepIcon || (tipo.includes("pago") ? DollarIcon : BellIcon);
+              const ItemIcon = StepIcon || (tipo.includes("pago") ? CoinIcon : BellIcon);
               return (
                 <button
                   key={n.id}

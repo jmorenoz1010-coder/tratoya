@@ -97,7 +97,7 @@ export default function Pagos({ toast }) {
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 9 }}>
           {pagos.map((p, i) => {
-            const st = PAGO_ESTADO[p.estado] || { l: p.estado || "—", c: "bg", icon: "dollar" };
+            const st = PAGO_ESTADO[p.estado] || { l: p.estado || "—", c: "bg", icon: "coin" };
             return (
               <div
                 key={i}

@@ -207,7 +207,7 @@ export default function CrearTrato({ setPage, toast, user }) {
                 setStep(2);
               }}
             >
-              Continuar →
+              Continuar <span className="btn-dark-cta-arrow" aria-hidden="true">→</span>
             </button>
           </div>
         )}
@@ -259,7 +259,7 @@ export default function CrearTrato({ setPage, toast, user }) {
               if (!["comprador", "vendedor", "compartida"].includes(f.quien)) { toast("Define quién paga la comisión.", "error"); return; }
               setStep(3);
             }}>
-              Continuar →
+              Continuar <span className="btn-dark-cta-arrow" aria-hidden="true">→</span>
             </button>
           </div>
         )}
@@ -279,8 +279,8 @@ export default function CrearTrato({ setPage, toast, user }) {
             <CommissionBreakdown monto={monto} quien={f.quien} />
             <div style={{ marginTop: 14, display: "flex", gap: 9 }}>
               <button className="btn bo blg" style={{ flex: 1 }} onClick={() => setStep(1)}>Editar</button>
-              <button className="btn btn-dark-cta blg create-glow-btn" style={{ flex: "0 1 280px", margin: "0 auto" }} onClick={create} disabled={loading}>
-                {loading ? <><div className="spin" /> Creando...</> : "🔒 Crear trato seguro"}
+              <button className="btn btn-dark-cta blg" style={{ flex: "0 1 280px", margin: "0 auto" }} onClick={create} disabled={loading}>
+                {loading ? <><div className="spin" /> Creando...</> : <><span className="btn-ico-white" aria-hidden="true">🔒</span> Crear trato seguro</>}
               </button>
             </div>
           </div>

@@ -103,21 +103,12 @@ export function LockIconDark() {
   );
 }
 
+export function CoinIcon() {
+  return <span className="ty-coin-emoji" aria-hidden="true">🪙</span>;
+}
+
 export function DollarIcon() {
-  return (
-    <Ic>
-      <circle cx="12" cy="12" r="9" fill="#0b2927" stroke="#9ed819" strokeWidth="1.8" />
-      <path
-        d="M13.4 7.2H11.2c-1.05 0-1.9.62-1.9 1.45s.85 1.35 2.05 1.35 2.05.62 2.05 1.5-.9 1.45-2.05 1.45H10.6"
-        stroke="#9ed819"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        fill="none"
-      />
-      <path d="M12 6.3v11.4" stroke="#9ed819" strokeWidth="2" strokeLinecap="round" />
-    </Ic>
-  );
+  return <CoinIcon />;
 }
 
 export function BankIcon() {
@@ -147,6 +138,7 @@ export const STEP_ICONS = {
   scale: ScaleIcon,
   bank: BankIcon,
   dollar: DollarIcon,
+  coin: CoinIcon,
   lockDark: LockIconDark,
   person: PersonIcon,
   flag: FlagIcon,

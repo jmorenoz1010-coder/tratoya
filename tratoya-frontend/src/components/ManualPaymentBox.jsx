@@ -131,7 +131,7 @@ export default function ManualPaymentBox({ amount, reference, busy, onReport, to
               <li><span>3</span> Verificamos el pago en menos de 1 hora y avisamos al vendedor.</li>
             </ul>
             <button className="btn btn-dark-cta blg" style={{ width: "100%" }} onClick={() => setStep(2)}>
-              Tengo claro, ¿cómo pago? →
+              Tengo claro, ¿cómo pago? <span className="btn-dark-cta-arrow" aria-hidden="true">→</span>
             </button>
           </div>
         )}
