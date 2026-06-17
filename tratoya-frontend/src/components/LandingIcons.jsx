@@ -107,7 +107,7 @@ export function DollarIcon() {
   return (
     <Ic>
       <circle cx="12" cy="12" r="8.5" fill="rgba(158,216,25,0.14)" stroke="#9ed819" strokeWidth="1.6" />
-      <path d="M12 7.2v9.6M9.8 9.4c0-1.1 1-1.9 2.2-1.9s2.2.7 2.2 1.8c0 1.3-2.2 1.4-2.2 3 0 1.1 1 1.9 2.2 1.9s2.2-.8 2.2-1.9" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M12 6.8v10.4M9.4 9.1c0-1 .9-1.7 2-1.7h1.2c1.2 0 2.1.7 2.1 1.7 0 1.2-2.1 1.3-2.1 2.8 0 1 .9 1.7 2.1 1.7h1.1c1.2 0 2.1-.7 2.1-1.7" stroke="#fff" strokeWidth="1.55" strokeLinecap="round" strokeLinejoin="round" fill="none" />
     </Ic>
   );
 }

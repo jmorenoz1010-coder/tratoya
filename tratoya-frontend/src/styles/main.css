@@ -353,6 +353,65 @@ tbody tr:hover td{background:var(--s50)}
 .trato-row-arrow{margin-left:auto;color:var(--s300,#CBD3DD);font-weight:900;font-size:14px;transition:transform .18s,color .18s}
 .trato-row--tap:hover .trato-row-arrow{transform:translateX(3px);color:var(--g2)}
 .trato-chip-action{color:#fff;animation:pulse 2.4s ease infinite;border:none}
+/* legacy — usar .estado-pill */
+.estado-pill{
+  display:inline-flex;
+  align-items:center;
+  gap:7px;
+  padding:5px 12px 5px 6px;
+  border-radius:999px;
+  background:var(--dg-grad-soft);
+  border:1px solid rgba(168,196,0,.16);
+  max-width:100%;
+  vertical-align:middle;
+}
+.estado-pill-ico{
+  width:22px;
+  height:22px;
+  border-radius:7px;
+  background:var(--ico-dark);
+  border:1px solid rgba(168,196,0,.18);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:13px;
+  flex-shrink:0;
+}
+.estado-pill-txt{
+  font-size:10px;
+  font-weight:800;
+  color:#9ed819;
+  text-transform:uppercase;
+  letter-spacing:.35px;
+  line-height:1.25;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.page-subhead{display:flex;align-items:center;gap:12px;margin-bottom:8px}
+.page-back-link{
+  background:none;
+  border:none;
+  padding:0;
+  margin:0;
+  color:var(--g2);
+  font-family:inherit;
+  font-size:13px;
+  font-weight:700;
+  cursor:pointer;
+  flex-shrink:0;
+  -webkit-tap-highlight-color:transparent;
+}
+.page-back-link:hover{opacity:.85}
+.page-ref-code{
+  font-family:'Manrope',sans-serif;
+  font-weight:700;
+  font-size:12.5px;
+  color:var(--g2);
+  letter-spacing:.02em;
+}
+.td-estado-pill{margin:0 0 6px}
+.td-strip-wait{font-size:12.5px;color:var(--s500)}
 /* Tonos por etapa de la timeline — solo verdes en degradado */
 .trato-chip-action.tono-do{background:linear-gradient(135deg,#b5e400 0%,#5fae00 100%);color:#07303a}
 .trato-chip-action.tono-wait{background:linear-gradient(135deg,#0b6b4f 0%,#0d8a63 100%);color:#eafff5}
@@ -479,6 +538,7 @@ tbody tr:hover td{background:var(--s50)}
 .pago-card:hover{border-color:var(--g);box-shadow:0 4px 16px rgba(7,25,47,.09);transform:translateY(-1px)}
 .pago-card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:9px}
 .pago-card-trato-info{min-width:0;flex:1}
+.pago-card-trato-info .estado-pill{margin-top:6px}
 .pago-card-codigo{font-family:'Manrope';font-weight:700;font-size:11px;color:var(--g2);display:block;margin-bottom:2px}
 .pago-card-titulo{font-size:13.5px;font-weight:600;color:var(--n);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;max-width:100%}
 .pago-card-bottom{display:flex;align-items:center;justify-content:space-between}
@@ -655,8 +715,19 @@ tbody tr:hover td{background:var(--s50)}
   /* Títulos de página visibles sobre el fondo oscuro */
   .page-hd{color:#fff!important}
   .main{margin-left:0;padding-bottom:max(92px,calc(72px + env(safe-area-inset-bottom) + 16px));background:radial-gradient(circle at 88% 4%,rgba(169,235,27,.13),transparent 22%),linear-gradient(180deg,#071819 0,#0b2523 112px,#f4f7f5 112px,#f4f7f5 100%)}
-  .topbar{height:58px;padding:0 14px;background:rgba(7,24,25,.92);border-bottom:1px solid rgba(169,235,27,.13);box-shadow:none;backdrop-filter:blur(16px)}
+  .topbar{height:58px;padding:0 14px 0 6px;background:rgba(7,24,25,.92);border-bottom:1px solid rgba(169,235,27,.13);box-shadow:none;backdrop-filter:blur(16px)}
   .topbar span{color:#f7fff9!important}
+  .topbar .app-back-mini{
+    background:transparent!important;
+    box-shadow:none!important;
+    color:#fff!important;
+    width:32px!important;
+    height:32px!important;
+    margin-left:0!important;
+    border-radius:8px!important;
+  }
+  .topbar .app-back-mini:hover{opacity:.82}
+  .page-back-link,.page-ref-code{color:#fff!important}
   .topbar .topbar-user-chip{background:rgba(255,255,255,.1)!important;border-color:rgba(255,255,255,.12)!important;color:#fff!important}
   .topbar-user-name{display:none}
   .topbar-menu-arrow{display:inline;opacity:.55;font-size:18px;line-height:1}

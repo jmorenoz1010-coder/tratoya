@@ -216,6 +216,22 @@ export const calcularComisionUI = (monto, quien = "comprador") => {
   };
 };
 
+export const ESTADO_ICON = {
+  borrador: "bolt",
+  activo: "cash",
+  pago_pendiente: "scale",
+  pago_retenido: "lock",
+  en_entrega: "bolt",
+  pendiente_confirmacion: "bolt",
+  confirmado: "shield",
+  completado: "shield",
+  disputado: "scale",
+  cancelado: "flag",
+  expirado: "flag",
+};
+
+export const estadoIconKey = (estado) => ESTADO_ICON[estado] || "bolt";
+
 export const ESTADO = {
   borrador: {
     l: "Esperando aceptación", c: "or",

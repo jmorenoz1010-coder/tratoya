@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { api } from "../lib/api";
 import { fmt, fmtDate, timeAgo, ESTADO, TIPO_ICO } from "../lib/utils";
+import EstadoPill from "../components/EstadoPill";
 import { SkeletonKpiGrid, SkeletonList } from "../components/SkeletonCard";
 import { ShieldIcon, LockIcon, CashIcon, FlagIcon, ScaleIcon, BoltIcon, DollarIcon, PersonIcon } from "../components/LandingIcons";
 
@@ -182,7 +183,6 @@ export default function Dashboard({ setPage, setTratoId, user, toast, setUser })
           ) : (
             <div className="deal-list" style={{ display: "flex", flexDirection: "column", gap: 9 }}>
               {activos.map((t) => {
-                const ec = ESTADO[t.estado] || ESTADO.borrador;
                 const cp = t.vendedor?.id === user?.id ? t.comprador : t.vendedor;
                 return (
                   <div
@@ -194,18 +194,18 @@ export default function Dashboard({ setPage, setTratoId, user, toast, setUser })
                       {TIPO_ICO[t.tipo] || "📋"}
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontWeight: 700, fontSize: 13.5, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", marginBottom: 2 }}>
+                      <div style={{ fontWeight: 700, fontSize: 13.5, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", marginBottom: 4 }}>
                         {t.titulo}
                       </div>
-                      <div style={{ fontSize: 12, color: "var(--s600)" }}>
+                      <EstadoPill estado={t.estado} />
+                      <div style={{ fontSize: 12, color: "var(--s600)", marginTop: 4 }}>
                         {cp ? `${cp.nombre} ${cp.apellido}` : "Esperando contraparte"}
                       </div>
                     </div>
-                    <div style={{ textAlign: "right", flexShrink: 0 }}>
-                      <div style={{ fontFamily: "Manrope", fontWeight: 800, fontSize: 13.5, marginBottom: 3 }}>
+                    <div style={{ textAlign: "right", flexShrink: 0, alignSelf: "flex-start" }}>
+                      <div style={{ fontFamily: "Manrope", fontWeight: 800, fontSize: 13.5 }}>
                         {fmt(t.monto)}
                       </div>
-                      <span className={`bdg ${ec.c}`} style={{ fontSize: 10 }}>{ec.l}</span>
                     </div>
                   </div>
                 );

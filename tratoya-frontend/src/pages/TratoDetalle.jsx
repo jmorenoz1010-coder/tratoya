@@ -7,6 +7,7 @@ import StarRating from "../components/StarRating";
 import Avatar from "../components/Avatar";
 import ManualPaymentBox from "../components/ManualPaymentBox";
 import CaducidadAviso from "../components/CaducidadAviso";
+import EstadoPill from "../components/EstadoPill";
 import { ShieldIcon, ScaleIcon, CashIcon, LockIcon, PersonIcon, BoltIcon, FlagIcon } from "../components/LandingIcons";
 
 function ReviewBox({ tratoId, reviews, user, toast, onSaved }) {
@@ -182,11 +183,9 @@ export default function TratoDetalle({ tratoId, setPage, setDisputeTratoId, user
   return (
     <div className="page fi">
       <div style={{ marginBottom: 16 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 9, marginBottom: 8 }}>
-          <button className="btn bg_ bsm" onClick={() => setPage("tratos")}>← Volver</button>
-          <div style={{ height: 14, width: 1, background: "var(--s200)" }} />
-          <span style={{ fontFamily: "Manrope", fontWeight: 700, fontSize: 12.5, color: "var(--g2)" }}>{trato.codigo}</span>
-          <span className={`bdg ${ec.c}`}>{ec.l}</span>
+        <div className="page-subhead">
+          <button type="button" className="page-back-link" onClick={() => setPage("tratos")}>← Volver</button>
+          <span className="page-ref-code">{trato.codigo}</span>
         </div>
         <CaducidadAviso trato={trato} />
         {/* ── Guía de próximo paso ────────────────────────── */}
@@ -308,10 +307,11 @@ export default function TratoDetalle({ tratoId, setPage, setDisputeTratoId, user
               <div className="td-strip-ico">{TIPO_ICO[trato.tipo] || "📋"}</div>
               <div className="td-strip-info">
                 <h2>{trato.titulo}</h2>
+                <EstadoPill estado={trato.estado} className="td-estado-pill" />
                 <div className="td-strip-cp">
                   {cp
                     ? <><Avatar name={`${cp.nombre} ${cp.apellido}`} size={18} /> {esV ? "Comprador" : "Vendedor"}: <b>{cp.nombre} {cp.apellido}</b></>
-                    : <span style={{ color: "var(--or)" }}>⚠ Esperando que alguien acepte el trato</span>}
+                    : <span className="td-strip-wait">Sin contraparte aún</span>}
                 </div>
               </div>
               <div className="td-strip-amount">{fmt(montoTrato)}</div>

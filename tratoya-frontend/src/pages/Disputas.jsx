@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { api } from "../lib/api";
 import { fmtDate, ESTADO, DISPUTA_ESTADO } from "../lib/utils";
+import EstadoPill from "../components/EstadoPill";
 
 export default function Disputas({ toast, initialTratoId, clearInitialTratoId, setPage, setTratoId }) {
   const [d, setD] = useState([]);
@@ -101,12 +102,12 @@ export default function Disputas({ toast, initialTratoId, clearInitialTratoId, s
         d.map((x, i) => (
           <div key={i} className="card" style={{ padding: "15px 17px", marginBottom: 9 }}>
             <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
-              <div style={{ minWidth: 0 }}>
+              <div style={{ minWidth: 0, flex: 1 }}>
                 <div style={{ fontFamily: "Manrope", fontWeight: 800, fontSize: 11, color: "var(--g2)", marginBottom: 3 }}>{x.Trato?.codigo || ""}</div>
-                <div className="wrap-any" style={{ fontWeight: 700, fontSize: 14, marginBottom: 2 }}>{x.motivo}</div>
-                <div className="wrap-any" style={{ fontSize: 12, color: "var(--s600)" }}>{x.descripcion?.slice(0, 160)}{x.descripcion?.length > 160 ? "..." : ""}</div>
+                <div className="wrap-any" style={{ fontWeight: 700, fontSize: 14, marginBottom: 6 }}>{x.motivo}</div>
+                <EstadoPill label={DISPUTA_ESTADO[x.estado]?.l || x.estado} icon="scale" />
+                <div className="wrap-any" style={{ fontSize: 12, color: "var(--s600)", marginTop: 6 }}>{x.descripcion?.slice(0, 160)}{x.descripcion?.length > 160 ? "..." : ""}</div>
               </div>
-                <span className={`bdg ${DISPUTA_ESTADO[x.estado]?.c || "or"}`}>{DISPUTA_ESTADO[x.estado]?.l || x.estado}</span>
             </div>
             <div className="g4" style={{ marginTop: 12, gap: 8 }}>
               {[

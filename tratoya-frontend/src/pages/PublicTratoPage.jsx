@@ -5,6 +5,7 @@ import { ESTADO, calcularComisionUI, parseCopAmount } from "../lib/utils";
 import CommissionBreakdown from "../components/CommissionBreakdown";
 import ManualPaymentBox from "../components/ManualPaymentBox";
 import { ShieldIcon } from "../components/LandingIcons";
+import EstadoPill from "../components/EstadoPill";
 import logo from "../assets/tratoya-logo.png";
 import "../styles/auth-slide.css";
 
@@ -118,9 +119,9 @@ export default function PublicTratoPage({ link, session, goAuth, toast }) {
             <div>
               <div className="ty-checkout-code">{trato.codigo}</div>
               <h1>{trato.titulo}</h1>
+              <EstadoPill estado={trato.estado} className="ty-checkout-estado" />
               <p>Creado por {vendedor}</p>
             </div>
-            <span className={`bdg ${ec.c} ty-checkout-badge`}>{ec.l}</span>
           </div>
 
           {trato.descripcion && (

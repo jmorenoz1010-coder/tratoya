@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { api } from "../lib/api";
 import { fmt, fmtDate, PAGO_ESTADO } from "../lib/utils";
+import EstadoPill from "../components/EstadoPill";
 
 let pagosCache = [];
 
@@ -41,7 +42,7 @@ export default function Pagos({ toast }) {
                 const st = PAGO_ESTADO[selected.estado];
                 return st ? (
                   <div className="payment-status-panel">
-                    <span className={`bdg ${st.c}`} style={{ marginBottom: 6, display: "inline-block" }}>{st.l}</span>
+                    <span className="estado-pill-wrap" style={{ marginBottom: 6, display: "inline-block" }}><EstadoPill label={st.l} icon="dollar" /></span>
                     <p style={{ margin: 0, fontSize: 13, color: "var(--s600)", lineHeight: 1.55 }}>{st.desc}</p>
                     {st.help && <p style={{ margin: "5px 0 0", fontSize: 12, color: "var(--g2)", fontWeight: 600 }}>{st.help}</p>}
                   </div>
@@ -106,8 +107,8 @@ export default function Pagos({ toast }) {
                   <div className="pago-card-trato-info">
                     <span className="pago-card-codigo">{p.Trato?.codigo || "—"}</span>
                     <span className="pago-card-titulo">{p.Trato?.titulo || "Pago"}</span>
+                    <EstadoPill label={st.l} icon="dollar" />
                   </div>
-                  <span className={`bdg ${st.c}`}>{st.l}</span>
                 </div>
                 <div className="pago-card-bottom">
                   <span className="pago-card-amount">{fmt(p.monto)}</span>
