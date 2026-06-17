@@ -236,7 +236,9 @@ tbody tr:hover td{background:var(--s50)}
   .crear-trato-page .wz-l.a{color:#9ed819}
   .crear-trato-page .wz-ln{background:var(--s100)}
 }
+.ty-coin-emoji{font-size:1.15em;line-height:1;display:inline-block;vertical-align:-0.08em}
 .estado-pill-ico .ty-coin-emoji{font-size:14px;line-height:1}
+.ty-bell-emoji{font-size:1.2em;line-height:1;display:inline-block;vertical-align:-0.06em}
 
 /* ── Toast ──────────────────────────────────────────── */
 .toast{position:fixed;top:18px;right:18px;z-index:9999;background:var(--n);color:#fff;padding:11px 18px;border-radius:11px;font-size:13.5px;font-weight:600;box-shadow:0 8px 28px rgba(7,25,47,.2);display:flex;align-items:center;gap:9px;animation:toastIn .3s cubic-bezier(.34,1.56,.64,1) both;max-width:340px}
@@ -684,7 +686,8 @@ tbody tr:hover td{background:var(--s50)}
 .nav-lbl{font-size:9.5px;font-weight:900;color:rgba(169,235,27,.52);letter-spacing:1.2px;text-transform:uppercase;padding:9px 9px 4px}
 .ni{display:flex;align-items:center;gap:8px;padding:10px 11px;border-radius:12px;cursor:pointer;font-size:13px;font-weight:800;color:rgba(244,255,249,.68);transition:all .15s;margin-bottom:3px;user-select:none;position:relative;border:1px solid transparent}
 .ni .nav-ico{font-size:18px;line-height:1;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0}
-.ni.nav-pagos .nav-ico{font-size:20px;line-height:1}
+.ni.nav-pagos .nav-ico{font-size:22px;line-height:1}
+.ni.nav-pagos .ty-coin-emoji{font-size:1.35em}
 .ty-coin-emoji{font-size:1.15em;line-height:1;display:inline-block;vertical-align:-0.08em}
 .ni .nav-ico--logout{font-size:15px;font-weight:800;opacity:.85}
 .ni:hover{background:rgba(255,255,255,.08);color:#fff;border-color:rgba(255,255,255,.08)}
@@ -834,7 +837,8 @@ tbody tr:hover td{background:var(--s50)}
   .crear-trato-page .crear-cancel-btn{display:none}
   .mis-tratos-title{margin-bottom:18px!important;font-size:21px!important;padding-bottom:2px}
   .mis-tratos-page .trato-filters-row{margin-top:12px}
-  .ni.nav-pagos .nav-ico{font-size:22px!important;line-height:1!important}
+  .ni.nav-pagos .nav-ico{font-size:24px!important;line-height:1!important}
+  .ni.nav-pagos .ty-coin-emoji{font-size:1.4em!important}
   .topbar .topbar-user-chip{background:rgba(255,255,255,.1)!important;border-color:rgba(255,255,255,.12)!important;color:#fff!important}
   .topbar-user-name{display:none}
   .topbar-menu-arrow{display:inline;opacity:.55;font-size:18px;line-height:1}
@@ -3379,18 +3383,19 @@ tbody tr:hover td{background:var(--s50)}
   align-items: center;
   justify-content: center;
 }
-.notif-bell-ico { font-size: 20px; line-height: 1; display: flex; color: #9ed819; }
+.notif-bell-ico { font-size: 20px; line-height: 1; display: flex; align-items: center; justify-content: center; }
 @keyframes bellRing {
   0%, 100% { transform: rotate(0deg); }
-  10% { transform: rotate(14deg); }
-  20% { transform: rotate(-12deg); }
-  30% { transform: rotate(10deg); }
-  40% { transform: rotate(-8deg); }
+  10% { transform: rotate(16deg); }
+  20% { transform: rotate(-14deg); }
+  30% { transform: rotate(12deg); }
+  40% { transform: rotate(-10deg); }
   50% { transform: rotate(0deg); }
 }
-.notif-bell-btn.has-unread .notif-bell-ico {
-  animation: bellRing 2.4s ease-in-out infinite;
-  transform-origin: 50% 4px;
+.notif-bell-btn.has-unread .ty-bell-emoji {
+  animation: bellRing 2.2s ease-in-out infinite;
+  transform-origin: 50% 12%;
+  display: inline-block;
 }
 .notif-bell-badge {
   position: absolute;

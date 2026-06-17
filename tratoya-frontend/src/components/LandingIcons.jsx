@@ -104,7 +104,7 @@ export function LockIconDark() {
 }
 
 export function CoinIcon() {
-  return <span className="ty-coin-emoji" aria-hidden="true">🪙</span>;
+  return <span className="ty-coin-emoji" aria-hidden="true">💰</span>;
 }
 
 export function DollarIcon() {
@@ -122,12 +122,7 @@ export function BankIcon() {
 }
 
 export function BellIcon() {
-  return (
-    <Ic>
-      <path d="M12 3.2a5.2 5.2 0 0 0-5.2 5.2v2.4l-1.4 2.3a1.2 1.2 0 0 0 1 1.8h11.2a1.2 1.2 0 0 0 1-1.8l-1.4-2.3V8.4A5.2 5.2 0 0 0 12 3.2Z" fill="rgba(158,216,25,0.14)" stroke="#9ed819" strokeWidth="1.6" strokeLinejoin="round" />
-      <path d="M10 18.8a2 2 0 0 0 4 0" stroke="#fff" strokeWidth="1.6" strokeLinecap="round" />
-    </Ic>
-  );
+  return <span className="ty-bell-emoji" aria-hidden="true">🔔</span>;
 }
 
 export const STEP_ICONS = {
