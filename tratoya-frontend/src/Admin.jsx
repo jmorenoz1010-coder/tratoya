@@ -195,6 +195,8 @@ textarea.inp{height:auto;padding:9px 12px;resize:vertical}
 /* Badges */
 .bdg{display:inline-flex;align-items:center;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;letter-spacing:.3px;text-transform:uppercase;white-space:nowrap}
 .bdg.gn{background:var(--cr);color:var(--g2)}.bdg.nb{background:#E6EBF2;color:var(--n3)}.bdg.or{background:var(--orb);color:var(--or)}.bdg.rd{background:var(--rdb);color:var(--rd)}.bdg.bg{background:var(--s100);color:var(--s600)}.bdg.pu{background:var(--pub);color:var(--pu)}
+.verified-premium{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;background:linear-gradient(135deg,#0B2A4A,#6DCB00);color:#fff;font-size:10px;font-weight:900;letter-spacing:.6px;text-transform:uppercase;box-shadow:0 8px 18px rgba(109,203,0,.22)}
+.verified-premium:before{content:"✓";display:inline-grid;place-items:center;width:16px;height:16px;border-radius:50%;background:#fff;color:#49A000;font-size:11px;font-weight:900}
 
 /* Table */
 .tw{overflow-x:auto;border-radius:10px;border:1px solid var(--s100)}
@@ -208,8 +210,8 @@ tbody td{padding:9px 13px;border-bottom:1px solid var(--s100);color:var(--s800)}
 tbody tr:last-child td{border-bottom:none}tbody tr:hover td{background:var(--s50)}
 
 /* Modal */
-.overlay{position:fixed;inset:0;background:rgba(6,15,30,.7);backdrop-filter:blur(4px);z-index:200;display:flex;align-items:center;justify-content:center;padding:20px;overflow:auto}
-.modal{background:#fff;border-radius:14px;width:100%;max-width:520px;max-height:90vh;overflow-y:auto;box-shadow:var(--shl);animation:pi .25s ease both;margin:auto}
+.overlay{position:fixed;inset:0;background:rgba(6,15,30,.7);backdrop-filter:blur(4px);z-index:200;display:flex;align-items:flex-start;justify-content:center;padding:88px 20px 28px;overflow:auto}
+.modal{background:#fff;border-radius:14px;width:100%;max-width:520px;max-height:calc(100vh - 116px);overflow-y:auto;box-shadow:var(--shl);animation:pi .25s ease both;margin:0 auto auto}
 .modal-hd{padding:16px 20px;border-bottom:1px solid var(--s100);display:flex;align-items:center;justify-content:space-between}
 .modal-bd{padding:18px 20px}
 .modal-ft{padding:14px 20px;border-top:1px solid var(--s100);display:flex;gap:8px;justify-content:flex-end}
@@ -241,6 +243,12 @@ tbody tr:last-child td{border-bottom:none}tbody tr:hover td{background:var(--s50
 .log-item{display:flex;gap:11px;padding:9px 0;border-bottom:1px solid var(--s100)}
 .log-item:last-child{border-bottom:none}
 .log-dot{width:8px;height:8px;border-radius:50%;margin-top:5px;flex-shrink:0}
+.log-list{display:grid;gap:0}
+.log-row{display:flex;gap:12px;align-items:flex-start;padding:10px 0;border-bottom:1px solid var(--s100)}
+.log-row:last-child{border-bottom:none}
+.log-row b{display:block;font-size:13px;font-weight:800;color:var(--n);line-height:1.35}
+.log-row p{font-size:11.5px;color:var(--s400);margin-top:3px}
+.log-row .log-dot{background:var(--g2);box-shadow:0 0 0 4px rgba(72,152,24,.11)}
 
 /* Admin login */
 .adm-login{min-height:100vh;background:radial-gradient(circle at 72% 20%,rgba(169,235,27,.2),transparent 28%),linear-gradient(140deg,#061315 0%,#0b2526 48%,#071012 100%);display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden}
@@ -258,6 +266,15 @@ tbody tr:last-child td{border-bottom:none}tbody tr:hover td{background:var(--s50
 /* Grid helpers */
 .g2{display:grid;grid-template-columns:1fr 1fr;gap:11px}
 .g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:11px}
+.admin-chart{height:210px;display:flex;align-items:flex-end;gap:8px;padding:12px;border-radius:12px;background:linear-gradient(180deg,#f9fbf7,#eef5e4);border:1px solid rgba(168,196,0,.18)}
+.admin-chart-bar{flex:1;min-width:10px;border-radius:9px 9px 3px 3px;background:linear-gradient(180deg,var(--g),var(--g2));box-shadow:0 10px 18px rgba(72,152,24,.16);position:relative}.admin-chart-bar span{position:absolute;bottom:-22px;left:50%;transform:translateX(-50%);font-size:9px;color:var(--s500);white-space:nowrap}
+.ops-kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}.state-stack{display:grid;gap:9px}.state-row{display:grid;grid-template-columns:150px 1fr 40px;gap:10px;align-items:center;font-size:12px}.state-row b{font-size:12px}.state-row div:nth-child(2){height:8px;background:var(--s100);border-radius:999px;overflow:hidden}.state-row i{display:block;height:100%;background:linear-gradient(90deg,var(--g),var(--g2));border-radius:999px}
+.mini{display:flex;flex-direction:column;align-items:flex-start;gap:5px;min-width:0;padding:10px 12px;border-radius:10px;background:var(--s50);border:1px solid var(--s100)}
+.mini b{display:block;font-family:Manrope;font-size:17px;line-height:1.15;color:var(--n);white-space:normal;overflow-wrap:anywhere}
+.mini span{display:block;font-size:11px;line-height:1.25;color:var(--s600);font-weight:800;text-transform:uppercase;letter-spacing:.3px}
+.ops-toolbar{display:flex;gap:10px;justify-content:space-between;align-items:center;flex-wrap:wrap;margin-bottom:12px}.ops-filter-pills{display:flex;gap:7px;flex-wrap:wrap}.ops-filter-pills button{border:1px solid var(--s100);background:#fff;border-radius:999px;padding:8px 11px;font-size:11.5px;font-weight:800;cursor:pointer;color:var(--s600)}.ops-filter-pills button.active{background:var(--n);color:#fff;border-color:var(--n)}
+.ops-flow{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:14px}.ops-flow-card{border:1px solid var(--s100);border-radius:12px;background:#fff;padding:12px;min-height:86px;box-shadow:var(--sh);cursor:pointer;text-align:left}.ops-flow-card.active{border-color:rgba(168,196,0,.5);box-shadow:0 10px 28px rgba(72,152,24,.12)}.ops-flow-card span{font-size:10px;text-transform:uppercase;letter-spacing:.45px;color:var(--s400);font-weight:900}.ops-flow-card strong{display:block;font-family:Manrope;font-size:22px;color:var(--n);margin-top:8px}.ops-flow-card em{display:block;font-style:normal;font-size:11px;color:var(--s500);margin-top:4px}
+.managed-chip{display:inline-flex;align-items:center;gap:5px;background:#f2f7ea;color:var(--g2);border:1px solid rgba(168,196,0,.28);border-radius:999px;padding:4px 8px;font-size:10.5px;font-weight:800}.admin-payment-flow-modal{max-width:680px!important;max-height:82vh!important}.transfer-callout{margin-top:10px;border:1.5px solid rgba(168,196,0,.42);background:#f6fbeb;border-radius:12px;padding:12px 14px}.transfer-callout span{display:block;font-size:10px;color:var(--s500);font-weight:900;text-transform:uppercase;letter-spacing:.5px}.transfer-callout strong{display:block;font-family:Manrope;font-size:22px;color:var(--g2);margin-top:4px}.transfer-callout p{font-size:12px;color:var(--s600);margin-top:3px}
 @media (max-width:900px){
   .admin-shell{display:block!important;min-height:100vh}
   .admin-sidebar{position:fixed!important;left:0!important;right:0!important;bottom:0!important;top:auto!important;width:100%!important;min-width:0!important;max-width:none!important;height:72px!important;z-index:120;border-right:0;border-top:1px solid rgba(255,255,255,.08);overflow:hidden}
@@ -270,10 +287,16 @@ tbody tr:last-child td{border-bottom:none}tbody tr:hover td{background:var(--s50
   .topbar{height:auto;min-height:54px;padding:9px 12px;gap:8px;align-items:flex-start;flex-wrap:wrap}
   .topbar>div{min-width:0;flex-wrap:wrap}
   .page{padding:14px 12px}
-  .stat-grid,.role-grid,.g2,.g3{grid-template-columns:1fr!important}
+  .stat-grid,.role-grid,.g2,.g3,.ops-kpi-grid,.ops-flow{grid-template-columns:1fr!important}
+  .ops-toolbar{align-items:stretch!important}
+  .ops-filter-pills{overflow-x:auto;padding-bottom:2px}
+  .admin-chart{height:180px;overflow-x:auto;min-width:0}
+  .admin-chart-bar{min-width:18px}
+  .state-row{grid-template-columns:1fr!important;gap:4px}
   .tw{margin-left:-2px;margin-right:-2px}
   table{min-width:780px}
-  .modal{max-width:calc(100vw - 20px);max-height:92vh}
+  .overlay{padding:76px 10px 18px}
+  .modal{max-width:calc(100vw - 20px);max-height:calc(100vh - 94px)}
   .modal-hd,.modal-bd,.modal-ft{padding-left:14px;padding-right:14px}
   .toast-wrap{left:10px;right:10px;top:10px}
   .toast{max-width:none}
@@ -369,20 +392,45 @@ function AdminDashboard({ toast, setPage }) {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [actividad, setActividad] = useState([]);
+  const [monthlyGoal, setMonthlyGoal] = useState(() => Number(localStorage.getItem('ty_admin_monthly_goal') || 0));
+
+  const normalizeActivity = useCallback((items = []) => {
+    const seen = new Set();
+    return items
+      .map((a, index) => {
+        const title = a.titulo || a.title || a.descripcion || a.message || 'Movimiento operativo';
+        const date = a.createdAt || a.created_at || a.fecha || null;
+        const type = a.tipo || a.type || 'actividad';
+        return { ...a, id: a.id || [type, date || index, title].join('-'), title, date, type };
+      })
+      .filter((a) => {
+        const key = [a.type, a.title, a.date ? new Date(a.date).getTime() : ''].join('|');
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      })
+      .slice(0, 8);
+  }, []);
 
   const load = useCallback((silent = false) => {
     if (!silent) setLoading(true);
-    Promise.all([
-      api.get("/admin/stats"),
-      api.get("/admin/actividad-reciente"),
-    ]).then(([s, a]) => {
-      setStats(s.data || s);
-      setActividad(a.data || []);
-    }).catch(() => {
-      // fallback demo stats si el endpoint aún no existe
-      setStats({ usuarios: 0, tratos: 0, volumen: 0, disputas_abiertas: 0, kyc_pendientes: 0, comisiones_mes: 0, tratos_hoy: 0, registros_hoy: 0 });
-    }).finally(() => setLoading(false));
-  }, []);
+    Promise.all([api.get('/admin/stats'), api.get('/admin/actividad-reciente')])
+      .then(([sRes, aRes]) => {
+        const data = sRes.data || sRes;
+        setStats(data);
+        setActividad(normalizeActivity(aRes.data || aRes || []));
+        if (!monthlyGoal) {
+          const initial = Number(data.meta_mensual || 5000000);
+          setMonthlyGoal(initial);
+        }
+      })
+      .catch((e) => {
+        toast?.(e.message || 'No se pudo cargar el resumen admin', 'error');
+        setStats({ usuarios: 0, tratos: 0, volumen: 0, comisiones_mes: 0, estados_mes: {}, serie_14_dias: [] });
+        setActividad([]);
+      })
+      .finally(() => setLoading(false));
+  }, [monthlyGoal, normalizeActivity, toast]);
 
   useEffect(() => {
     load();
@@ -390,75 +438,34 @@ function AdminDashboard({ toast, setPage }) {
     return () => clearInterval(t);
   }, [load]);
 
+  const goal = monthlyGoal || Number(stats?.meta_mensual || 5000000);
+  const net = Number(stats?.comisiones_mes || 0);
+  const goalPct = goal > 0 ? Math.min(100, Math.round((net / goal) * 100)) : 0;
+  const series = stats?.serie_14_dias || [];
+  const maxSeries = Math.max(1, ...series.map(d => Number(d.volumen || 0)));
+  const states = Object.entries(stats?.estados_mes || {});
+  const maxState = Math.max(1, ...states.map(([,v]) => Number(v || 0)));
   const kpis = stats ? [
-    { ico: "👥", bg: "#E6EBF2", l: "Usuarios totales", v: stats.usuarios || 0, sub: `+${stats.registros_hoy || 0} hoy`, page: "usuarios" },
-    { ico: "🤝", bg: "var(--cr)", l: "Tratos totales", v: stats.tratos || 0, sub: `${stats.tratos_hoy || 0} hoy`, page: "tratos" },
-    { ico: "💰", bg: "var(--cr)", l: "Volumen total", v: fmt(stats.volumen), sub: `${stats.pagos_hoy || 0} pagos hoy`, page: "pagos" },
-    { ico: "⚖️", bg: "#FEECEC", l: "Disputas abiertas", v: stats.disputas_abiertas || 0, sub: `${stats.kyc_pendientes || 0} KYC pendientes`, page: "disputas" },
+    { l: 'Usuarios', v: stats.usuarios || 0, sub: '+' + (stats.registros_hoy || 0) + ' hoy', page: 'usuarios' },
+    { l: 'Tratos', v: stats.tratos || 0, sub: (stats.tratos_hoy || 0) + ' hoy', page: 'tratos' },
+    { l: 'Volumen aprobado', v: fmt(stats.volumen), sub: (stats.pagos_hoy || 0) + ' pagos hoy', page: 'pagos' },
+    { l: 'Pendientes', v: stats.operaciones_pendientes || 0, sub: fmt(stats.fondos_por_liberar || 0) + ' por liberar', page: 'pagos' },
   ] : [];
 
-  return (
-    <div className="page fi">
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-        <div>
-          <h1 style={{ fontSize: 20 }}>Panel de Control</h1>
-          <p style={{ color: "var(--s600)", fontSize: 12.5, marginTop: 2 }}>Vista general de la plataforma</p>
-        </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 12px", background: "#fff", borderRadius: 8, border: "1px solid var(--s100)", fontSize: 12.5, fontWeight: 600 }}>
-          <div className="live" /> Sistema operativo
-        </div>
-      </div>
-
-      <div className="stat-grid fi">
-        {loading
-          ? [1,2,3,4].map(i => <div key={i} className="stat"><div style={{ height: 80, background: "var(--s100)", borderRadius: 8 }} /></div>)
-          : kpis.map((k, i) => (
-            <div key={i} className="stat" onClick={() => setPage?.(k.page)} title={`Abrir ${k.l}`}>
-              <div className="stat-ico" style={{ background: k.bg }}>{k.ico}</div>
-              <div className="stat-lbl">{k.l}</div>
-              <div className="stat-val">{k.v}</div>
-              <div className="stat-sub">{k.sub}</div>
-            </div>
-          ))
-        }
-      </div>
-
-      <div className="g2" style={{ gap: 14, alignItems: "start" }}>
-        {/* Ingresos */}
-        <div className="card" style={{ padding: "16px 18px" }}>
-          <h3 style={{ fontSize: 14, marginBottom: 12 }}>💰 Comisiones del mes</h3>
-          <div style={{ fontFamily: "Syne", fontSize: 28, fontWeight: 800, color: "var(--g2)", marginBottom: 4 }}>{fmt(stats?.comisiones_mes || 0)}</div>
-          <div style={{ fontSize: 12, color: "var(--s600)" }}>Ingresos netos TratoYa</div>
-          <div style={{ marginTop: 14, height: 6, background: "var(--s100)", borderRadius: 3, overflow: "hidden" }}>
-            <div style={{ width: "62%", height: "100%", background: "linear-gradient(to right,var(--g),var(--g2))", borderRadius: 3 }} />
-          </div>
-          <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: "var(--s400)", marginTop: 4 }}>
-            <span>Meta mensual</span><span>62%</span>
-          </div>
-        </div>
-
-        {/* Actividad reciente */}
-        <div className="card" style={{ padding: "16px 18px" }}>
-          <h3 style={{ fontSize: 14, marginBottom: 12 }}>⚡ Actividad reciente · actualiza cada 60s</h3>
-          {actividad.length === 0
-            ? <div style={{ textAlign: "center", padding: 20, color: "var(--s400)", fontSize: 13 }}>Sin actividad registrada</div>
-            : actividad.slice(0, 6).map((a, i) => (
-              <div key={i} className="log-item">
-                <div className="log-dot" style={{ background: a.tipo === "registro" ? "var(--g2)" : a.tipo === "trato" ? "var(--n)" : a.tipo === "disputa" ? "var(--rd)" : "var(--or)" }} />
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 12.5, fontWeight: 600 }}>{a.descripcion}</div>
-                  <div style={{ fontSize: 11, color: "var(--s400)" }}>{timeAgo(a.createdAt)}</div>
-                </div>
-              </div>
-            ))
-          }
-        </div>
-      </div>
+  return <div className="page fi">
+    <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:16,gap:12,flexWrap:'wrap'}}>
+      <div><h1 style={{fontSize:20}}>Panel de Control</h1><p style={{color:'var(--s600)',fontSize:12.5,marginTop:2}}>Resumen operativo, caja y comisiones netas</p></div>
+      <div style={{display:'flex',alignItems:'center',gap:8,padding:'6px 12px',background:'#fff',borderRadius:8,border:'1px solid var(--s100)',fontSize:12.5,fontWeight:600}}><div className="live"/> Sistema operativo</div>
     </div>
-  );
+    <div className="stat-grid fi">{loading ? [1,2,3,4].map(i => <div key={i} className="stat"><div style={{height:80,background:'var(--s100)',borderRadius:8}}/></div>) : kpis.map((k,i) => <div key={i} className="stat" onClick={() => setPage?.(k.page)}><div className="stat-top"><div><p>{k.l}</p><h2>{k.v}</h2></div></div><span>{k.sub}</span></div>)}</div>
+    <div className="g2" style={{alignItems:'start'}}>
+      <div className="card" style={{padding:18}}><h3 style={{fontSize:14,marginBottom:12}}>Comisiones netas del mes</h3><div style={{fontFamily:'Manrope',fontSize:30,fontWeight:900,color:'var(--g2)',marginBottom:8}}>{fmt(net)}</div><p style={{color:'var(--s600)',fontSize:12.5}}>Ingreso TratoYA despues de descontar costos GMF configurados.</p><div style={{display:'flex',justifyContent:'space-between',color:'var(--s400)',fontSize:11.5,marginTop:13}}><span>Meta mensual: {fmt(goal)}</span><span>{goalPct}%</span></div><div className="prog"><i style={{width:goalPct+'%'}}/></div><p style={{color:'var(--s500)',fontSize:11.5,marginTop:8}}>La meta mensual se modifica desde Configuracion.</p><div className="ops-kpi-grid" style={{marginTop:14}}><div className="mini"><b>{fmt(stats?.comisiones_brutas_mes || 0)}</b><span>Comision bruta</span></div><div className="mini"><b>{fmt(stats?.costos_gmf_mes || 0)}</b><span>Costos GMF</span></div><div className="mini"><b>{stats?.total_activados || 0}</b><span>Pagos aprobados</span></div><div className="mini"><b>{stats?.total_fundadores || 0}</b><span>Tratos mes</span></div></div></div>
+      <div className="card" style={{padding:18}}><h3 style={{fontSize:14,marginBottom:12}}>Volumen ultimos 14 dias</h3><div className="admin-chart">{series.map(d => <div key={d.fecha} className="admin-chart-bar" style={{height:Math.max(8,(Number(d.volumen || 0)/maxSeries)*100)+'%'}} title={d.fecha+': '+fmt(d.volumen)}><span>{String(d.fecha || '').slice(5)}</span></div>)}</div><h3 style={{fontSize:14,margin:'28px 0 10px'}}>Estados del mes</h3><div className="state-stack">{states.length ? states.map(([estado,count]) => <div className="state-row" key={estado}><b>{tratoLabel(estado)}</b><div><i style={{width:Math.max(4,(Number(count)/maxState)*100)+'%'}}/></div><span>{count}</span></div>) : <p style={{color:'var(--s400)',fontSize:12}}>Sin tratos este mes.</p>}</div></div>
+    </div>
+    <div className="card" style={{marginTop:14,padding:18}}><h3 style={{fontSize:14,marginBottom:12}}>Actividad reciente - actualiza cada 60s</h3><div className="log-list">{actividad.length ? actividad.map((a) => <div key={a.id} className="log-row"><span className="log-dot"/><div><b>{a.title}</b><p>{a.date ? timeAgo(a.date) : ''}</p></div></div>) : <p style={{color:'var(--s400)',fontSize:12.5}}>Sin actividad reciente.</p>}</div></div>
+  </div>;
 }
 
-// ─── USUARIOS ─────────────────────────────────────────
 function Usuarios({ toast }) {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -472,6 +479,7 @@ function Usuarios({ toast }) {
   const [pwForm, setPwForm] = useState({ password: "", confirmar: "" });
   const [msgForm, setMsgForm] = useState({ titulo: "", cuerpo: "" });
   const [deleteCode, setDeleteCode] = useState("");
+  const [kycForm, setKycForm] = useState({ kyc_nivel: "ninguno", kyc_verificacion_inicio: "", kyc_verificacion_fin: "" });
 
   const load = () => {
     setLoading(true);
@@ -505,22 +513,31 @@ function Usuarios({ toast }) {
     setBusy(false);
   };
 
-  const toggleKyc = async (user) => {
-    const levels = ['ninguno', 'basico', 'verificado', 'premium'];
-    const cur = levels.indexOf(user.kyc_nivel || 'ninguno');
-    const nextLevel = levels[Math.min(cur + 1, levels.length - 1)] === user.kyc_nivel
-      ? levels[Math.max(cur - 1, 0)]
-      : levels[Math.min(cur + 1, levels.length - 1)];
-    // Ciclo: ninguno → basico → verificado → premium → ninguno
-    const cycle = { ninguno: 'basico', basico: 'verificado', verificado: 'premium', premium: 'ninguno' };
-    const next = cycle[user.kyc_nivel || 'ninguno'] || 'basico';
-    setKycBusy(user.id);
+  const openKycModal = (user) => {
+    setSelected(user);
+    setKycForm({
+      kyc_nivel: user.kyc_nivel === "verificado" ? "verificado" : "ninguno",
+      kyc_verificacion_inicio: user.kyc_verificacion_inicio ? String(user.kyc_verificacion_inicio).slice(0, 10) : new Date().toISOString().slice(0, 10),
+      kyc_verificacion_fin: user.kyc_verificacion_fin ? String(user.kyc_verificacion_fin).slice(0, 10) : "",
+    });
+    setModal("kyc");
+  };
+
+  const saveKyc = async () => {
+    if (!selected) return;
+    if (kycForm.kyc_nivel === "verificado" && !kycForm.kyc_verificacion_fin) {
+      toast("Indica la fecha de finalizacion de la verificacion", "error");
+      return;
+    }
+    setKycBusy(selected.id);
     try {
-      const r = await api.patch(`/admin/users/${user.id}/kyc`, { kyc_nivel: next });
-      // Actualiza el usuario en la lista local sin recargar toda la tabla
-      setUsers(prev => prev.map(u => u.id === user.id ? { ...u, kyc_nivel: next, kyc_estado: r.data?.kyc_estado || 'aprobado' } : u));
-      toast(`✓ ${user.nombre}: verificación → ${next}`, 'success');
-    } catch (e) { toast(e.message, 'error'); }
+      const r = await api.patch(`/admin/users/${selected.id}/kyc`, kycForm);
+      const updated = r.data || {};
+      setUsers(prev => prev.map(u => u.id === selected.id ? { ...u, ...updated } : u));
+      setSelected(prev => prev ? { ...prev, ...updated } : prev);
+      toast("Verificacion actualizada", "success");
+      setModal(null);
+    } catch (e) { toast(e.message, "error"); }
     setKycBusy(null);
   };
 
@@ -602,19 +619,10 @@ function Usuarios({ toast }) {
                     <td className="mono" style={{ fontSize: 11.5 }}>{[u.tipo_identificacion, u.cedula].filter(Boolean).join(" ") || "—"}</td>
                     <td style={{ fontSize: 11.5 }}>{(u.CuentaBancarias || u.CuentaBancaria || [])[0]?.banco || "—"}</td>
                     <td>
-                      {u.kyc_nivel === 'premium'
-                        ? <span style={{display:'inline-flex',alignItems:'center',gap:4,background:'#1877F2',color:'#fff',padding:'2px 8px',borderRadius:20,fontSize:10,fontWeight:700}}>
-                            <span style={{display:'inline-flex',alignItems:'center',justifyContent:'center',width:14,height:14,background:'#fff',borderRadius:'50%',color:'#1877F2',fontSize:10,fontWeight:900,lineHeight:1,flexShrink:0}}>✓</span>
-                            PREMIUM
-                          </span>
-                        : u.kyc_nivel === 'verificado'
-                          ? <span style={{display:'inline-flex',alignItems:'center',gap:4,background:'#1877F2',color:'#fff',padding:'2px 8px',borderRadius:20,fontSize:10,fontWeight:700}}>
-                              <span style={{display:'inline-flex',alignItems:'center',justifyContent:'center',width:14,height:14,background:'#fff',borderRadius:'50%',color:'#1877F2',fontSize:10,fontWeight:900,lineHeight:1,flexShrink:0}}>✓</span>
-                              Verif.
-                            </span>
-                          : u.kyc_nivel === 'basico'
-                            ? <span className="bdg gn" style={{fontSize:10}}>✓ Básico</span>
-                            : <span className="bdg bg" style={{fontSize:10}}>Sin verif.</span>}
+                      {u.kyc_nivel === 'verificado'
+                        ? <span className="verified-premium">VERIFICADO</span>
+                        : <span className="bdg bg" style={{fontSize:10}}>Sin verificación</span>}
+                      {u.kyc_verificacion_fin && <div style={{fontSize:10.5,color:"var(--s400)",marginTop:3}}>Vence: {fmtDate(u.kyc_verificacion_fin)}</div>}
                     </td>
                     <td><span className={`bdg ${ROLE_BADGE[u.rol] || "bg"}`}>{rolLabel(u.rol)}</span></td>
                     <td><span className={`bdg ${u.estado === "activo" ? "gn" : u.estado === "suspendido" ? "rd" : "bg"}`}>{u.estado}</span></td>
@@ -623,17 +631,13 @@ function Usuarios({ toast }) {
                     <td>
                       <div style={{ display: "flex", gap: 4 }}>
                         <button
-                          className={`btn bsm ${u.kyc_nivel === 'premium' || u.kyc_nivel === 'verificado' ? 'bp' : u.kyc_nivel === 'basico' ? 'bor' : 'bg_'}`}
-                          title={`Verificación actual: ${u.kyc_nivel || 'ninguno'}. Clic para cambiar.`}
-                          onClick={() => toggleKyc(u)}
+                          className={`btn bsm ${u.kyc_nivel === 'verificado' ? 'bp' : 'bg_'}`}
+                          title={`Verificación actual: ${u.kyc_nivel === 'verificado' ? 'VERIFICADO' : 'Sin verificación'}. Clic para editar.`}
+                          onClick={() => openKycModal(u)}
                           disabled={kycBusy === u.id}
                           style={{minWidth:28}}
                         >
-                          {kycBusy === u.id
-                            ? <div className="spin" style={{width:12,height:12}} />
-                            : u.kyc_nivel === 'premium' || u.kyc_nivel === 'verificado'
-                              ? <span style={{display:'inline-flex',alignItems:'center',justifyContent:'center',width:15,height:15,background:'#1877F2',borderRadius:'50%',color:'#fff',fontSize:11,fontWeight:900,lineHeight:1}}>✓</span>
-                              : u.kyc_nivel === 'basico' ? '✓' : '○'}
+                          {kycBusy === u.id ? <div className="spin" style={{width:12,height:12}} /> : (u.kyc_nivel === 'verificado' ? "✓" : "○")}
                         </button>
                         <button className="btn bg_ bsm" title="Ver perfil" onClick={() => openUserDetail(u)}>👁</button>
                         <button className="btn bg_ bsm" title="Restablecer contraseña" onClick={() => { setSelected(u); setModal("pw"); }}>🔑</button>
@@ -695,10 +699,57 @@ function Usuarios({ toast }) {
                 ) : <div style={{ color: "var(--s400)", fontSize: 12.5 }}>Sin pagos registrados.</div>}
               </div>
             </div>
+              <div style={{ marginTop: 12 }}><h4 style={{ fontSize: 13, marginBottom: 8 }}>Huella / log del usuario</h4>{(selectedDetail?.audit_logs || []).length ? (<div className="tw"><table><thead><tr><th>Fecha</th><th>Accion</th><th>Entidad</th><th>Detalle</th></tr></thead><tbody>{selectedDetail.audit_logs.slice(0, 30).map(l => <tr key={l.id}><td>{fmtTime(l.created_at || l.createdAt)}</td><td>{l.action}</td><td>{l.entity_type}</td><td className="mono" style={{ fontSize: 10 }}>{JSON.stringify(l.metadata || {}).slice(0, 140)}</td></tr>)}</tbody></table></div>) : <div style={{ color: "var(--s400)", fontSize: 12.5 }}>Sin huella operativa registrada.</div>}</div>
             <div className="modal-ft">
               <button className="btn bpu bsm" onClick={() => setModal("msg")}>🔔 Enviar notificación</button>
               <button className="btn bor bsm" onClick={() => setModal("pw")}>🔑 Resetear contraseña</button>
               <button className="btn brd bsm" onClick={() => { setDeleteCode(""); setModal("delete"); }}>Eliminar usuario</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {modal === "kyc" && selected && (
+        <div className="overlay" onClick={() => setModal(null)}>
+          <div className="modal" style={{ maxWidth: 520 }} onClick={e => e.stopPropagation()}>
+            <div className="modal-hd">
+              <h3 style={{ fontSize: 15 }}>Marca de verificación</h3>
+              <button className="btn bg_ bsm" onClick={() => setModal(null)}>×</button>
+            </div>
+            <div className="modal-bd">
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, background: "var(--s50)", borderRadius: 10, padding: 12, marginBottom: 14 }}>
+                <div>
+                  <div style={{ fontWeight: 800 }}>{selected.nombre} {selected.apellido}</div>
+                  <div style={{ fontSize: 12, color: "var(--s600)" }}>{selected.email}</div>
+                </div>
+                {kycForm.kyc_nivel === "verificado" ? <span className="verified-premium">VERIFICADO</span> : <span className="bdg bg">Sin verificación</span>}
+              </div>
+              <div className="fg">
+                <label className="fl">Estado de verificación</label>
+                <select className="inp" value={kycForm.kyc_nivel} onChange={e => setKycForm(p => ({ ...p, kyc_nivel: e.target.value }))}>
+                  <option value="ninguno">Sin verificación</option>
+                  <option value="verificado">VERIFICADO</option>
+                </select>
+              </div>
+              {kycForm.kyc_nivel === "verificado" && (
+                <div className="g2">
+                  <div className="fg">
+                    <label className="fl">Fecha de inicio</label>
+                    <input className="inp" type="date" value={kycForm.kyc_verificacion_inicio} onChange={e => setKycForm(p => ({ ...p, kyc_verificacion_inicio: e.target.value }))} />
+                  </div>
+                  <div className="fg">
+                    <label className="fl">Fecha de finalización</label>
+                    <input className="inp" type="date" value={kycForm.kyc_verificacion_fin} onChange={e => setKycForm(p => ({ ...p, kyc_verificacion_fin: e.target.value }))} />
+                  </div>
+                </div>
+              )}
+              <p style={{ fontSize: 12, color: "var(--s500)", lineHeight: 1.5, marginTop: 4 }}>
+                El sistema avisará 5 días antes del vencimiento y retirará la marca automáticamente 30 días después si no se renueva.
+              </p>
+            </div>
+            <div className="modal-ft">
+              <button className="btn bg_" onClick={() => setModal(null)}>Cancelar</button>
+              <button className="btn bp" onClick={saveKyc} disabled={kycBusy === selected.id}>{kycBusy === selected.id ? <div className="spin" /> : "Guardar verificación"}</button>
             </div>
           </div>
         </div>
@@ -1140,11 +1191,18 @@ function KYCVerificaciones({ toast }) {
   const [selected, setSelected] = useState(null);
   const [busy, setBusy] = useState(false);
   const [notas, setNotas] = useState("");
+  const [resumen, setResumen] = useState(null);
+  const [showExpiryPopup, setShowExpiryPopup] = useState(false);
 
   const load = () => {
     setLoading(true);
-    api.get("/admin/kyc/pendientes")
-      .then(r => setKycs(r.data || []))
+    Promise.all([api.get("/admin/kyc/pendientes"), api.get("/admin/kyc/resumen")])
+      .then(([p, s]) => {
+        setKycs(p.data || []);
+        setResumen(s.data || null);
+        const totalAlertas = (s.data?.por_vencer?.length || 0) + (s.data?.vencidas?.length || 0);
+        setShowExpiryPopup(totalAlertas > 0);
+      })
       .catch(() => toast("Error cargando KYC", "error"))
       .finally(() => setLoading(false));
   };
@@ -1171,6 +1229,23 @@ function KYCVerificaciones({ toast }) {
         <h1 style={{ fontSize: 20 }}>Verificaciones KYC pendientes</h1>
         <button className="btn bg_" onClick={load}>↻</button>
       </div>
+
+      {resumen && (
+        <div className="g3" style={{ marginBottom: 14 }}>
+          <div className="card" style={{ padding: 14 }}>
+            <div style={{ fontSize: 11, color: "var(--s400)", fontWeight: 800, textTransform: "uppercase" }}>Verificados activos</div>
+            <div style={{ fontFamily: "Syne", fontWeight: 900, fontSize: 28, color: "var(--g2)" }}>{resumen.verificados || 0}</div>
+          </div>
+          <div className="card" style={{ padding: 14, borderLeft: "4px solid var(--or)" }}>
+            <div style={{ fontSize: 11, color: "var(--s400)", fontWeight: 800, textTransform: "uppercase" }}>Por vencer en 5 dias</div>
+            <div style={{ fontFamily: "Syne", fontWeight: 900, fontSize: 28, color: "var(--or)" }}>{resumen.por_vencer?.length || 0}</div>
+          </div>
+          <div className="card" style={{ padding: 14, borderLeft: "4px solid var(--rd)" }}>
+            <div style={{ fontSize: 11, color: "var(--s400)", fontWeight: 800, textTransform: "uppercase" }}>Vencidas</div>
+            <div style={{ fontFamily: "Syne", fontWeight: 900, fontSize: 28, color: "var(--rd)" }}>{resumen.vencidas?.length || 0}</div>
+          </div>
+        </div>
+      )}
 
       {loading
         ? <div style={{ textAlign: "center", padding: 40 }}><div className="spin" style={{ margin: "0 auto", color: "var(--s400)" }} /></div>
@@ -1201,6 +1276,24 @@ function KYCVerificaciones({ toast }) {
               </tbody>
             </table></div>
           }
+
+      {showExpiryPopup && resumen && (
+        <div className="overlay" onClick={() => setShowExpiryPopup(false)}>
+          <div className="modal" style={{ maxWidth: 620 }} onClick={e => e.stopPropagation()}>
+            <div className="modal-hd"><h3 style={{ fontSize: 15 }}>Vencimientos de verificacion</h3><button className="btn bg_ bsm" onClick={() => setShowExpiryPopup(false)}>x</button></div>
+            <div className="modal-bd">
+              <p style={{ fontSize: 12.5, color: "var(--s600)", lineHeight: 1.5, marginBottom: 12 }}>Revisa renovaciones pendientes. El sistema retira la marca 30 dias despues del vencimiento si no se confirma pago o renovacion.</p>
+              {[...(resumen.vencidas || []), ...(resumen.por_vencer || [])].slice(0, 12).map(u => (
+                <div key={u.id} style={{ display: "flex", justifyContent: "space-between", gap: 12, padding: "10px 0", borderBottom: "1px solid var(--s100)" }}>
+                  <div><div style={{ fontWeight: 800 }}>{u.nombre} {u.apellido}</div><div style={{ fontSize: 12, color: "var(--s500)" }}>{u.email}</div></div>
+                  <div style={{ textAlign: "right" }}><span className={new Date(u.kyc_verificacion_fin) < new Date() ? "bdg rd" : "bdg or"}>{new Date(u.kyc_verificacion_fin) < new Date() ? "Vencida" : "Por vencer"}</span><div style={{ fontSize: 11.5, color: "var(--s500)", marginTop: 4 }}>{fmtDate(u.kyc_verificacion_fin)}</div></div>
+                </div>
+              ))}
+            </div>
+            <div className="modal-ft"><button className="btn bp" onClick={() => setShowExpiryPopup(false)}>Entendido</button></div>
+          </div>
+        </div>
+      )}
 
       {selected && (
         <div className="overlay" onClick={() => setSelected(null)}>
@@ -1257,7 +1350,7 @@ function PersonCard({ title, user }) {
   );
 }
 
-function AdminTratoDetailModal({ detail, loading, onClose, onRefresh, onLiberar, onCancelar, toast, fullPage = false, backHref = ADMIN_ENTRY_PATH }) {
+function AdminTratoDetailModal({ detail, loading, onClose, onRefresh, onLiberar, onCancelar, toast, currentAdmin, fullPage = false, backHref = ADMIN_ENTRY_PATH }) {
   const [destino, setDestino] = useState("ambos");
   const [mensaje, setMensaje] = useState("");
   const [sending, setSending] = useState(false);
@@ -1268,6 +1361,7 @@ function AdminTratoDetailModal({ detail, loading, onClose, onRefresh, onLiberar,
   const retentionPayment = data.pagos?.find?.((p) => p.tipo === "retencion");
   const manualPayment = t.metadata?.manual_payment || retentionPayment?.metadata || null;
   const adminCalc = t.monto ? calcularComisionUI(parseCopAmount(t.monto), t.quien_paga_comision || "comprador") : null;
+  const isSuper = currentAdmin?.rol === "superadmin";
   const validateReceipt = async () => {
     if (!retentionPayment?.id) return toast("No hay comprobante pendiente por validar.", "warn");
     try {
@@ -1340,8 +1434,9 @@ function AdminTratoDetailModal({ detail, loading, onClose, onRefresh, onLiberar,
                   <h3 style={{ fontSize: 14, marginBottom: 10 }}>Control admin</h3>
                   <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 12 }}>
                     {publicUrl && <a className="btn bg_ bsm" href={publicUrl} target="_blank" rel="noreferrer">Abrir link público</a>}
-                    {["pago_retenido","en_entrega","confirmado","pendiente_confirmacion"].includes(t.estado) && <button className="btn bp bsm" onClick={() => onLiberar(t.id)}>Liberar pago</button>}
-                    {!["completado","cancelado","expirado"].includes(t.estado) && <button className="btn brd bsm" onClick={() => onCancelar(t.id)}>Cancelar trato</button>}
+                    {isSuper && ["pago_retenido","en_entrega","confirmado","pendiente_confirmacion"].includes(t.estado) && <button className="btn bp bsm" onClick={() => onLiberar(t.id)}>Liberar pago</button>}
+                    {isSuper && !["completado","cancelado","expirado"].includes(t.estado) && <button className="btn brd bsm" onClick={() => onCancelar(t.id)}>Cancelar trato</button>}
+                    {!isSuper && <span className="bdg bg">Admin: valida/rechaza/mensaje</span>}
                     <button className="btn bg_ bsm" onClick={onRefresh}>Actualizar</button>
                   </div>
                   {manualPayment && (
@@ -1484,134 +1579,27 @@ function AdminTratoDetailModal({ detail, loading, onClose, onRefresh, onLiberar,
   );
 }
 
-function TratosAdmin({ toast }) {
-  const [tratos, setTratos] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [q, setQ] = useState("");
-  const [detail, setDetail] = useState(null);
-  const [detailLoading, setDetailLoading] = useState(false);
-  const [detailId, setDetailId] = useState(null);
-
-  const load = () => {
-    setLoading(true);
-    api.get(`/admin/tratos${q ? `?q=${q}` : ""}`)
-      .then(r => setTratos(r.data || []))
-      .catch(() => toast("Error", "error"))
-      .finally(() => setLoading(false));
-  };
-  useEffect(load, []);
-
-  const openDetail = async (id) => {
-    setDetailId(id);
-    setDetail(null);
-    setDetailLoading(true);
-    try {
-      const r = await api.get(`/admin/tratos/${id}/detalle`);
-      setDetail(r.data);
-    } catch (e) {
-      toast(e.message, "error");
-      setDetailId(null);
-    } finally {
-      setDetailLoading(false);
-    }
-  };
-
-  const refreshDetail = async () => {
-    if (!detailId) return;
-    try {
-      const r = await api.get(`/admin/tratos/${detailId}/detalle`);
-      setDetail(r.data);
-    } catch (e) { toast(e.message, "error"); }
-  };
-
-  const forzarCancelar = async (id) => {
-    if (!confirm("¿Cancelar este trato? El dinero será devuelto al comprador.")) return;
-    try { await api.post(`/admin/tratos/${id}/cancelar`); toast("Trato cancelado", "warn"); load(); refreshDetail(); }
-    catch (e) { toast(e.message, "error"); }
-  };
-
-  const forzarLiberar = async (id) => {
-    if (!confirm("¿Liberar el pago al vendedor forzadamente?")) return;
-    try { await api.post(`/admin/tratos/${id}/liberar`); toast("Pago liberado", "success"); load(); refreshDetail(); }
-    catch (e) { toast(e.message, "error"); }
-  };
-
-  return (
-    <div className="page fi">
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
-        <h1 style={{ fontSize: 20 }}>Todos los Tratos</h1>
-        <div style={{ display: "flex", gap: 8 }}>
-          <div className="search" style={{ width: 220 }}>🔍 <input placeholder="Código o título…" value={q} onChange={e => setQ(e.target.value)} onKeyDown={e => e.key === "Enter" && load()} /></div>
-          <button className="btn bg_" onClick={load}>↻</button>
-        </div>
-      </div>
-      <div className="tw">
-        <table>
-          <thead><tr><th>Código</th><th>Título</th><th>Vendedor</th><th>Comprador</th><th>Monto</th><th>Tipo envío</th><th>Estado</th><th>Fecha</th><th>Acciones</th></tr></thead>
-          <tbody>
-            {loading
-              ? <tr><td colSpan={9} style={{ textAlign: "center", padding: 32 }}><div className="spin" style={{ margin: "0 auto", color: "var(--s400)" }} /></td></tr>
-              : tratos.map(t => (
-                <tr key={t.id} onClick={() => { window.location.href = `${ADMIN_ENTRY_PATH}?trato=${encodeURIComponent(t.id)}&from=tratos`; }} style={{ cursor: "pointer" }}>
-                  <td style={{ fontFamily: "Syne", fontWeight: 700, fontSize: 11, color: "var(--g2)" }}>{t.codigo}</td>
-                  <td style={{ fontWeight: 600, fontSize: 12.5, maxWidth: 180 }}>{t.titulo}</td>
-                  <td style={{ fontSize: 12 }}>{t.vendedor?.nombre} {t.vendedor?.apellido}<div className="mono" style={{ fontSize: 10, color: "var(--s400)" }}>{t.vendedor?.usuario_unico || "—"}</div></td>
-                  <td style={{ fontSize: 12 }}>{t.comprador?.nombre} {t.comprador?.apellido || <span style={{ color: "var(--s400)", fontStyle: "italic" }}>—</span>}<div className="mono" style={{ fontSize: 10, color: "var(--s400)" }}>{t.comprador?.usuario_unico || "—"}</div></td>
-                  <td style={{ fontFamily: "Syne", fontWeight: 700, fontSize: 12.5 }}>{fmt(t.monto)}</td>
-                  <td><span className={`bdg ${t.metadata?.invitacion_directa ? "gn" : "bg"}`}>{t.metadata?.invitacion_directa ? "Directo por ID" : "Link / QR"}</span></td>
-                  <td><span className={`bdg ${TRATO_EST[t.estado] || "bg"}`}>{tratoLabel(t.estado)}</span></td>
-                  <td style={{ fontSize: 11, color: "var(--s400)" }}>{fmtDate(t.createdAt)}</td>
-                  <td>
-                    <div style={{ display: "flex", gap: 4 }}>
-                      <a className="btn bg_ bsm" href={`${ADMIN_ENTRY_PATH}?trato=${encodeURIComponent(t.id)}&from=tratos`} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()}>👁 Detalle</a>
-                      {["pago_retenido","en_entrega","confirmado"].includes(t.estado) && <button className="btn bp bsm" onClick={(e) => { e.stopPropagation(); forzarLiberar(t.id); }}>💰 Liberar</button>}
-                      {!["completado","cancelado","expirado"].includes(t.estado) && <button className="btn brd bsm" onClick={(e) => { e.stopPropagation(); forzarCancelar(t.id); }}>✕</button>}
-                    </div>
-                  </td>
-                </tr>
-              ))
-            }
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
-}
-
-function TratoAdminFullPage({ tratoId, toast, backHref }) {
+function TratoAdminFullPage({ tratoId, toast, backHref, currentAdmin }) {
   const [detail, setDetail] = useState(null);
   const [loading, setLoading] = useState(true);
-
-  const load = useCallback(() => {
+  const load = useCallback(async () => {
     if (!tratoId) return;
     setLoading(true);
-    api.get(`/admin/tratos/${tratoId}/detalle`)
-      .then(r => setDetail(r.data))
-      .catch(e => toast(e.message, "error"))
-      .finally(() => setLoading(false));
+    try { const r = await api.get('/admin/tratos/' + tratoId + '/detalle'); setDetail(r.data); }
+    catch (e) { toast(e.message, 'error'); }
+    finally { setLoading(false); }
   }, [tratoId, toast]);
-
-  useEffect(load, [load]);
-
-  const forzarCancelar = async (id) => {
-    if (!confirm("¿Cancelar este trato? El dinero será devuelto al comprador.")) return;
-    try { await api.post(`/admin/tratos/${id}/cancelar`); toast("Trato cancelado", "warn"); load(); }
-    catch (e) { toast(e.message, "error"); }
-  };
-
-  const forzarLiberar = async (id) => {
-    if (!confirm("¿Liberar el pago al vendedor forzadamente?")) return;
-    try { await api.post(`/admin/tratos/${id}/liberar`); toast("Pago liberado", "success"); load(); }
-    catch (e) { toast(e.message, "error"); }
-  };
-
-  return <AdminTratoDetailModal detail={detail} loading={loading} onRefresh={load} onLiberar={forzarLiberar} onCancelar={forzarCancelar} toast={toast} fullPage backHref={backHref} />;
+  useEffect(() => { load(); }, [load]);
+  const forzarLiberar = async (id) => { try { await api.post('/admin/tratos/' + id + '/liberar'); toast('Pago liberado', 'success'); load(); } catch (e) { toast(e.message, 'error'); } };
+  const forzarCancelar = async (id) => { try { await api.post('/admin/tratos/' + id + '/cancelar'); toast('Trato cancelado', 'warn'); load(); } catch (e) { toast(e.message, 'error'); } };
+  return <AdminTratoDetailModal detail={detail} loading={loading} onRefresh={load} onLiberar={forzarLiberar} onCancelar={forzarCancelar} toast={toast} currentAdmin={currentAdmin} fullPage backHref={backHref} />;
 }
 
-// ─── PAGOS ADMIN ──────────────────────────────────────
+function TratosAdmin({ toast, currentAdmin }) { const [tratos,setTratos]=useState([]); const [loading,setLoading]=useState(true); const [q,setQ]=useState(''); const [estado,setEstado]=useState('todos'); const [detail,setDetail]=useState(null); const [detailLoading,setDetailLoading]=useState(false); const [detailId,setDetailId]=useState(null); const [cancelTarget,setCancelTarget]=useState(null); const [cancelCode,setCancelCode]=useState(''); const isSuper=currentAdmin?.rol==='superadmin'; const load=useCallback(()=>{setLoading(true); const params=new URLSearchParams(); if(q)params.set('q',q); if(estado!=='todos')params.set('estado',estado); api.get('/admin/tratos'+(params.toString()?'?'+params.toString():'')).then(r=>setTratos(r.data||[])).catch(()=>toast('Error cargando tratos','error')).finally(()=>setLoading(false));},[q,estado,toast]); useEffect(()=>{load();},[load]); const openDetail=async(id)=>{setDetailId(id);setDetail(null);setDetailLoading(true);try{const r=await api.get('/admin/tratos/'+id+'/detalle');setDetail(r.data);}catch(e){toast(e.message,'error');setDetailId(null);}finally{setDetailLoading(false);}}; const openDetailTab=(id)=>{window.open(`${ADMIN_ENTRY_PATH}?trato=${encodeURIComponent(id)}&from=tratos`, '_blank', 'noopener,noreferrer');}; const refreshDetail=async()=>{if(!detailId)return;try{const r=await api.get('/admin/tratos/'+detailId+'/detalle');setDetail(r.data);}catch(e){toast(e.message,'error');}}; const forzarCancelar=async(id,code='')=>{try{await api.post('/admin/tratos/'+id+'/cancelar',code?{confirmation_code:code}:{});toast('Trato cancelado','warn');setCancelTarget(null);setCancelCode('');load();refreshDetail();}catch(e){toast(e.message,'error');}}; const forzarLiberar=async(id)=>{if(!isSuper)return toast('Solo superadmin puede liberar pagos','error');try{await api.post('/admin/tratos/'+id+'/liberar');toast('Pago liberado','success');load();refreshDetail();}catch(e){toast(e.message,'error');}}; const all=tratos; const flow=[['todos','Todos',all.length,'Vista completa'],['pago_pendiente','Por pagar',all.filter(t=>t.estado==='pago_pendiente').length,'Esperando comprador'],['pago_retenido','Validar entrega',all.filter(t=>t.estado==='pago_retenido').length,'Pago protegido'],['en_entrega','En entrega',all.filter(t=>t.estado==='en_entrega').length,'Vendedor gestionando'],['confirmado','Listos para liberar',all.filter(t=>t.estado==='confirmado').length,'Solo superadmin']]; const filters=['todos','pago_pendiente','pago_retenido','en_entrega','confirmado','completado','cancelado']; return <div className="page fi"><div className="ops-toolbar"><div><h1 style={{fontSize:20}}>Centro de operaciones</h1><p style={{color:'var(--s600)',fontSize:12.5}}>Control completo de tratos, pagos manuales, usuarios y flujo operativo.</p></div><div style={{display:'flex',gap:8,flexWrap:'wrap'}}><div className="search" style={{width:240}}>Buscar <input placeholder="Codigo, titulo o usuario" value={q} onChange={e=>setQ(e.target.value)} onKeyDown={e=>e.key==='Enter'&&load()}/></div><button className="btn bg_" onClick={load}>Actualizar</button></div></div><div className="ops-flow">{flow.map(([key,label,count,sub])=><button key={key} className={'ops-flow-card '+(estado===key?'active':'')} onClick={()=>setEstado(key)}><span>{label}</span><strong>{count}</strong><em>{sub}</em></button>)}</div><div className="ops-filter-pills" style={{marginBottom:12}}>{filters.map(f=><button key={f} className={estado===f?'active':''} onClick={()=>setEstado(f)}>{f==='todos'?'Todos':tratoLabel(f)}</button>)}</div><div className="tw"><table><thead><tr><th>Trato</th><th>Partes</th><th>Monto / Comision</th><th>Flujo</th><th>Gestionado por</th><th>Fecha</th><th>Acciones</th></tr></thead><tbody>{loading?<tr><td colSpan="7">Cargando...</td></tr>:tratos.map(t=><tr key={t.id} onClick={()=>openDetailTab(t.id)} style={{cursor:'pointer'}}><td><b>{t.codigo}</b><br/><span>{t.titulo}</span></td><td><b>C:</b> {t.comprador?.nombre||'-'}<br/><b>V:</b> {t.vendedor?.nombre||'-'}</td><td>{fmt(t.monto)}<br/><span>{t.quien_paga_comision||'comprador'} paga comision</span></td><td><span className={'bdg '+(TRATO_EST[t.estado]||'bg')}>{tratoLabel(t.estado)}</span><br/><span>{t.tipo_envio||'manual'}</span></td><td>{t.managed_by_admin?.nombre?<span className="managed-chip">Gestionado por: {t.managed_by_admin.nombre}</span>:<span style={{color:'var(--s400)',fontSize:12}}>Sin gestor</span>}</td><td>{fmtDate(t.createdAt)}</td><td onClick={e=>e.stopPropagation()}><button className="btn bg_ bsm" onClick={()=>openDetailTab(t.id)}>Ver flujo</button>{isSuper&&<button className="btn brd bsm" style={{marginLeft:6}} onClick={()=>setCancelTarget(t)}>Cancelar</button>}</td></tr>)}{!loading&&tratos.length===0&&<tr><td colSpan="7">Sin tratos con este filtro.</td></tr>}</tbody></table></div>{detailId&&<div className="overlay"><AdminTratoDetailModal detail={detail} loading={detailLoading} onClose={()=>{setDetailId(null);setDetail(null);}} onRefresh={refreshDetail} onLiberar={forzarLiberar} onCancelar={(id)=>setCancelTarget({id,codigo:detail?.trato?.codigo})} toast={toast} currentAdmin={currentAdmin}/></div>}{cancelTarget&&<div className="overlay" onClick={()=>setCancelTarget(null)}><div className="modal" style={{maxWidth:460}} onClick={e=>e.stopPropagation()}><div className="modal-hd"><h3>Cancelar trato {cancelTarget.codigo}</h3><button className="btn bg_ bsm" onClick={()=>setCancelTarget(null)}>x</button></div><div className="modal-bd"><p style={{color:'var(--s600)',fontSize:13}}>Esta accion deja huella de auditoria. Solo superadmin debe cancelar; si el backend exige codigo, ingresalo.</p>{!isSuper&&<div className="fg"><label className="fl">Codigo de autorizacion</label><input className="inp" type="password" value={cancelCode} onChange={e=>setCancelCode(e.target.value)}/></div>}</div><div className="modal-ft"><button className="btn bg_" onClick={()=>setCancelTarget(null)}>Volver</button><button className="btn brd" onClick={()=>forzarCancelar(cancelTarget.id,cancelCode)}>Confirmar cancelacion</button></div></div></div>}</div>; }
+
 let adminPagosCache = [];
 
-function PagosAdmin({ toast }) {
+function PagosAdmin({ toast, currentAdmin }) {
   const [pagos, setPagos] = useState(adminPagosCache);
   const [loading, setLoading] = useState(adminPagosCache.length === 0);
   const [q, setQ] = useState("");
@@ -1619,7 +1607,7 @@ function PagosAdmin({ toast }) {
   const [busy, setBusy] = useState(false);
   const [lastSync, setLastSync] = useState(null);
   const [statusFilter, setStatusFilter] = useState("todos");
-  const payPanel = "todos";
+  const payPanel = statusFilter;
   const [historyFrom, setHistoryFrom] = useState("");
   const [historyTo, setHistoryTo] = useState("");
   const [confirmTarget, setConfirmTarget] = useState(null);
@@ -1629,6 +1617,7 @@ function PagosAdmin({ toast }) {
   const [rejectTarget, setRejectTarget] = useState(null);
   const [rejectMotivo, setRejectMotivo] = useState("monto_incorrecto");
   const [rejectMontoRecibido, setRejectMontoRecibido] = useState("");
+  const isSuper = currentAdmin?.rol === "superadmin";
 
   const load = useCallback((silent = false) => {
     if (!silent) setLoading(true);
@@ -1696,6 +1685,7 @@ function PagosAdmin({ toast }) {
   };
 
   const liberar = async (p) => {
+    if (!isSuper) { toast("Solo superadmin puede consignar/liberar pagos.", "error"); return; }
     setReleaseTarget(p);
     setReleaseRef("");
     setReleaseReceipt(null);
@@ -2002,9 +1992,7 @@ function PagosAdmin({ toast }) {
                         <strong style={{ color: "var(--n)" }}>{fmt(vendedorRecibe)}</strong>
                       </div>
                     </div>
-                    <div style={{ fontSize: 11, color: "var(--s400)", marginTop: 8, lineHeight: 1.5 }}>
-                      El IMP es cobrado por el banco a TratoYa al momento de transferir al vendedor.
-                    </div>
+                    <div style={{ color: "var(--s400)", fontSize: 11, marginTop: 6 }}>El GMF/4x1000 se contempla como costo operativo para que la comision neta de TratoYA quede limpia.</div><div className="transfer-callout"><span>Transferir desde TratoYA al vendedor</span><strong>{fmt(vendedorRecibe)}</strong><p>Este es el valor exacto a consignar cuando el comprador confirme la recepcion. No transfieras el total pagado por el comprador.</p></div>
                   </div>
                 );
               })() : null}
@@ -2039,7 +2027,7 @@ function PagosAdmin({ toast }) {
                       <td style={{ fontFamily: "Syne", fontWeight: 800, color: "var(--g2)" }}>{fmt(sellerAmount(p))}</td>
                       <td style={{ fontWeight: 800 }}>{fmt(freeGain(p))}</td>
                       <td>{fmt(coveredCosts(p))}</td>
-                      <td><button className="btn bp bsm" disabled={busy} onClick={(e) => { e.stopPropagation(); liberar(p); }}>Consignar</button></td>
+                      <td>{isSuper ? <button className="btn bp bsm" disabled={busy} onClick={(e) => { e.stopPropagation(); liberar(p); }}>Consignar</button> : <span className="bdg bg">Solo superadmin</span>}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -2120,76 +2108,26 @@ function PagosAdmin({ toast }) {
 // ─── LOGS ────────────────────────────────────────────
 function Logs({ toast }) {
   const [logs, setLogs] = useState([]);
+  const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(true);
-  useEffect(() => {
-    api.get("/admin/logs").then(r => setLogs(r.data || [])).catch(() => setLogs([])).finally(() => setLoading(false));
-  }, []);
+  useEffect(() => { api.get("/admin/logs").then(r => { setLogs(r.data || []); setSummary(r.summary || null); }).catch(() => setLogs([])).finally(() => setLoading(false)); }, []);
   const lvlColor = { error: "rd", warn: "or", info: "nb", debug: "bg" };
-  return (
-    <div className="page fi">
-      <h1 style={{ fontSize: 20, marginBottom: 14 }}>Logs del sistema</h1>
-      <div style={{ background: "#0D1F38", borderRadius: 12, padding: "14px 16px", border: "1px solid rgba(255,255,255,.06)", maxHeight: 520, overflowY: "auto" }}>
-        {loading ? <div style={{ color: "rgba(255,255,255,.4)", textAlign: "center", padding: 32 }}><div className="spin" style={{ margin: "0 auto" }} /></div>
-          : logs.length === 0
-            ? <div style={{ color: "rgba(255,255,255,.3)", textAlign: "center", padding: 32, fontSize: 13 }}>Sin logs disponibles o endpoint pendiente</div>
-            : logs.map((l, i) => (
-              <div key={i} style={{ fontFamily: "JetBrains Mono", fontSize: 11.5, padding: "5px 0", borderBottom: "1px solid rgba(255,255,255,.04)", display: "flex", gap: 12 }}>
-                <span style={{ color: "rgba(255,255,255,.25)", minWidth: 160 }}>{l.timestamp || l.createdAt}</span>
-                <span className={`bdg ${lvlColor[l.level] || "bg"}`} style={{ flexShrink: 0 }}>{l.level}</span>
-                <span style={{ color: "rgba(255,255,255,.7)" }}>{l.message}</span>
-              </div>
-            ))
-        }
-      </div>
-    </div>
-  );
+  const top = (obj = {}) => Object.entries(obj).sort((a,b) => b[1] - a[1]).slice(0, 4);
+  return <div className="page fi"><h1 style={{ fontSize: 20, marginBottom: 14 }}>Logs del sistema</h1>{summary && <div className="g3" style={{ marginBottom: 14 }}><div className="card" style={{ padding: 14 }}><div style={{ fontSize: 11, color: "var(--s400)", fontWeight: 800, textTransform: "uppercase" }}>Eventos auditados</div><div style={{ fontFamily: "Syne", fontSize: 28, fontWeight: 900 }}>{summary.total || logs.length}</div></div><div className="card" style={{ padding: 14 }}><div style={{ fontSize: 11, color: "var(--s400)", fontWeight: 800, textTransform: "uppercase" }}>Acciones top</div>{top(summary.por_accion).map(([k,v]) => <div key={k} style={{ display: "flex", justifyContent: "space-between", fontSize: 12, paddingTop: 4 }}><span>{k}</span><strong>{v}</strong></div>)}</div><div className="card" style={{ padding: 14 }}><div style={{ fontSize: 11, color: "var(--s400)", fontWeight: 800, textTransform: "uppercase" }}>Admins con actividad</div>{top(summary.por_admin).map(([k,v]) => <div key={k} style={{ display: "flex", justifyContent: "space-between", fontSize: 12, paddingTop: 4 }}><span>{k}</span><strong>{v}</strong></div>)}</div></div>}<div style={{ background: "#0D1F38", borderRadius: 12, padding: "14px 16px", border: "1px solid rgba(255,255,255,.06)", maxHeight: 560, overflowY: "auto" }}>{loading ? <div style={{ color: "rgba(255,255,255,.4)", textAlign: "center", padding: 32 }}><div className="spin" style={{ margin: "0 auto" }} /></div> : logs.length === 0 ? <div style={{ color: "rgba(255,255,255,.3)", textAlign: "center", padding: 32, fontSize: 13 }}>Sin logs disponibles</div> : logs.map((l, i) => <div key={l.id || i} style={{ fontFamily: "JetBrains Mono", fontSize: 11.5, padding: "8px 0", borderBottom: "1px solid rgba(255,255,255,.05)", display: "grid", gridTemplateColumns: "150px 52px 1fr", gap: 12 }}><span style={{ color: "rgba(255,255,255,.35)" }}>{fmtTime(l.timestamp || l.createdAt)}</span><span className={"bdg " + (lvlColor[l.level] || "bg")} style={{ flexShrink: 0 }}>{l.level || "info"}</span><span style={{ color: "rgba(255,255,255,.78)" }}><strong>{l.action || "EVENTO"}</strong> ? {l.entity_type || "sistema"}{l.actor?.email ? " ? " + l.actor.email : ""}<div style={{ color: "rgba(255,255,255,.45)", marginTop: 3 }}>{l.message}</div>{l.metadata && Object.keys(l.metadata).length > 0 && <div style={{ color: "rgba(255,255,255,.35)", marginTop: 3, whiteSpace: "normal" }}>{JSON.stringify(l.metadata).slice(0, 180)}</div>}</span></div>)}</div></div>;
 }
 
-// ─── CONFIGURACIÓN ────────────────────────────────────
-function Configuracion({ toast }) {
-  const [config, setConfig] = useState({ comision_min: "1500", limite_diario: "50000000", dias_inspeccion_default: "7", mantenimiento: false });
+function Configuracion({ toast, currentAdmin }) {
+  const isSuper = currentAdmin?.rol === "superadmin";
+  const [config, setConfig] = useState(() => ({ comision_min: localStorage.getItem("ty_cfg_comision_min") || "1500", limite_diario: localStorage.getItem("ty_cfg_limite_diario") || "50000000", dias_inspeccion_default: localStorage.getItem("ty_cfg_dias_inspeccion") || "7", meta_mensual_comisiones: localStorage.getItem("ty_admin_monthly_goal") || "200000", kyc_aviso_dias: localStorage.getItem("ty_cfg_kyc_aviso") || "5", kyc_gracia_dias: localStorage.getItem("ty_cfg_kyc_gracia") || "30", admin_delete_requires_code: localStorage.getItem("ty_cfg_delete_code") !== "false", auditoria_retencion_dias: localStorage.getItem("ty_cfg_auditoria_retencion") || "365", mantenimiento: localStorage.getItem("ty_cfg_mantenimiento") === "true" }));
   const [loading, setLoading] = useState(false);
   const sc = (k, v) => setConfig(c => ({ ...c, [k]: v }));
-
-  const guardar = async () => {
-    setLoading(true);
-    try { await api.put("/admin/configuracion", config); toast("Configuración guardada", "success"); }
-    catch (e) { toast(e.message, "error"); }
-    setLoading(false);
-  };
-
-  return (
-    <div className="page fi">
-      <h1 style={{ fontSize: 20, marginBottom: 16 }}>Configuración del sistema</h1>
-      <div style={{ maxWidth: 560 }}>
-        <div className="card" style={{ padding: "18px 20px", marginBottom: 14 }}>
-          <h3 style={{ fontSize: 14, marginBottom: 14 }}>💰 Comisiones</h3>
-          <div className="fg"><label className="fl">Comisión mínima (COP)</label><input className="inp" type="number" value={config.comision_min} onChange={e => sc("comision_min", e.target.value)} /></div>
-          <div className="fg"><label className="fl">Límite diario por usuario (COP)</label><input className="inp" type="number" value={config.limite_diario} onChange={e => sc("limite_diario", e.target.value)} /></div>
-        </div>
-
-        <div className="card" style={{ padding: "18px 20px", marginBottom: 14 }}>
-          <h3 style={{ fontSize: 14, marginBottom: 14 }}>⚙️ Modo mantenimiento</h3>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            <div>
-              <div style={{ fontWeight: 600, fontSize: 13 }}>Activar modo mantenimiento</div>
-              <div style={{ fontSize: 12, color: "var(--s600)" }}>Bloquea todas las operaciones de pago temporalmente</div>
-            </div>
-            <div onClick={() => sc("mantenimiento", !config.mantenimiento)} style={{ width: 44, height: 24, borderRadius: 12, background: config.mantenimiento ? "var(--g)" : "var(--s200)", cursor: "pointer", position: "relative", transition: "background .2s" }}>
-              <div style={{ width: 18, height: 18, borderRadius: "50%", background: "#fff", position: "absolute", top: 3, left: config.mantenimiento ? 23 : 3, transition: "left .2s", boxShadow: "0 1px 4px rgba(0,0,0,.2)" }} />
-            </div>
-          </div>
-        </div>
-
-        <button className="btn bp blg" style={{ width: "100%" }} onClick={guardar} disabled={loading}>
-          {loading ? <><div className="spin" /> Guardando…</> : "💾 Guardar configuración"}
-        </button>
-      </div>
-    </div>
-  );
+  const guardar = async () => { if (!isSuper) return toast("Solo superadmin puede modificar configuracion", "error"); setLoading(true); try { localStorage.setItem("ty_cfg_comision_min", config.comision_min); localStorage.setItem("ty_cfg_limite_diario", config.limite_diario); localStorage.setItem("ty_cfg_dias_inspeccion", config.dias_inspeccion_default); localStorage.setItem("ty_admin_monthly_goal", config.meta_mensual_comisiones); localStorage.setItem("ty_cfg_kyc_aviso", config.kyc_aviso_dias); localStorage.setItem("ty_cfg_kyc_gracia", config.kyc_gracia_dias); localStorage.setItem("ty_cfg_delete_code", String(config.admin_delete_requires_code)); localStorage.setItem("ty_cfg_auditoria_retencion", config.auditoria_retencion_dias); localStorage.setItem("ty_cfg_mantenimiento", String(config.mantenimiento)); await api.put("/admin/configuracion", config); toast("Configuracion guardada", "success"); } catch (e) { toast(e.message, "error"); } setLoading(false); };
+  if (!isSuper) return <div className="page fi"><div className="card" style={{ padding: 24, maxWidth: 620 }}><h1 style={{ fontSize: 20, marginBottom: 8 }}>Configuracion del sistema</h1><p style={{ color: "var(--s600)", fontSize: 13 }}>Este modulo es exclusivo para superadmin.</p></div></div>;
+  const Field = ({ label, k, type = "number", help }) => <div className="fg"><label className="fl">{label}</label><input className="inp" type={type} value={config[k]} onChange={e => sc(k, e.target.value)} />{help && <div style={{ fontSize: 11.5, color: "var(--s500)", marginTop: 4 }}>{help}</div>}</div>;
+  const Toggle = ({ label, k, help }) => <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, padding: "10px 0" }}><div><div style={{ fontWeight: 700, fontSize: 13 }}>{label}</div>{help && <div style={{ fontSize: 12, color: "var(--s600)" }}>{help}</div>}</div><div onClick={() => sc(k, !config[k])} style={{ width: 44, height: 24, borderRadius: 12, background: config[k] ? "var(--g)" : "var(--s200)", cursor: "pointer", position: "relative", transition: "background .2s" }}><div style={{ width: 18, height: 18, borderRadius: "50%", background: "#fff", position: "absolute", top: 3, left: config[k] ? 23 : 3, transition: "left .2s", boxShadow: "0 1px 4px rgba(0,0,0,.2)" }} /></div></div>;
+  return <div className="page fi"><h1 style={{ fontSize: 20, marginBottom: 16 }}>Configuracion del sistema</h1><div className="g2" style={{ alignItems: "start" }}><div className="card" style={{ padding: "18px 20px" }}><h3 style={{ fontSize: 14, marginBottom: 14 }}>Comisiones y limites</h3><Field label="Comision minima (COP)" k="comision_min" /><Field label="Meta mensual de comisiones (COP)" k="meta_mensual_comisiones" help="Alimenta el panel de Comisiones TratoYA." /><Field label="Limite diario por usuario (COP)" k="limite_diario" /></div><div className="card" style={{ padding: "18px 20px" }}><h3 style={{ fontSize: 14, marginBottom: 14 }}>Verificacion premium</h3><Field label="Avisar vencimiento antes de (dias)" k="kyc_aviso_dias" /><Field label="Retirar marca despues de vencida (dias)" k="kyc_gracia_dias" /><Field label="Dias de inspeccion por defecto" k="dias_inspeccion_default" /></div><div className="card" style={{ padding: "18px 20px" }}><h3 style={{ fontSize: 14, marginBottom: 14 }}>Seguridad admin</h3><Toggle label="Exigir clave para eliminar usuarios" k="admin_delete_requires_code" help="La clave vive en variables de entorno del backend, no en Git." /><Field label="Retencion de logs/auditoria (dias)" k="auditoria_retencion_dias" /></div><div className="card" style={{ padding: "18px 20px" }}><h3 style={{ fontSize: 14, marginBottom: 14 }}>Operacion</h3><Toggle label="Activar modo mantenimiento" k="mantenimiento" help="Bloquea operaciones de pago temporalmente." /><div style={{ fontSize: 12, color: "var(--s600)", lineHeight: 1.5, marginTop: 8 }}>Roles: admin valida y comunica; superadmin paga, reembolsa, cancela y configura.</div></div></div><button className="btn bp blg" style={{ width: "100%", maxWidth: 680, marginTop: 14 }} onClick={guardar} disabled={loading}>{loading ? <><div className="spin" /> Guardando...</> : "Guardar configuracion"}</button></div>;
 }
 
-// ─── Actividad en vivo ────────────────────────────────
 function ResenasAdmin({ toast }) {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -2233,8 +2171,8 @@ function ResenasAdmin({ toast }) {
             <tbody>{items.map(r => (
               <tr key={r.id}>
                 <td><strong>{r.Trato?.codigo || "—"}</strong><div style={{ fontSize: 11, color: "var(--s500)" }}>{r.Trato?.titulo || ""}</div></td>
-                <td>{r.autor ? `${r.autor.nombre} ${r.autor.apellido}` : r.autor_id}</td>
-                <td>{r.destinatario ? `${r.destinatario.nombre} ${r.destinatario.apellido}` : r.destinatario_id}</td>
+                <td>{r.autor ? <><strong>{r.autor.nombre} {r.autor.apellido}</strong><div style={{ fontSize: 11, color: "var(--s500)" }}>{r.autor.email || r.autor.usuario_unico || ""}</div></> : r.autor_id}</td>
+                <td>{r.destinatario ? <><strong>{r.destinatario.nombre} {r.destinatario.apellido}</strong><div style={{ fontSize: 11, color: "var(--s500)" }}>{r.destinatario.email || r.destinatario.usuario_unico || ""}</div></> : r.destinatario_id}</td>
                 <td><span style={{ color: "var(--g2)", fontWeight: 800 }}>{r.calificacion}★</span></td>
                 <td style={{ maxWidth: 360, whiteSpace: "normal", lineHeight: 1.4 }}>{r.comentario || "—"}</td>
                 <td style={{ fontSize: 11.5, color: "var(--s400)" }}>{fmtDate(r.createdAt)}</td>
@@ -2249,150 +2187,86 @@ function ResenasAdmin({ toast }) {
 // ─── PANEL DE COMISIONES ─────────────────────────────
 function ComisionesPanel({ toast }) {
   const [pagos, setPagos] = useState([]);
-  const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [periodo, setPeriodo] = useState("mes");
+  const [metaMensual] = useState(() => Number(localStorage.getItem("ty_admin_monthly_goal") || 200000));
 
   const load = useCallback(() => {
     setLoading(true);
-    Promise.all([api.get("/admin/pagos"), api.get("/admin/stats")])
-      .then(([p, s]) => { setPagos(p.data || []); setStats(s.data); })
+    api.get("/admin/pagos")
+      .then(r => setPagos(r.data || []))
       .catch(() => toast("Error cargando comisiones", "error"))
       .finally(() => setLoading(false));
-  }, []);
+  }, [toast]);
   useEffect(() => { load(); }, [load]);
 
-  // Tasas de comisión de pasarelas (aproximadas Colombia 2024)
-  const TASAS_PASARELA = {
-    pse:              { label: "PSE",        pct: 0.012, fijo: 900 },
-    nequi:            { label: "Nequi",      pct: 0.018, fijo: 0   },
-    daviplata:        { label: "Daviplata",  pct: 0.020, fijo: 0   },
-    tarjeta_credito:  { label: "T. Crédito", pct: 0.030, fijo: 0   },
-    tarjeta_debito:   { label: "T. Débito",  pct: 0.020, fijo: 0   },
-    transferencia:    { label: "Transferencia", pct: 0, fijo: 0 },
-    efectivo:         { label: "Efectivo",   pct: 0, fijo: 0 },
+  const inicioPeriodo = (() => {
+    const now = new Date();
+    if (periodo === "hoy") return new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    if (periodo === "semana") return new Date(now.getTime() - 7 * 86400000);
+    if (periodo === "mes") return new Date(now.getFullYear(), now.getMonth(), 1);
+    return new Date(now.getFullYear(), 0, 1);
+  })();
+
+  const operaciones = pagos
+    .filter(p => ["aprobado", "liberado", "completado"].includes(p.estado) && (p.tipo === "retencion" || p.Trato))
+    .map(p => {
+      const monto = parseCopAmount(p.Trato?.monto || p.monto || 0);
+      const calc = calcularComisionUI(monto, p.Trato?.quien_paga_comision || p.quien_paga_comision || "comprador");
+      const fecha = new Date(p.createdAt || p.fecha_pago || p.updatedAt || Date.now());
+      return { pago: p, fecha, monto, calc };
+    })
+    .filter(x => x.monto > 0);
+  const periodoOps = operaciones.filter(x => x.fecha >= inicioPeriodo);
+
+  const totals = periodoOps.reduce((acc, x) => {
+    acc.volumen += x.monto;
+    acc.comision += x.calc.comision_tratoya || 0;
+    acc.gmf += x.calc.costo_gmf || 0;
+    acc.bruto += x.calc.monto_comision || 0;
+    acc.vendedor += x.calc.vendedorRecibe || 0;
+    return acc;
+  }, { volumen: 0, comision: 0, gmf: 0, bruto: 0, vendedor: 0 });
+
+  const groupBy = (mode) => {
+    const map = {};
+    operaciones.forEach(x => {
+      const d = x.fecha;
+      const week = Math.ceil((((d - new Date(d.getFullYear(),0,1)) / 86400000) + new Date(d.getFullYear(),0,1).getDay() + 1) / 7);
+      const key = mode === "dia" ? d.toISOString().slice(0, 10) : mode === "semana" ? d.getFullYear() + "-S" + week : d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0");
+      if (!map[key]) map[key] = { key, volumen: 0, comision: 0, gmf: 0, ops: 0 };
+      map[key].volumen += x.monto;
+      map[key].comision += x.calc.comision_tratoya || 0;
+      map[key].gmf += x.calc.costo_gmf || 0;
+      map[key].ops += 1;
+    });
+    return Object.values(map).sort((a, b) => a.key.localeCompare(b.key)).slice(-12);
   };
-
-  const aprobados = pagos.filter(p => p.estado === "aprobado");
-  const comisiones = aprobados.filter(p => p.tipo === "comision");
-
-  // Calcular período
-  const ahora = new Date();
-  const inicio = periodo === "hoy"
-    ? new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate())
-    : periodo === "semana"
-    ? new Date(ahora.getTime() - 7 * 86400000)
-    : periodo === "mes"
-    ? new Date(ahora.getFullYear(), ahora.getMonth(), 1)
-    : new Date(ahora.getFullYear(), 0, 1);
-
-  const comisionesPeriodo = comisiones.filter(p => new Date(p.createdAt) >= inicio);
-  const bruto = comisionesPeriodo.reduce((s, p) => s + parseFloat(p.monto || 0), 0);
-
-  // Desglose por método de pago
-  const byMetodo = {};
-  aprobados.filter(p => p.tipo === "retencion" && new Date(p.createdAt) >= inicio).forEach(p => {
-    const metodo = p.metodo_pago || p.pasarela || "otros";
-    if (!byMetodo[metodo]) byMetodo[metodo] = { count: 0, volumen: 0, comision_pasarela: 0 };
-    byMetodo[metodo].count++;
-    byMetodo[metodo].volumen += parseFloat(p.monto || 0);
-    const tasa = TASAS_PASARELA[metodo] || TASAS_PASARELA.transferencia;
-    byMetodo[metodo].comision_pasarela += parseFloat(p.monto || 0) * tasa.pct + tasa.fijo;
-  });
-
-  const totalDeducciones = Object.values(byMetodo).reduce((s, v) => s + v.comision_pasarela, 0);
-  const neto = bruto - totalDeducciones;
+  const diario = groupBy("dia");
+  const semanal = groupBy("semana");
+  const mensual = groupBy("mes");
+  const chart = periodo === "mes" ? diario : periodo === "anio" ? mensual : diario.slice(-7);
+  const maxChart = Math.max(...chart.map(x => x.comision), 1);
+  const avance = Math.min(100, Math.round((totals.comision / Math.max(metaMensual, 1)) * 100));
 
   return (
     <div className="page fi">
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-        <div>
-          <h1 style={{ fontSize: 20 }}>💰 Comisiones TratoYa</h1>
-          <p style={{ fontSize: 12.5, color: "var(--s600)", marginTop: 2 }}>Ingresos netos descontando costos de pasarelas</p>
-        </div>
-        <div style={{ display: "flex", gap: 7 }}>
-          {[["hoy","Hoy"],["semana","7 días"],["mes","Este mes"],["año","Este año"]].map(([v,l]) => (
-            <button key={v} className={`btn bsm ${periodo === v ? "bp" : "bo"}`} onClick={() => setPeriodo(v)}>{l}</button>
-          ))}
-          <button className="btn bg_" onClick={load}>↻</button>
-        </div>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16, gap: 12, flexWrap: "wrap" }}>
+        <div><h1 style={{ fontSize: 20 }}>Comisiones TratoYA</h1><p style={{ fontSize: 12.5, color: "var(--s600)", marginTop: 2 }}>Arqueo contable manual: comision TratoYA, IMP/GMF y valores a transferir.</p></div>
+        <div style={{ display: "flex", gap: 7, flexWrap: "wrap" }}>{[["hoy","Hoy"],["semana","7 dias"],["mes","Este mes"],["anio","Este anio"]].map(([v,l]) => <button key={v} className={"btn bsm " + (periodo === v ? "bp" : "bo")} onClick={() => setPeriodo(v)}>{l}</button>)}<button className="btn bg_" onClick={load}>Actualizar</button></div>
       </div>
 
-      {loading ? <div style={{ textAlign: "center", padding: 60 }}><div className="spin" style={{ margin: "0 auto", color: "var(--s400)" }} /></div> : (
-        <>
-          {/* KPIs principales */}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 11, marginBottom: 16 }}>
-            <div className="card" style={{ padding: "18px 20px", borderLeft: "4px solid var(--g)" }}>
-              <div style={{ fontSize: 11, color: "var(--s400)", fontWeight: 600, textTransform: "uppercase", letterSpacing: ".5px", marginBottom: 6 }}>Comisión Bruta TratoYa</div>
-              <div style={{ fontFamily: "Syne", fontSize: 28, fontWeight: 800, color: "var(--g2)" }}>{fmt(bruto)}</div>
-              <div style={{ fontSize: 12, color: "var(--s600)", marginTop: 4 }}>{comisionesPeriodo.length} transacciones</div>
-            </div>
-            <div className="card" style={{ padding: "18px 20px", borderLeft: "4px solid var(--rd)" }}>
-              <div style={{ fontSize: 11, color: "var(--s400)", fontWeight: 600, textTransform: "uppercase", letterSpacing: ".5px", marginBottom: 6 }}>Deducciones Pasarelas</div>
-              <div style={{ fontFamily: "Syne", fontSize: 28, fontWeight: 800, color: "var(--rd)" }}>−{fmt(totalDeducciones)}</div>
-              <div style={{ fontSize: 12, color: "var(--s600)", marginTop: 4 }}>Bre-B, Nequi, Daviplata, transferencia</div>
-            </div>
-            <div className="card" style={{ padding: "18px 20px", borderLeft: "4px solid var(--n)" }}>
-              <div style={{ fontSize: 11, color: "var(--s400)", fontWeight: 600, textTransform: "uppercase", letterSpacing: ".5px", marginBottom: 6 }}>💵 Ingreso Neto TratoYa</div>
-              <div style={{ fontFamily: "Syne", fontSize: 28, fontWeight: 800, color: "var(--n)" }}>{fmt(neto)}</div>
-              <div style={{ fontSize: 12, color: "var(--s600)", marginTop: 4 }}>Transferible a cuentas TratoYa</div>
-            </div>
-          </div>
-
-          {/* Desglose por método de pago */}
-          <div className="card" style={{ padding: "16px 18px", marginBottom: 14 }}>
-            <h3 style={{ fontSize: 14, marginBottom: 14 }}>Desglose por método de pago</h3>
-            {Object.keys(byMetodo).length === 0
-              ? <div style={{ textAlign: "center", padding: 24, color: "var(--s400)", fontSize: 13 }}>Sin transacciones en este período</div>
-              : (
-                <table>
-                  <thead><tr><th>Método</th><th>Transacciones</th><th>Volumen</th><th>% Pasarela</th><th>Costo Pasarela</th><th>Neto Estimado</th></tr></thead>
-                  <tbody>
-                    {Object.entries(byMetodo).map(([metodo, datos]) => {
-                      const tasa = TASAS_PASARELA[metodo] || TASAS_PASARELA.transferencia;
-                      const costoStr = tasa.pct > 0 ? `${(tasa.pct * 100).toFixed(1)}%${tasa.fijo > 0 ? ` + $${tasa.fijo.toLocaleString("es-CO")}` : ""}` : "Sin costo";
-                      const neto_ = datos.volumen - datos.comision_pasarela;
-                      return (
-                        <tr key={metodo}>
-                          <td style={{ fontWeight: 600 }}>{TASAS_PASARELA[metodo]?.label || metodo}</td>
-                          <td style={{ fontFamily: "Syne", fontWeight: 700 }}>{datos.count}</td>
-                          <td style={{ fontFamily: "Syne", fontWeight: 700 }}>{fmt(datos.volumen)}</td>
-                          <td><span style={{ fontSize: 11.5, color: "var(--or)", fontWeight: 600 }}>{costoStr}</span></td>
-                          <td style={{ color: "var(--rd)", fontWeight: 600 }}>−{fmt(datos.comision_pasarela)}</td>
-                          <td style={{ color: "var(--g2)", fontWeight: 700 }}>{fmt(neto_ * 0.045)}</td>
-                        </tr>
-                      );
-                    })}
-                    <tr style={{ background: "var(--cr)" }}>
-                      <td style={{ fontWeight: 800 }}>TOTAL</td>
-                      <td style={{ fontFamily: "Syne", fontWeight: 800 }}>{Object.values(byMetodo).reduce((s,v) => s+v.count,0)}</td>
-                      <td style={{ fontFamily: "Syne", fontWeight: 800 }}>{fmt(Object.values(byMetodo).reduce((s,v) => s+v.volumen,0))}</td>
-                      <td>—</td>
-                      <td style={{ color: "var(--rd)", fontWeight: 800 }}>−{fmt(totalDeducciones)}</td>
-                      <td style={{ color: "var(--g2)", fontWeight: 800, fontFamily: "Syne" }}>{fmt(neto)}</td>
-                    </tr>
-                  </tbody>
-                </table>
-              )
-            }
-          </div>
-
-          {/* Costos referenciales */}
-          <div className="card" style={{ padding: "14px 18px" }}>
-            <h3 style={{ fontSize: 13, marginBottom: 10 }}>📋 Costos referenciales de pasarelas (Colombia)</h3>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 9 }}>
-              {Object.entries(TASAS_PASARELA).filter(([, v]) => v.pct > 0 || v.fijo > 0).map(([k, v]) => (
-                <div key={k} style={{ background: "var(--s50)", borderRadius: 8, padding: "10px 12px" }}>
-                  <div style={{ fontWeight: 700, fontSize: 12.5, marginBottom: 2 }}>{v.label}</div>
-                  <div style={{ fontSize: 12, color: "var(--or)", fontWeight: 600 }}>{(v.pct*100).toFixed(1)}%{v.fijo > 0 ? ` + $${v.fijo.toLocaleString("es-CO")}` : ""}</div>
-                  <div style={{ fontSize: 10, color: "var(--s400)", marginTop: 2 }}>por transacción</div>
-                </div>
-              ))}
-            </div>
-            <p style={{ fontSize: 11.5, color: "var(--s400)", marginTop: 10 }}>* Tasas aproximadas. Verificar contratos vigentes con cada pasarela para valores exactos.</p>
-          </div>
-        </>
-      )}
+      {loading ? <div style={{ textAlign: "center", padding: 60 }}><div className="spin" style={{ margin: "0 auto", color: "var(--s400)" }} /></div> : <>
+        <div className="g3" style={{ marginBottom: 14 }}>
+          <div className="card" style={{ padding: "18px 20px", borderLeft: "4px solid var(--g)" }}><div style={{ fontSize: 11, color: "var(--s400)", fontWeight: 800, textTransform: "uppercase" }}>TratoYA neto</div><div style={{ fontFamily: "Syne", fontSize: 28, fontWeight: 900, color: "var(--g2)" }}>{fmt(totals.comision)}</div><div style={{ fontSize: 12, color: "var(--s600)" }}>{periodoOps.length} operaciones</div></div>
+          <div className="card" style={{ padding: "18px 20px" }}><div style={{ fontSize: 11, color: "var(--s400)", fontWeight: 800, textTransform: "uppercase" }}>IMP / GMF causado</div><div style={{ fontFamily: "Syne", fontSize: 28, fontWeight: 900, color: "var(--or)" }}>{fmt(totals.gmf)}</div><div style={{ fontSize: 12, color: "var(--s600)" }}>4x1000 estimado segun flujo</div></div>
+          <div className="card" style={{ padding: "18px 20px" }}><div style={{ fontSize: 11, color: "var(--s400)", fontWeight: 800, textTransform: "uppercase" }}>Volumen protegido</div><div style={{ fontFamily: "Syne", fontSize: 28, fontWeight: 900, color: "var(--n)" }}>{fmt(totals.volumen)}</div><div style={{ fontSize: 12, color: "var(--s600)" }}>Base de transacciones validadas</div></div>
+        </div>
+        <div className="card" style={{ padding: "16px 18px", marginBottom: 14 }}><div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center", flexWrap: "wrap", marginBottom: 12 }}><div><h3 style={{ fontSize: 14 }}>Meta mensual de comisiones</h3><p style={{ fontSize: 12, color: "var(--s600)" }}>La meta mensual se modifica unicamente desde Configuracion.</p></div><strong style={{ fontFamily: "Syne", fontSize: 22, color: "var(--g2)" }}>{fmt(metaMensual)}</strong></div><div style={{ height: 9, background: "var(--s100)", borderRadius: 999, overflow: "hidden" }}><div style={{ width: avance + "%", height: "100%", background: "linear-gradient(90deg,var(--g),var(--g2))" }} /></div><div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: "var(--s600)", marginTop: 6 }}><span>{fmt(totals.comision)} / {fmt(metaMensual)}</span><strong>{avance}%</strong></div></div>
+        <div className="card" style={{ padding: "16px 18px", marginBottom: 14 }}><h3 style={{ fontSize: 14, marginBottom: 14 }}>Grafica de comisiones netas</h3><div className="admin-chart" style={{ alignItems: "end" }}>{chart.map(row => <div key={row.key} style={{ flex: 1, minWidth: 42, display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}><div title={fmt(row.comision)} style={{ width: "70%", minHeight: 4, height: Math.max(4, (row.comision / maxChart) * 150) + "px", borderRadius: "8px 8px 2px 2px", background: "linear-gradient(180deg,var(--g),var(--g2))" }} /><span style={{ fontSize: 10.5, color: "var(--s500)", textAlign: "center" }}>{row.key.slice(-5)}</span></div>)}</div></div>
+        <div className="card" style={{ padding: "16px 18px", marginBottom: 14 }}><h3 style={{ fontSize: 14, marginBottom: 12 }}>Arqueo diario / semanal / mensual</h3><div className="g3">{[['Diario', diario], ['Semanal', semanal], ['Mensual', mensual]].map(([title, rows]) => <div key={title} style={{ background: "var(--s50)", border: "1px solid var(--s100)", borderRadius: 10, padding: 12 }}><h4 style={{ fontSize: 13, marginBottom: 8 }}>{title}</h4>{rows.slice(-5).reverse().map(r => <div key={r.key} style={{ display: "flex", justifyContent: "space-between", gap: 8, borderTop: "1px solid var(--s100)", padding: "7px 0", fontSize: 12 }}><span>{r.key}</span><strong>{fmt(r.comision)}</strong></div>)}</div>)}</div></div>
+        <div className="card" style={{ padding: 0, overflow: "hidden" }}><div style={{ padding: "14px 18px", borderBottom: "1px solid var(--s100)" }}><h3 style={{ fontSize: 14 }}>Detalle operativo para arqueo</h3><p style={{ fontSize: 12, color: "var(--s600)" }}>Valores estimados con la regla vigente: 4.5% TratoYA + IMP/GMF cuando aplique.</p></div><div className="tw"><table><thead><tr><th>Fecha</th><th>Trato</th><th>Comprador</th><th>Vendedor</th><th>Monto</th><th>Comision TratoYA</th><th>IMP/GMF</th><th>Vendedor recibe</th></tr></thead><tbody>{periodoOps.slice(0, 80).map(x => <tr key={x.pago.id}><td>{fmtDate(x.fecha)}</td><td><strong>{x.pago.Trato?.codigo || x.pago.trato_id || "-"}</strong><div style={{ fontSize: 11, color: "var(--s500)" }}>{x.pago.Trato?.titulo || ""}</div></td><td>{x.pago.Trato?.comprador?.nombre || "-"}</td><td>{x.pago.Trato?.vendedor?.nombre || "-"}</td><td>{fmt(x.monto)}</td><td style={{ color: "var(--g2)", fontWeight: 800 }}>{fmt(x.calc.comision_tratoya || 0)}</td><td style={{ color: "var(--or)", fontWeight: 700 }}>{fmt(x.calc.costo_gmf || 0)}</td><td>{fmt(x.calc.vendedorRecibe || 0)}</td></tr>)}</tbody></table></div></div>
+      </>}
     </div>
   );
 }
@@ -2995,14 +2869,14 @@ export default function TratoYaAdmin() {
     roles:          <RolesAdmin toast={toast} currentAdmin={admin} />,
     kyc:            <KYCVerificaciones toast={toast} />,
     baneos:         <Baneados toast={toast} />,
-    tratos:         <TratosAdmin toast={toast} />,
-    pagos:          <PagosAdmin toast={toast} />,
+    tratos:         <TratosAdmin toast={toast} currentAdmin={admin} />,
+    pagos:          <PagosAdmin toast={toast} currentAdmin={admin} />,
     comisiones:     <ComisionesPanel toast={toast} />,
     resenas:        <ResenasAdmin toast={toast} />,
     disputas:       <Disputas toast={toast} />,
     tickets:        <Tickets toast={toast} />,
     notificaciones: <Notificaciones toast={toast} />,
-    configuracion:  <Configuracion toast={toast} />,
+    configuracion:  <Configuracion toast={toast} currentAdmin={admin} />,
     logs:           <Logs toast={toast} />,
   };
 
@@ -3025,7 +2899,7 @@ export default function TratoYaAdmin() {
               <button className="btn bg_ bsm" onClick={logout}>🚪 Salir</button>
             </div>
           </div>
-          <TratoAdminFullPage tratoId={tratoDetailId} toast={toast} backHref={detailBackHref} />
+          <TratoAdminFullPage tratoId={tratoDetailId} toast={toast} backHref={detailBackHref} currentAdmin={admin} />
         </div>
       ) : (
         <div className="admin-shell">

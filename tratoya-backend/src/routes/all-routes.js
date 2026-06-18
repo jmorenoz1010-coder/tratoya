@@ -1,5 +1,5 @@
 // =============================================
-// USERS ROUTE — src/routes/users.js
+// USERS ROUTE â€” src/routes/users.js
 // =============================================
 const express = require('express');
 const bcrypt = require('bcryptjs');
@@ -46,20 +46,20 @@ usersRouter.put('/profile', async (req, res, next) => {
     if (usuario_unico !== undefined) {
       const handle = normalizeHandle(usuario_unico);
       if (!/^[a-z0-9]{5,24}$/.test(handle)) {
-        return res.status(400).json({ success: false, message: 'El ID único debe tener entre 5 y 24 letras/números, sin espacios ni símbolos' });
+        return res.status(400).json({ success: false, message: 'El ID Ãºnico debe tener entre 5 y 24 letras/nÃºmeros, sin espacios ni sÃ­mbolos' });
       }
       const existing = await User.findOne({ where: { usuario_unico: handle, id: { [Op.ne]: req.user.id } } });
-      if (existing) return res.status(409).json({ success: false, message: 'Ese ID único ya está en uso' });
+      if (existing) return res.status(409).json({ success: false, message: 'Ese ID Ãºnico ya estÃ¡ en uso' });
       updates.usuario_unico = handle;
     }
 
     if (cedula !== undefined) {
       const existingDoc = await User.findOne({ where: { cedula, id: { [Op.ne]: req.user.id } } });
-      if (existingDoc) return res.status(409).json({ success: false, message: 'Ese número de identificación ya está registrado' });
+      if (existingDoc) return res.status(409).json({ success: false, message: 'Ese nÃºmero de identificaciÃ³n ya estÃ¡ registrado' });
     }
     if (telefono !== undefined && telefono) {
       const existingTel = await User.findOne({ where: { telefono, id: { [Op.ne]: req.user.id } } });
-      if (existingTel) return res.status(409).json({ success: false, message: 'Ese número de WhatsApp ya está registrado en otra cuenta' });
+      if (existingTel) return res.status(409).json({ success: false, message: 'Ese nÃºmero de WhatsApp ya estÃ¡ registrado en otra cuenta' });
     }
 
     await req.user.update(updates);
@@ -72,7 +72,7 @@ usersRouter.get('/lookup/:usuario_unico', async (req, res, next) => {
   try {
     const handle = normalizeHandle(req.params.usuario_unico);
     if (!/^[a-z0-9]{5,24}$/.test(handle)) {
-      return res.status(400).json({ success: false, message: 'ID único inválido' });
+      return res.status(400).json({ success: false, message: 'ID Ãºnico invÃ¡lido' });
     }
     const user = await User.findOne({
       where: { usuario_unico: handle, is_active: true, is_blocked: false },
@@ -104,7 +104,7 @@ usersRouter.get('/notifications', async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
-// GET /api/users/stream — SSE push notifications en tiempo real
+// GET /api/users/stream â€” SSE push notifications en tiempo real
 usersRouter.get('/stream', (req, res) => {
   res.setHeader('Content-Type', 'text/event-stream');
   res.setHeader('Cache-Control', 'no-cache');
@@ -112,19 +112,19 @@ usersRouter.get('/stream', (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.flushHeaders();
 
-  // Registrar conexión
+  // Registrar conexiÃ³n
   try {
     const { registrarConexion } = require('../services/pushService');
     registrarConexion(req.user.id, res);
   } catch { /* pushService no disponible */ }
 
-  // Heartbeat cada 25s para mantener conexión activa
+  // Heartbeat cada 25s para mantener conexiÃ³n activa
   const heartbeat = setInterval(() => {
     try { res.write(': heartbeat\n\n'); } catch { clearInterval(heartbeat); }
   }, 25000);
 
   // Bienvenida inicial
-  res.write(`data: ${JSON.stringify({ tipo: 'conectado', mensaje: 'Conexión establecida', usuario_id: req.user.id })}\n\n`);
+  res.write(`data: ${JSON.stringify({ tipo: 'conectado', mensaje: 'ConexiÃ³n establecida', usuario_id: req.user.id })}\n\n`);
 
   req.on('close', () => clearInterval(heartbeat));
 });
@@ -153,8 +153,8 @@ usersRouter.get('/bank-accounts', async (req, res, next) => {
 usersRouter.post('/bank-accounts', async (req, res, next) => {
   try {
     const { banco, tipo, numero, titular } = req.body;
-    if (!banco || !tipo || !numero) return res.status(400).json({ success: false, message: 'Banco, tipo y número son requeridos' });
-    if (!['ahorros','corriente','nequi','daviplata','breb'].includes(tipo)) return res.status(400).json({ success: false, message: 'Tipo de cuenta inválido' });
+    if (!banco || !tipo || !numero) return res.status(400).json({ success: false, message: 'Banco, tipo y nÃºmero son requeridos' });
+    if (!['ahorros','corriente','nequi','daviplata','breb'].includes(tipo)) return res.status(400).json({ success: false, message: 'Tipo de cuenta invÃ¡lido' });
     const cuenta = await CuentaBancaria.create({
       usuario_id: req.user.id,
       banco,
@@ -172,7 +172,7 @@ module.exports.users = usersRouter;
 
 
 // =============================================
-// PAYMENTS ROUTE — src/routes/payments.js
+// PAYMENTS ROUTE â€” src/routes/payments.js
 // =============================================
 const paymentsRouter = express.Router();
 const {
@@ -194,7 +194,7 @@ const paymentFailedStatuses = ['PAYMENT_DECLINED', 'PAYMENT_ERROR', 'PAYMENT_VOI
 
 const envBool = (value, fallback = false) => {
   if (value === undefined || value === null || value === '') return fallback;
-  return ['1', 'true', 'yes', 'si', 'sí', 'on'].includes(String(value).trim().toLowerCase());
+  return ['1', 'true', 'yes', 'si', 'sÃ­', 'on'].includes(String(value).trim().toLowerCase());
 };
 
 function getEpaycoConfig() {
@@ -220,7 +220,7 @@ function getEpaycoConfig() {
     throw err;
   }
   if (!customerId || !pKey) {
-    logger.warn('EPAYCO_SIGNATURE_KEYS_MISSING: faltan EPAYCO_CUSTOMER_ID/EPAYCO_P_CUST_ID y EPAYCO_P_KEY para sesión v2 o validación de webhook');
+    logger.warn('EPAYCO_SIGNATURE_KEYS_MISSING: faltan EPAYCO_CUSTOMER_ID/EPAYCO_P_CUST_ID y EPAYCO_P_KEY para sesiÃ³n v2 o validaciÃ³n de webhook');
   }
   return { env, isTest, publicKey, customerId, pKey, frontendUrl, backendUrl, realEnabled, maxTestAmountCop, checkoutVersion, checkoutType };
 }
@@ -242,7 +242,7 @@ async function createEpaycoSmartSession(config, sessionPayload) {
   });
   const token = login.data?.token || login.data?.data?.token;
   if (!token) {
-    const err = new Error(login.data?.textResponse || login.data?.titleResponse || login.data?.message || 'ePayco no devolvió token de autenticación');
+    const err = new Error(login.data?.textResponse || login.data?.titleResponse || login.data?.message || 'ePayco no devolviÃ³ token de autenticaciÃ³n');
     err.statusCode = 502;
     err.expose = true;
     throw err;
@@ -256,7 +256,7 @@ async function createEpaycoSmartSession(config, sessionPayload) {
   });
   const sessionId = session.data?.data?.sessionId || session.data?.sessionId;
   if (!sessionId) {
-    const err = new Error(session.data?.textResponse || session.data?.titleResponse || 'ePayco no devolvió sessionId');
+    const err = new Error(session.data?.textResponse || session.data?.titleResponse || 'ePayco no devolviÃ³ sessionId');
     err.statusCode = 502;
     err.expose = true;
     throw err;
@@ -309,7 +309,7 @@ paymentsRouter.post('/epayco/create', async (req, res, next) => {
 
     const config = getEpaycoConfig();
     if (!config.isTest && !config.realEnabled) {
-      return res.status(403).json({ success: false, message: 'Pagos reales deshabilitados por configuración' });
+      return res.status(403).json({ success: false, message: 'Pagos reales deshabilitados por configuraciÃ³n' });
     }
 
     const trato = await Trato.findByPk(dealId);
@@ -329,7 +329,7 @@ paymentsRouter.post('/epayco/create', async (req, res, next) => {
     const commission = calcularComision(montoBase, trato.quien_paga_comision || 'comprador');
     const amountCop = commission.total_a_pagar;
     if (!Number.isFinite(amountCop) || amountCop <= 0) {
-      return res.status(400).json({ success: false, message: 'El monto del trato no es válido' });
+      return res.status(400).json({ success: false, message: 'El monto del trato no es vÃ¡lido' });
     }
     if (config.isTest && amountCop > config.maxTestAmountCop) {
       return res.status(400).json({
@@ -607,7 +607,7 @@ paymentsRouter.post('/manual/report', reportePagoLimiter, paymentUpload.single('
       },
     });
 
-    // Pasos no críticos: nunca deben tumbar un pago ya registrado.
+    // Pasos no crÃ­ticos: nunca deben tumbar un pago ya registrado.
     try {
       await AuditLog.create({
         user_id: req.user.id,
@@ -617,14 +617,14 @@ paymentsRouter.post('/manual/report', reportePagoLimiter, paymentUpload.single('
         metadata: { deal_id: trato.id, reference, transaction_ref: cleanRef, amount_cop: amountCop },
       });
     } catch (e) {
-      require('../utils/logger').warn(`[PAYMENT] AuditLog falló (no bloquea): ${e.message}`);
+      require('../utils/logger').warn(`[PAYMENT] AuditLog fallÃ³ (no bloquea): ${e.message}`);
     }
 
     try {
       const { notificar } = require('../services/notificacionService');
       await notificar(trato.comprador_id, 'pago_reportado', {
         titulo: 'Comprobante recibido',
-        cuerpo: `Recibimos el comprobante del trato ${trato.codigo}. Nuestro equipo validará el pago manualmente.`,
+        cuerpo: `Recibimos el comprobante del trato ${trato.codigo}. Nuestro equipo validarÃ¡ el pago manualmente.`,
         metadata: { trato_id: trato.id, payment_intent_id: intent.id },
         email_template: 'pago_recibido_comprador',
         email_data: { codigo: trato.codigo, titulo: trato.titulo, monto: Number(amountCop).toLocaleString('es-CO') },
@@ -633,13 +633,13 @@ paymentsRouter.post('/manual/report', reportePagoLimiter, paymentUpload.single('
       });
       if (trato.vendedor_id) {
         await notificar(trato.vendedor_id, 'pago_reportado_vendedor', {
-          titulo: 'El comprador reportó el pago',
-          cuerpo: `El comprador subió el comprobante del trato ${trato.codigo}. Lo estamos verificando.`,
+          titulo: 'El comprador reportÃ³ el pago',
+          cuerpo: `El comprador subiÃ³ el comprobante del trato ${trato.codigo}. Lo estamos verificando.`,
           metadata: { trato_id: trato.id, payment_intent_id: intent.id },
         });
       }
     } catch (e) {
-      require('../utils/logger').warn(`[PAYMENT] Notificación falló (no bloquea): ${e.message}`);
+      require('../utils/logger').warn(`[PAYMENT] NotificaciÃ³n fallÃ³ (no bloquea): ${e.message}`);
     }
 
     try {
@@ -650,7 +650,7 @@ paymentsRouter.post('/manual/report', reportePagoLimiter, paymentUpload.single('
     res.json({
       success: true,
       ok: true,
-      message: 'Pago reportado. Lo revisaremos en máximo 1 hora.',
+      message: 'Pago reportado. Lo revisaremos en mÃ¡ximo 1 hora.',
       data: {
         reference,
         amountCop,
@@ -712,7 +712,7 @@ paymentsRouter.post('/create-order-disabled/:trato_id', async (req, res, next) =
 });
 
 paymentsRouter.get('/status/:transaction_id', async (req, res, next) => {
-  return res.status(410).json({ success: false, message: 'La verificación Wompi fue desactivada. Usa /api/payments/status?reference=...' });
+  return res.status(410).json({ success: false, message: 'La verificaciÃ³n Wompi fue desactivada. Usa /api/payments/status?reference=...' });
 });
 
 paymentsRouter.get('/status-disabled/:transaction_id', async (req, res, next) => {
@@ -721,7 +721,7 @@ paymentsRouter.get('/status-disabled/:transaction_id', async (req, res, next) =>
     const trx = await verificarTransaccionWompi(req.params.transaction_id);
     const codigo = (trx.reference || '').split('-')[0];
     const trato = await Trato.findOne({ where: { codigo } });
-    if (!trato) return res.status(404).json({ success: false, message: 'Trato no encontrado para esta transacción' });
+    if (!trato) return res.status(404).json({ success: false, message: 'Trato no encontrado para esta transacciÃ³n' });
 
     if (trx.status === 'APPROVED') {
       await registrarPagoAprobado({
@@ -739,12 +739,12 @@ paymentsRouter.get('/status-disabled/:transaction_id', async (req, res, next) =>
 
 paymentsRouter.post('/sandbox-approve/:trato_id', async (req, res, next) => {
   try {
-    // S-03: la simulación de pago NUNCA está disponible en producción. Es un bypass
+    // S-03: la simulaciÃ³n de pago NUNCA estÃ¡ disponible en producciÃ³n. Es un bypass
     // del escrow (marca pago_retenido sin pago real) y solo debe usarse en entornos
-    // de prueba (NODE_ENV !== 'production'). Los pagos reales se confirman vía webhook
-    // de pasarela o confirmación manual del admin.
+    // de prueba (NODE_ENV !== 'production'). Los pagos reales se confirman vÃ­a webhook
+    // de pasarela o confirmaciÃ³n manual del admin.
     if (process.env.NODE_ENV === 'production') {
-      return res.status(403).json({ success: false, message: 'Simulación no disponible en producción' });
+      return res.status(403).json({ success: false, message: 'SimulaciÃ³n no disponible en producciÃ³n' });
     }
     const trato = await Trato.findByPk(req.params.trato_id);
     if (!trato) return res.status(404).json({ success: false, message: 'Trato no encontrado' });
@@ -776,15 +776,15 @@ paymentsRouter.post('/sandbox-approve/:trato_id', async (req, res, next) => {
     await notificarAmbos(
       trato.comprador_id, trato.vendedor_id, 'pago_retenido',
       {
-        titulo: '🔒 Pago retenido',
-        cuerpo: `Tu pago de $${parseFloat(trato.monto).toLocaleString('es-CO')} COP está seguro en TratoYa.`,
+        titulo: 'ðŸ”’ Pago retenido',
+        cuerpo: `Tu pago de $${parseFloat(trato.monto).toLocaleString('es-CO')} COP estÃ¡ seguro en TratoYa.`,
         metadata: { trato_id: trato.id },
         sms_evento: 'pago_retenido_comprador',
         sms_params: { codigo: trato.codigo },
       },
       {
-        titulo: '🔒 Pago retenido — procede a entregar',
-        cuerpo: `$${parseFloat(trato.monto).toLocaleString('es-CO')} COP del trato ${trato.codigo} están seguros. Envía el producto.`,
+        titulo: 'ðŸ”’ Pago retenido â€” procede a entregar',
+        cuerpo: `$${parseFloat(trato.monto).toLocaleString('es-CO')} COP del trato ${trato.codigo} estÃ¡n seguros. EnvÃ­a el producto.`,
         metadata: { trato_id: trato.id, sandbox: true },
         sms_evento: 'pago_retenido_vendedor',
         sms_params: { codigo: trato.codigo, monto: trato.monto },
@@ -804,7 +804,7 @@ paymentsRouter.get('/history', async (req, res, next) => {
     const tratoIds = tratos.map(t => t.id);
     const tratoMap = Object.fromEntries(tratos.map(t => [t.id, t]));
 
-    // PaymentIntents — estado real de cada cobro ePayco
+    // PaymentIntents â€” estado real de cada cobro ePayco
     const intents = await PaymentIntent.findAll({
       where: { deal_id: { [Op.in]: tratoIds } },
       order: [['createdAt', 'DESC']],
@@ -855,7 +855,7 @@ module.exports.payments = paymentsRouter;
 
 
 // =============================================
-// MESSAGES ROUTE — src/routes/messages.js
+// MESSAGES ROUTE â€” src/routes/messages.js
 // =============================================
 const messagesRouter = express.Router();
 const { Mensaje } = require('../config/database');
@@ -884,7 +884,7 @@ messagesRouter.get('/:trato_id', async (req, res, next) => {
 });
 
 messagesRouter.post('/:trato_id', chatLimiter, [
-  bodyMsg('contenido').notEmpty().trim().withMessage('Mensaje vacío'),
+  bodyMsg('contenido').notEmpty().trim().withMessage('Mensaje vacÃ­o'),
 ], async (req, res, next) => {
   const errors = validMsg(req);
   if (!errors.isEmpty()) {
@@ -901,7 +901,7 @@ messagesRouter.post('/:trato_id', chatLimiter, [
     });
     if (!trato) return res.status(404).json({ success: false, message: 'Trato no encontrado' });
 
-    // Seguridad escrow: censurar teléfonos, correos y enlaces para que las
+    // Seguridad escrow: censurar telÃ©fonos, correos y enlaces para que las
     // partes no se salgan de la plataforma.
     const { censurarTexto } = require('../utils/censura');
     const { texto: contenidoSeguro, censurado } = censurarTexto(req.body.contenido);
@@ -929,7 +929,7 @@ module.exports.messages = messagesRouter;
 
 
 // =============================================
-// REVIEWS ROUTE — src/routes/reviews.js
+// REVIEWS ROUTE â€” src/routes/reviews.js
 // =============================================
 const reviewsRouter = express.Router();
 reviewsRouter.use(auth);
@@ -972,17 +972,17 @@ reviewsRouter.post('/deal/:trato_id', async (req, res, next) => {
     const { calificacion, comentario = '' } = req.body;
     const rating = Number(calificacion);
     if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
-      return res.status(400).json({ success: false, message: 'La valoración debe estar entre 1 y 5 estrellas' });
+      return res.status(400).json({ success: false, message: 'La valoraciÃ³n debe estar entre 1 y 5 estrellas' });
     }
     const trato = await Trato.findByPk(req.params.trato_id);
     if (!trato || ![trato.comprador_id, trato.vendedor_id].includes(req.user.id)) {
       return res.status(404).json({ success: false, message: 'Trato no encontrado' });
     }
     if (trato.estado !== 'completado') {
-      return res.status(400).json({ success: false, message: 'Solo puedes reseñar tratos completados' });
+      return res.status(400).json({ success: false, message: 'Solo puedes reseÃ±ar tratos completados' });
     }
     const destinatarioId = req.user.id === trato.comprador_id ? trato.vendedor_id : trato.comprador_id;
-    if (!destinatarioId) return res.status(400).json({ success: false, message: 'El trato no tiene contraparte para reseñar' });
+    if (!destinatarioId) return res.status(400).json({ success: false, message: 'El trato no tiene contraparte para reseÃ±ar' });
 
     const [resena, created] = await Resena.findOrCreate({
       where: { trato_id: trato.id, autor_id: req.user.id },
@@ -998,7 +998,7 @@ reviewsRouter.post('/deal/:trato_id', async (req, res, next) => {
       await resena.update({ calificacion: rating, comentario: comentario.trim().slice(0, 1000), destinatario_id: destinatarioId });
     }
     await recalcularReputacionPorResenas(destinatarioId);
-    res.status(created ? 201 : 200).json({ success: true, data: resena, message: created ? 'Reseña publicada' : 'Reseña actualizada' });
+    res.status(created ? 201 : 200).json({ success: true, data: resena, message: created ? 'ReseÃ±a publicada' : 'ReseÃ±a actualizada' });
   } catch (err) { next(err); }
 });
 
@@ -1006,7 +1006,7 @@ module.exports.reviews = reviewsRouter;
 
 
 // =============================================
-// DISPUTES ROUTE — src/routes/disputes.js
+// DISPUTES ROUTE â€” src/routes/disputes.js
 // =============================================
 const disputesRouter = express.Router();
 const { Disputa } = require('../config/database');
@@ -1016,9 +1016,9 @@ const dayjs = require('dayjs');
 disputesRouter.use(auth);
 
 disputesRouter.post('/', disputaLimiter, [
-  bodyD('trato_id').isUUID().withMessage('trato_id inválido'),
+  bodyD('trato_id').isUUID().withMessage('trato_id invÃ¡lido'),
   bodyD('motivo').notEmpty().withMessage('Motivo requerido'),
-  bodyD('descripcion').isLength({ min: 20 }).withMessage('Descripción mínimo 20 caracteres'),
+  bodyD('descripcion').isLength({ min: 20 }).withMessage('DescripciÃ³n mÃ­nimo 20 caracteres'),
   bodyD('tipo').isIn(['producto_danado','no_recibido','diferente','servicio_incompleto','fraude','otro']),
 ], async (req, res, next) => {
   const errors = validD(req);
@@ -1037,7 +1037,7 @@ disputesRouter.post('/', disputaLimiter, [
     // S-12: solo se puede disputar un trato con pago ya protegido / en proceso de entrega.
     const ESTADOS_DISPUTABLES = ['pago_retenido', 'en_entrega', 'pendiente_confirmacion', 'confirmado'];
     if (!ESTADOS_DISPUTABLES.includes(trato.estado)) {
-      return res.status(400).json({ success: false, message: 'Solo puedes abrir una disputa cuando el pago ya está protegido y hay una entrega en curso.' });
+      return res.status(400).json({ success: false, message: 'Solo puedes abrir una disputa cuando el pago ya estÃ¡ protegido y hay una entrega en curso.' });
     }
 
     const yaExiste = await Disputa.findOne({ where: { trato_id } });
@@ -1065,12 +1065,12 @@ disputesRouter.post('/', disputaLimiter, [
     const contraparte = trato.comprador_id === req.user.id ? trato.vendedor_id : trato.comprador_id;
     const { notificar } = require('../services/notificacionService');
     await notificar(contraparte, 'disputa_abierta', {
-      titulo: '⚖️ Disputa abierta en tu trato',
-      cuerpo: `El trato "${trato.titulo}" tiene una disputa. Responderemos en máximo 72h.`,
+      titulo: 'âš–ï¸ Disputa abierta en tu trato',
+      cuerpo: `El trato "${trato.titulo}" tiene una disputa. Responderemos en mÃ¡ximo 72h.`,
       metadata: { disputa_id: disputa.id, trato_id },
     });
 
-    res.status(201).json({ success: true, message: 'Disputa abierta. Un mediador revisará en 72 horas.', data: disputa });
+    res.status(201).json({ success: true, message: 'Disputa abierta. Un mediador revisarÃ¡ en 72 horas.', data: disputa });
   } catch (err) { next(err); }
 });
 
@@ -1092,7 +1092,7 @@ module.exports.disputes = disputesRouter;
 
 
 // =============================================
-// KYC ROUTE — src/routes/kyc.js
+// KYC ROUTE â€” src/routes/kyc.js
 // =============================================
 const kycRouter = express.Router();
 const multer = require('multer');
@@ -1120,7 +1120,7 @@ kycRouter.post('/upload', uploadLimiter, upload.fields([
     if (req.body.cedula) updates.cedula = req.body.cedula;
     if (req.body.fecha_nacimiento) updates.fecha_nacimiento = req.body.fecha_nacimiento;
 
-    // En desarrollo: aprobar automáticamente
+    // En desarrollo: aprobar automÃ¡ticamente
     if (process.env.NODE_ENV === 'development') {
       updates.kyc_nivel = 'basico';
       updates.kyc_estado = 'aprobado';
@@ -1149,7 +1149,7 @@ module.exports.kyc = kycRouter;
 
 
 // =============================================
-// ADMIN ROUTE — src/routes/admin.js
+// ADMIN ROUTE â€” src/routes/admin.js
 // =============================================
 const adminRouter = express.Router();
 
@@ -1169,7 +1169,29 @@ const requireSuperadmin = (req, res, next) => {
   next();
 };
 
+const isSuperadmin = (user) => (user?.rol || '').toLowerCase() === 'superadmin';
+
+const requireCancellationAuthorization = (req, res, next) => {
+  if (isSuperadmin(req.user)) return next();
+  const expected = process.env.ADMIN_CANCEL_DEAL_CODE || process.env.ADMIN_DELETE_USER_CODE;
+  const provided = String(req.body?.confirmation_code || req.body?.codigo_confirmacion || '');
+  if (!expected) {
+    return res.status(503).json({ success: false, message: 'Cancelacion deshabilitada: falta ADMIN_CANCEL_DEAL_CODE.' });
+  }
+  if (provided !== expected) {
+    return res.status(403).json({ success: false, message: 'Codigo de autorizacion incorrecto para cancelar el trato.' });
+  }
+  return next();
+};
+
+const adminName = (u) => [u?.nombre, u?.apellido].filter(Boolean).join(' ').trim() || u?.email || 'Admin';
+
 const ADMIN_ROLES = ['invitado', 'user', 'soporte', 'moderador', 'admin', 'superadmin'];
+const adminLimit = (value, fallback = 80, max = 250) => {
+  const parsed = Number.parseInt(value, 10);
+  if (!Number.isFinite(parsed) || parsed <= 0) return fallback;
+  return Math.min(parsed, max);
+};
 
 const cleanUser = (user) => {
   const data = user.toJSON ? user.toJSON() : user;
@@ -1183,10 +1205,13 @@ const cleanUser = (user) => {
 adminRouter.get('/stats', async (req, res, next) => {
   try {
     const { Trato, Pago, Disputa } = require('../config/database');
+    const { calcularComision } = require('../services/comisionService');
     const inicioHoy = new Date();
     inicioHoy.setHours(0, 0, 0, 0);
     const inicioMes = new Date(inicioHoy.getFullYear(), inicioHoy.getMonth(), 1);
-    const [totalUsers, totalTratos, totalPagos, disputasAbiertas, kycPendientes, registrosHoy, tratosHoy, pagosHoy, comisionesMes] = await Promise.all([
+    const serieDesde = new Date(inicioHoy);
+    serieDesde.setDate(serieDesde.getDate() - 13);
+    const [totalUsers, totalTratos, totalPagos, disputasAbiertas, kycPendientes, registrosHoy, tratosHoy, pagosHoy, pagosMes, tratosMes, tratosSerie] = await Promise.all([
       User.count(),
       Trato.count(),
       Pago.sum('monto', { where: { estado: 'aprobado' } }),
@@ -1195,8 +1220,56 @@ adminRouter.get('/stats', async (req, res, next) => {
       User.count({ where: { createdAt: { [Op.gte]: inicioHoy } } }),
       Trato.count({ where: { createdAt: { [Op.gte]: inicioHoy } } }),
       Pago.count({ where: { createdAt: { [Op.gte]: inicioHoy } } }),
-      Pago.sum('monto', { where: { tipo: 'comision', estado: 'aprobado', createdAt: { [Op.gte]: inicioMes } } }),
+      Pago.findAll({
+        where: { tipo: 'retencion', estado: 'aprobado', createdAt: { [Op.gte]: inicioMes } },
+        include: [{ model: Trato, attributes: ['id', 'monto', 'quien_paga_comision', 'estado', 'createdAt'] }],
+        limit: 1000,
+        order: [['createdAt', 'DESC']],
+      }),
+      Trato.findAll({
+        where: { createdAt: { [Op.gte]: inicioMes } },
+        attributes: ['id', 'monto', 'estado', 'quien_paga_comision', 'createdAt'],
+        limit: 1000,
+      }),
+      Trato.findAll({
+        where: { createdAt: { [Op.gte]: serieDesde } },
+        attributes: ['id', 'monto', 'estado', 'createdAt'],
+        limit: 2000,
+      }),
     ]);
+    const approvedDealIds = new Set();
+    let comisionesNetasMes = 0;
+    let costosGmfMes = 0;
+    let comisionesBrutasMes = 0;
+    for (const pago of pagosMes) {
+      const trato = pago.Trato;
+      if (!trato || approvedDealIds.has(trato.id)) continue;
+      approvedDealIds.add(trato.id);
+      try {
+        const calc = calcularComision(Number(trato.monto || 0), trato.quien_paga_comision || 'comprador');
+        comisionesNetasMes += Number(calc.comision_tratoya || 0);
+        costosGmfMes += Number(calc.costo_gmf || 0);
+        comisionesBrutasMes += Number(calc.monto_comision || 0);
+      } catch { /* ignora tratos viejos fuera de rango */ }
+    }
+    const estados = {};
+    for (const trato of tratosMes) estados[trato.estado] = (estados[trato.estado] || 0) + 1;
+    const serieMap = {};
+    for (let i = 13; i >= 0; i -= 1) {
+      const d = new Date(inicioHoy);
+      d.setDate(d.getDate() - i);
+      const key = d.toISOString().slice(0, 10);
+      serieMap[key] = { fecha: key, tratos: 0, volumen: 0 };
+    }
+    for (const trato of tratosSerie) {
+      const key = new Date(trato.createdAt).toISOString().slice(0, 10);
+      if (serieMap[key]) {
+        serieMap[key].tratos += 1;
+        serieMap[key].volumen += Number(trato.monto || 0);
+      }
+    }
+    const metaMensual = Number(process.env.COMMISSION_MONTHLY_GOAL || 5000000);
+    const progresoMeta = metaMensual > 0 ? Math.min(100, Math.round((comisionesNetasMes / metaMensual) * 100)) : 0;
     res.json({
       success: true,
       data: {
@@ -1211,7 +1284,15 @@ adminRouter.get('/stats', async (req, res, next) => {
         registros_hoy: registrosHoy,
         tratos_hoy: tratosHoy,
         pagos_hoy: pagosHoy,
-        comisiones_mes: Number(comisionesMes || 0),
+        comisiones_mes: Math.round(comisionesNetasMes),
+        comisiones_brutas_mes: Math.round(comisionesBrutasMes),
+        costos_gmf_mes: Math.round(costosGmfMes),
+        meta_mensual: metaMensual,
+        progreso_meta: progresoMeta,
+        estados_mes: estados,
+        serie_14_dias: Object.values(serieMap),
+        operaciones_pendientes: await Pago.count({ where: { tipo: 'retencion', estado: { [Op.in]: ['pendiente', 'procesando'] } } }),
+        fondos_por_liberar: await Pago.count({ where: { tipo: 'retencion', estado: 'aprobado' } }),
       }
     });
   } catch (err) { next(err); }
@@ -1233,6 +1314,21 @@ adminRouter.get('/reviews', async (req, res, next) => {
       });
     } catch {
       resenas = await Resena.findAll({ order: [['createdAt', 'DESC']], limit: 100 });
+      const plain = resenas.map((r) => r.toJSON ? r.toJSON() : r);
+      const userIds = [...new Set(plain.flatMap((r) => [r.autor_id, r.destinatario_id]).filter(Boolean))];
+      const tratoIds = [...new Set(plain.map((r) => r.trato_id).filter(Boolean))];
+      const [users, tratos] = await Promise.all([
+        userIds.length ? User.findAll({ where: { id: { [Op.in]: userIds } }, attributes: ['id', 'nombre', 'apellido', 'email', 'usuario_unico', 'telefono'] }) : [],
+        tratoIds.length ? Trato.findAll({ where: { id: { [Op.in]: tratoIds } }, attributes: ['id', 'codigo', 'titulo', 'estado'] }) : [],
+      ]);
+      const userMap = new Map(users.map((u) => [u.id, u.toJSON ? u.toJSON() : u]));
+      const tratoMap = new Map(tratos.map((t) => [t.id, t.toJSON ? t.toJSON() : t]));
+      resenas = plain.map((r) => ({
+        ...r,
+        autor: userMap.get(r.autor_id) || null,
+        destinatario: userMap.get(r.destinatario_id) || null,
+        Trato: tratoMap.get(r.trato_id) || null,
+      }));
     }
     res.json({ success: true, data: resenas });
   } catch (err) { next(err); }
@@ -1240,9 +1336,11 @@ adminRouter.get('/reviews', async (req, res, next) => {
 
 adminRouter.get('/tratos', async (req, res, next) => {
   try {
-    const { Trato, User } = require('../config/database');
-    const { q } = req.query;
+    const { Trato, User, AuditLog } = require('../config/database');
+    const { q, estado } = req.query;
+    const limit = adminLimit(req.query.limit, q ? 120 : 80);
     const where = {};
+    if (estado && estado !== 'todos') where.estado = estado;
     if (q) {
       where[Op.or] = [
         { codigo: { [Op.iLike]: `%${q}%` } },
@@ -1257,9 +1355,33 @@ adminRouter.get('/tratos', async (req, res, next) => {
         { model: User, as: 'comprador', attributes: partyAttrs },
       ],
       order: [['createdAt', 'DESC']],
-      limit: 250,
+      limit,
     });
-    res.json({ success: true, data: tratos });
+    const tratoIds = tratos.map((t) => t.id);
+    const auditLogs = tratoIds.length ? await AuditLog.findAll({
+      where: {
+        entity_type: 'deal',
+        entity_id: { [Op.in]: tratoIds },
+        action: { [Op.in]: ['MANUAL_PAYMENT_CONFIRMED', 'MANUAL_PAYMENT_REJECTED', 'ADMIN_FUNDS_RELEASED', 'ADMIN_DEAL_CANCELLED', 'ADMIN_MESSAGE_SENT'] },
+      },
+      order: [['created_at', 'DESC']],
+      limit: tratoIds.length * 3,
+    }).catch(() => []) : [];
+    const userIds = [...new Set(auditLogs.map((l) => l.user_id).filter(Boolean))];
+    const admins = userIds.length ? await User.findAll({
+      where: { id: { [Op.in]: userIds } },
+      attributes: ['id', 'nombre', 'apellido', 'email', 'rol'],
+    }).catch(() => []) : [];
+    const adminMap = new Map(admins.map((u) => [u.id, u]));
+    const managerByDeal = {};
+    for (const log of auditLogs) {
+      if (!managerByDeal[log.entity_id]) {
+        const actor = adminMap.get(log.user_id);
+        managerByDeal[log.entity_id] = actor ? { id: actor.id, nombre: adminName(actor), email: actor.email, rol: actor.rol, action: log.action, at: log.created_at } : null;
+      }
+    }
+    const data = tratos.map((t) => ({ ...t.toJSON(), managed_by_admin: managerByDeal[t.id] || null }));
+    res.json({ success: true, data });
   } catch (err) { next(err); }
 });
 
@@ -1337,6 +1459,18 @@ adminRouter.get('/tratos/:id/detalle', async (req, res, next) => {
         limit: 100,
       }), []),
     ]);
+    const auditUserIds = [...new Set(auditLogs.map((l) => l.user_id).filter(Boolean))];
+    const auditUsers = auditUserIds.length ? await safe('audit_users', () => User.findAll({
+      where: { id: { [Op.in]: auditUserIds } },
+      attributes: ['id', 'nombre', 'apellido', 'email', 'rol'],
+    }), []) : [];
+    const auditUserMap = new Map(auditUsers.map((u) => [u.id, u]));
+    const auditLogsWithActor = auditLogs.map((log) => {
+      const json = log.toJSON ? log.toJSON() : log;
+      const actor = auditUserMap.get(json.user_id);
+      return { ...json, actor: actor ? { id: actor.id, nombre: adminName(actor), email: actor.email, rol: actor.rol } : null };
+    });
+    const managerLog = auditLogsWithActor.find((l) => ['MANUAL_PAYMENT_CONFIRMED', 'MANUAL_PAYMENT_REJECTED', 'ADMIN_FUNDS_RELEASED', 'ADMIN_DEAL_CANCELLED', 'ADMIN_MESSAGE_SENT'].includes(l.action));
 
     const refs = intents.map(i => i.reference).filter(Boolean);
     const txIds = intents.map(i => i.wompi_transaction_id).filter(Boolean);
@@ -1361,12 +1495,12 @@ adminRouter.get('/tratos/:id/detalle', async (req, res, next) => {
 
     res.json({
       success: true,
-      data: { trato, pagos, payment_intents: intents, payment_events: paymentEvents, ledger, disputa, mensajes, resenas, audit_logs: auditLogs, cuentas_bancarias: cuentasBancarias },
+      data: { trato, pagos, payment_intents: intents, payment_events: paymentEvents, ledger, disputa, mensajes, resenas, audit_logs: auditLogsWithActor, managed_by_admin: managerLog?.actor || null, cuentas_bancarias: cuentasBancarias },
     });
   } catch (err) { next(err); }
 });
 
-adminRouter.post('/tratos/:id/cancelar', async (req, res, next) => {
+adminRouter.post('/tratos/:id/cancelar', requireCancellationAuthorization, async (req, res, next) => {
   try {
     const { Trato, Pago, LedgerEntry, AuditLog } = require('../config/database');
     const trato = await Trato.findByPk(req.params.id);
@@ -1411,7 +1545,7 @@ adminRouter.post('/tratos/:id/cancelar', async (req, res, next) => {
         deal_id: trato.id,
         type: 'escrow_refund_initiated',
         amount_cents: Math.round(montoDevolucion * 100),
-        description: `Devolución iniciada por cancelación admin ${trato.codigo}`,
+        description: `DevoluciÃ³n iniciada por cancelaciÃ³n admin ${trato.codigo}`,
       }).catch(() => {});
     } else if (pagosActivos.length) {
       await Pago.update({ estado: 'anulado' }, { where: { id: { [Op.in]: pagosActivos.map((p) => p.id) } } });
@@ -1432,7 +1566,7 @@ adminRouter.post('/tratos/:id/cancelar', async (req, res, next) => {
       'trato_cancelado_admin',
       {
         titulo: 'Trato cancelado',
-        cuerpo: `El trato ${trato.codigo} fue cancelado por soporte.${pagoRetenido ? ' Iniciamos la devolución de tu pago.' : ''}`,
+        cuerpo: `El trato ${trato.codigo} fue cancelado por soporte.${pagoRetenido ? ' Iniciamos la devoluciÃ³n de tu pago.' : ''}`,
         metadata: { trato_id: trato.id },
       },
       {
@@ -1442,11 +1576,11 @@ adminRouter.post('/tratos/:id/cancelar', async (req, res, next) => {
       },
     ).catch(() => {});
 
-    res.json({ success: true, data: trato, message: pagoRetenido ? 'Trato cancelado. Devolución iniciada.' : 'Trato cancelado' });
+    res.json({ success: true, data: trato, message: pagoRetenido ? 'Trato cancelado. DevoluciÃ³n iniciada.' : 'Trato cancelado' });
   } catch (err) { next(err); }
 });
 
-adminRouter.post('/tratos/:id/liberar', paymentUpload.single('release_receipt'), async (req, res, next) => {
+adminRouter.post('/tratos/:id/liberar', requireSuperadmin, paymentUpload.single('release_receipt'), async (req, res, next) => {
   try {
     const { Trato, Pago, User } = require('../config/database');
     const trato = await Trato.findByPk(req.params.id);
@@ -1469,7 +1603,7 @@ adminRouter.post('/tratos/:id/liberar', paymentUpload.single('release_receipt'),
     await trato.update({
       estado: 'completado',
       fecha_liberacion: new Date(),
-      notas_internas: `Liberado por admin ${req.user.email}${referenciaLiberacion ? ` · Ref: ${referenciaLiberacion}` : ''}`,
+      notas_internas: `Liberado por admin ${req.user.email}${referenciaLiberacion ? ` Â· Ref: ${referenciaLiberacion}` : ''}`,
       metadata: {
         ...(trato.metadata || {}),
         release_reference: referenciaLiberacion || undefined,
@@ -1502,7 +1636,7 @@ adminRouter.post('/tratos/:id/liberar', paymentUpload.single('release_receipt'),
       'pago_liberado',
       {
         titulo: 'Pago liberado',
-        cuerpo: `El pago del trato ${trato.codigo} fue liberado. Se verá reflejado máximo en 1 hora.`,
+        cuerpo: `El pago del trato ${trato.codigo} fue liberado. Se verÃ¡ reflejado mÃ¡ximo en 1 hora.`,
         metadata: { trato_id: trato.id, referencia_liberacion: referenciaLiberacion || null, release_receipt_url: releaseReceiptUrl },
         email_template: 'trato_completado',
         email_data: { codigo: trato.codigo, titulo: trato.titulo },
@@ -1511,7 +1645,7 @@ adminRouter.post('/tratos/:id/liberar', paymentUpload.single('release_receipt'),
       },
       {
         titulo: 'Pago liberado a tu favor',
-        cuerpo: `Liberamos los fondos del trato ${trato.codigo}. Se verá reflejado máximo en 1 hora.`,
+        cuerpo: `Liberamos los fondos del trato ${trato.codigo}. Se verÃ¡ reflejado mÃ¡ximo en 1 hora.`,
         metadata: { trato_id: trato.id, referencia_liberacion: referenciaLiberacion || null, release_receipt_url: releaseReceiptUrl },
         email_template: 'entrega_confirmada_vendedor',
         email_data: { codigo: trato.codigo, neto: Number(trato.monto_neto || trato.monto).toLocaleString('es-CO') },
@@ -1544,13 +1678,13 @@ adminRouter.post('/pagos/:id/confirmar', async (req, res, next) => {
     const pago = await Pago.findByPk(req.params.id);
     if (!pago) return res.status(404).json({ success: false, message: 'Pago no encontrado' });
     if (!['pendiente', 'procesando'].includes(pago.estado)) {
-      return res.status(409).json({ success: false, message: `Este pago ya está en estado ${pago.estado}.` });
+      return res.status(409).json({ success: false, message: `Este pago ya estÃ¡ en estado ${pago.estado}.` });
     }
     const trato = await Trato.findByPk(pago.trato_id);
     if (!trato) return res.status(404).json({ success: false, message: 'Trato no encontrado' });
     const { calcularComision } = require('../services/comisionService');
     const montoEsperado = calcularComision(Number(trato.monto || 0), trato.quien_paga_comision || 'comprador').total_a_pagar;
-    const montoVerificado = Number(req.body.monto_verificado);
+    const montoVerificado = Number(req.body.monto_verificado ?? pago.monto);
     if (!Number.isFinite(montoVerificado)) {
       return res.status(400).json({ success: false, message: 'Debes indicar el monto verificado (monto_verificado).' });
     }
@@ -1612,7 +1746,7 @@ adminRouter.post('/pagos/:id/confirmar', async (req, res, next) => {
       'pago_retenido',
       {
         titulo: 'Pago confirmado',
-        cuerpo: `Tu pago del trato ${trato.codigo} quedó confirmado y en custodia TratoYA.`,
+        cuerpo: `Tu pago del trato ${trato.codigo} quedÃ³ confirmado y en custodia TratoYA.`,
         metadata: { trato_id: trato.id, pago_id: pago.id },
         email_template: 'pago_confirmado_comprador',
         email_data: { codigo: trato.codigo, titulo: trato.titulo },
@@ -1621,7 +1755,7 @@ adminRouter.post('/pagos/:id/confirmar', async (req, res, next) => {
       },
       {
         titulo: 'Pago confirmado, puedes entregar',
-        cuerpo: `El pago del trato ${trato.codigo} está en custodia TratoYA. Puedes entregar con seguridad.`,
+        cuerpo: `El pago del trato ${trato.codigo} estÃ¡ en custodia TratoYA. Puedes entregar con seguridad.`,
         metadata: { trato_id: trato.id, pago_id: pago.id },
         email_template: 'pago_confirmado_vendedor',
         email_data: { codigo: trato.codigo, titulo: trato.titulo },
@@ -1643,12 +1777,12 @@ adminRouter.post('/pagos/:id/rechazar', async (req, res, next) => {
     const pago = await Pago.findByPk(req.params.id);
     if (!pago) return res.status(404).json({ success: false, message: 'Pago no encontrado' });
     if (!['pendiente', 'procesando'].includes(pago.estado)) {
-      return res.status(409).json({ success: false, message: `Este pago ya está en estado ${pago.estado}.` });
+      return res.status(409).json({ success: false, message: `Este pago ya estÃ¡ en estado ${pago.estado}.` });
     }
     const trato = await Trato.findByPk(pago.trato_id);
     if (!trato) return res.status(404).json({ success: false, message: 'Trato no encontrado' });
     const metadata = pago.metadata || {};
-    // Razón de rechazo opcional enviada desde el admin
+    // RazÃ³n de rechazo opcional enviada desde el admin
     const motivo = req.body.motivo || null;
     const montoRecibido = req.body.monto_recibido ? Number(req.body.monto_recibido) : null;
     await pago.update({
@@ -1682,8 +1816,8 @@ adminRouter.post('/pagos/:id/rechazar', async (req, res, next) => {
     }).catch(() => {});
     const { notificar } = require('../services/notificacionService');
     const cuerpoPush = motivo
-      ? `Pago no verificado para el trato ${trato.codigo}: ${motivo}. Podrás intentarlo de nuevo en 10 minutos.`
-      : `No pudimos verificar el pago del trato ${trato.codigo}. Podrás intentarlo de nuevo en 10 minutos.`;
+      ? `Pago no verificado para el trato ${trato.codigo}: ${motivo}. PodrÃ¡s intentarlo de nuevo en 10 minutos.`
+      : `No pudimos verificar el pago del trato ${trato.codigo}. PodrÃ¡s intentarlo de nuevo en 10 minutos.`;
     await notificar(trato.comprador_id, 'pago_rechazado', {
       titulo: 'Pago no verificado',
       cuerpo: cuerpoPush,
@@ -1715,7 +1849,7 @@ adminRouter.post('/tratos/:id/contactar', async (req, res, next) => {
     if (!cuerpo || cuerpo.trim().length < 3) {
       return res.status(400).json({ success: false, message: 'Mensaje requerido' });
     }
-    const { Trato, User, Mensaje } = require('../config/database');
+    const { Trato, User, Mensaje, AuditLog } = require('../config/database');
     const trato = await Trato.findByPk(req.params.id, {
       include: [
         { model: User, as: 'comprador', attributes: ['id', 'nombre', 'apellido', 'email'] },
@@ -1727,7 +1861,7 @@ adminRouter.post('/tratos/:id/contactar', async (req, res, next) => {
     if (['comprador', 'ambos'].includes(destino) && trato.comprador_id) targets.push(trato.comprador_id);
     if (['vendedor', 'ambos'].includes(destino) && trato.vendedor_id) targets.push(trato.vendedor_id);
     const uniqueTargets = [...new Set(targets)];
-    if (!uniqueTargets.length) return res.status(400).json({ success: false, message: 'El trato aún no tiene destinatarios disponibles' });
+    if (!uniqueTargets.length) return res.status(400).json({ success: false, message: 'El trato aÃºn no tiene destinatarios disponibles' });
 
     const { notificar } = require('../services/notificacionService');
     await Promise.all(uniqueTargets.map(usuario_id => notificar(usuario_id, 'admin_trato', {
@@ -1741,6 +1875,13 @@ adminRouter.post('/tratos/:id/contactar', async (req, res, next) => {
       tipo: 'sistema',
       contenido: `[Soporte TratoYA] ${cuerpo}`,
     });
+    await AuditLog.create({
+      user_id: req.user.id,
+      action: 'ADMIN_MESSAGE_SENT',
+      entity_type: 'deal',
+      entity_id: trato.id,
+      metadata: { destino, titulo, targets: uniqueTargets },
+    }).catch(() => {});
     res.status(201).json({ success: true, data: { enviados: uniqueTargets.length }, message: 'Mensaje enviado' });
   } catch (err) { next(err); }
 });
@@ -1749,6 +1890,7 @@ adminRouter.get('/pagos', async (req, res, next) => {
   try {
     const { Pago, Trato, User } = require('../config/database');
     const { q } = req.query;
+    const limit = adminLimit(req.query.limit, q ? 120 : 90);
     const tratoWhere = q ? {
       [Op.or]: [
         { codigo: { [Op.iLike]: `%${q}%` } },
@@ -1770,7 +1912,7 @@ adminRouter.get('/pagos', async (req, res, next) => {
         { model: User, attributes: ['id', 'nombre', 'apellido', 'email', 'telefono', 'usuario_unico'] },
       ],
       order: [['createdAt', 'DESC']],
-      limit: 250,
+      limit,
     });
     res.json({ success: true, data: pagos.map(p => {
       const json = p.toJSON();
@@ -1834,7 +1976,7 @@ adminRouter.post('/disputes/:id/resolver', async (req, res, next) => {
         },
       });
     } else {
-      // A favor del comprador o acuerdo con devolución.
+      // A favor del comprador o acuerdo con devoluciÃ³n.
       await trato.update({
         estado: 'cancelado',
         metadata: {
@@ -1860,7 +2002,7 @@ adminRouter.post('/disputes/:id/resolver', async (req, res, next) => {
           deal_id: trato.id,
           type: 'escrow_refund_initiated',
           amount_cents: Math.round(montoDevolucion * 100),
-          description: `Devolución por disputa resuelta a favor comprador · ${trato.codigo}`,
+          description: `DevoluciÃ³n por disputa resuelta a favor comprador Â· ${trato.codigo}`,
         }).catch(() => {});
       }
     }
@@ -1889,12 +2031,12 @@ adminRouter.post('/disputes/:id/resolver', async (req, res, next) => {
         'disputa_resuelta_vendedor',
         {
           titulo: 'Disputa resuelta',
-          cuerpo: `La disputa del trato ${trato.codigo} se resolvió a favor del vendedor. El pago quedará listo para liberación.`,
+          cuerpo: `La disputa del trato ${trato.codigo} se resolviÃ³ a favor del vendedor. El pago quedarÃ¡ listo para liberaciÃ³n.`,
           metadata: { trato_id: trato.id, disputa_id: disputa.id },
         },
         {
           titulo: 'Disputa resuelta a tu favor',
-          cuerpo: `Ganaste la disputa del trato ${trato.codigo}. TratoYa liberará el pago tras verificación final.`,
+          cuerpo: `Ganaste la disputa del trato ${trato.codigo}. TratoYa liberarÃ¡ el pago tras verificaciÃ³n final.`,
           metadata: { trato_id: trato.id, disputa_id: disputa.id },
         },
       ).catch(() => {});
@@ -1904,13 +2046,13 @@ adminRouter.post('/disputes/:id/resolver', async (req, res, next) => {
         trato.vendedor_id,
         'disputa_resuelta_comprador',
         {
-          titulo: 'Disputa resuelta — devolución iniciada',
-          cuerpo: `La disputa del trato ${trato.codigo} se resolvió a tu favor.${pagoRetenido ? ' Iniciamos la devolución de tu pago.' : ''}`,
+          titulo: 'Disputa resuelta â€” devoluciÃ³n iniciada',
+          cuerpo: `La disputa del trato ${trato.codigo} se resolviÃ³ a tu favor.${pagoRetenido ? ' Iniciamos la devoluciÃ³n de tu pago.' : ''}`,
           metadata: { trato_id: trato.id, disputa_id: disputa.id },
         },
         {
           titulo: 'Disputa resuelta',
-          cuerpo: `La disputa del trato ${trato.codigo} se resolvió a favor del comprador.`,
+          cuerpo: `La disputa del trato ${trato.codigo} se resolviÃ³ a favor del comprador.`,
           metadata: { trato_id: trato.id, disputa_id: disputa.id },
         },
       ).catch(() => {});
@@ -1920,8 +2062,68 @@ adminRouter.post('/disputes/:id/resolver', async (req, res, next) => {
       success: true,
       data: disputa,
       message: fallo === 'vendedor'
-        ? 'Disputa resuelta. El trato quedó confirmado; libera fondos desde admin.'
-        : 'Disputa resuelta. Devolución iniciada si había pago retenido.',
+        ? 'Disputa resuelta. El trato quedÃ³ confirmado; libera fondos desde admin.'
+        : 'Disputa resuelta. DevoluciÃ³n iniciada si habÃ­a pago retenido.',
+    });
+  } catch (err) { next(err); }
+});
+
+function todayDateOnly() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function addDaysDateOnly(days) {
+  const d = new Date();
+  d.setDate(d.getDate() + days);
+  return d.toISOString().slice(0, 10);
+}
+
+async function syncExpiredVerificationBadges() {
+  const cutoff = addDaysDateOnly(-30);
+  const [count] = await User.update({
+    kyc_nivel: 'ninguno',
+    kyc_estado: 'pendiente',
+    kyc_verificacion_inicio: null,
+    kyc_verificacion_fin: null,
+  }, {
+    where: {
+      kyc_nivel: 'verificado',
+      kyc_verificacion_fin: { [Op.lt]: cutoff },
+    },
+  });
+  return count || 0;
+}
+
+adminRouter.get('/kyc/resumen', async (req, res, next) => {
+  try {
+    const retiradas = await syncExpiredVerificationBadges();
+    const hoy = todayDateOnly();
+    const cincoDias = addDaysDateOnly(5);
+    const attrs = ['id', 'nombre', 'apellido', 'email', 'usuario_unico', 'telefono', 'kyc_nivel', 'kyc_estado', 'kyc_verificacion_inicio', 'kyc_verificacion_fin'];
+    const [porVencer, vencidas, verificados] = await Promise.all([
+      User.findAll({
+        where: { kyc_nivel: 'verificado', kyc_verificacion_fin: { [Op.between]: [hoy, cincoDias] } },
+        attributes: attrs,
+        order: [['kyc_verificacion_fin', 'ASC']],
+        limit: 50,
+      }),
+      User.findAll({
+        where: { kyc_nivel: 'verificado', kyc_verificacion_fin: { [Op.lt]: hoy } },
+        attributes: attrs,
+        order: [['kyc_verificacion_fin', 'ASC']],
+        limit: 50,
+      }),
+      User.count({ where: { kyc_nivel: 'verificado', kyc_estado: 'aprobado' } }),
+    ]);
+    res.json({
+      success: true,
+      data: {
+        por_vencer: porVencer,
+        vencidas,
+        verificados,
+        retiradas_automaticamente: retiradas,
+        reglas: { aviso_dias: 5, retiro_despues_dias: 30 },
+      },
     });
   } catch (err) { next(err); }
 });
@@ -1951,7 +2153,15 @@ adminRouter.post('/kyc/:id/aprobar', async (req, res, next) => {
   try {
     const user = await User.findByPk(req.params.id);
     if (!user) return res.status(404).json({ success: false, message: 'Usuario no encontrado' });
-    await user.update({ kyc_estado: 'aprobado', kyc_nivel: 'basico', kyc_verificado_en: new Date() });
+    const inicio = req.body?.kyc_verificacion_inicio || todayDateOnly();
+    const fin = req.body?.kyc_verificacion_fin || addDaysDateOnly(30);
+    await user.update({
+      kyc_estado: 'aprobado',
+      kyc_nivel: 'verificado',
+      kyc_verificado_en: new Date(),
+      kyc_verificacion_inicio: inicio,
+      kyc_verificacion_fin: fin,
+    });
     res.json({ success: true, data: cleanUser(user), message: 'KYC aprobado' });
   } catch (err) { next(err); }
 });
@@ -1968,6 +2178,7 @@ adminRouter.post('/kyc/:id/rechazar', async (req, res, next) => {
 adminRouter.get('/users', async (req, res, next) => {
   try {
     const { q, estado } = req.query;
+    const limit = adminLimit(req.query.limit, q ? 120 : 80, 200);
     const where = {};
     if (q) {
       where[Op.or] = [
@@ -1985,7 +2196,7 @@ adminRouter.get('/users', async (req, res, next) => {
       where,
       attributes: { exclude: ['password_hash', 'refresh_token'] },
       order: [['createdAt', 'DESC']],
-      limit: 200,
+      limit,
     });
     const userIds = users.map(u => u.id);
     let cuentasMap = {};
@@ -1999,7 +2210,7 @@ adminRouter.get('/users', async (req, res, next) => {
           if (!cuentasMap[c.usuario_id]) cuentasMap[c.usuario_id] = [];
           if (cuentasMap[c.usuario_id].length < 5) cuentasMap[c.usuario_id].push(c.toJSON());
         });
-      } catch { /* no crash si la tabla de cuentas no está disponible */ }
+      } catch { /* no crash si la tabla de cuentas no estÃ¡ disponible */ }
     }
     const data = users.map(u => {
       const clean = cleanUser(u);
@@ -2012,7 +2223,7 @@ adminRouter.get('/users', async (req, res, next) => {
 
 adminRouter.get('/users/:id/detalle', async (req, res, next) => {
   try {
-    const { Trato, Pago } = require('../config/database');
+    const { Trato, Pago, AuditLog } = require('../config/database');
     const user = await User.findByPk(req.params.id, {
       include: [{ model: CuentaBancaria, separate: true, order: [['createdAt', 'DESC']] }],
       attributes: { exclude: ['password_hash', 'refresh_token'] },
@@ -2033,7 +2244,18 @@ adminRouter.get('/users/:id/detalle', async (req, res, next) => {
       order: [['createdAt', 'DESC']],
       limit: 100,
     });
-    res.json({ success: true, data: { user: cleanUser(user), cuentas_bancarias: user.CuentaBancaria || user.CuentaBancariae || user.CuentaBancarias || [], tratos, pagos } });
+    const tratoIds = tratos.map((t) => t.id);
+    const auditLogs = await AuditLog.findAll({
+      where: {
+        [Op.or]: [
+          { user_id: user.id },
+          ...(tratoIds.length ? [{ entity_type: 'deal', entity_id: { [Op.in]: tratoIds } }] : []),
+        ],
+      },
+      order: [['created_at', 'DESC']],
+      limit: 120,
+    }).catch(() => []);
+    res.json({ success: true, data: { user: cleanUser(user), cuentas_bancarias: user.CuentaBancaria || user.CuentaBancariae || user.CuentaBancarias || [], tratos, pagos, audit_logs: auditLogs } });
   } catch (err) { next(err); }
 });
 
@@ -2041,13 +2263,13 @@ adminRouter.post('/users', requireSuperadmin, async (req, res, next) => {
   try {
     const { nombre, apellido = '', email, password, telefono, rol = 'user' } = req.body;
     if (!nombre || !email || !password) {
-      return res.status(400).json({ success: false, message: 'Nombre, email y contraseña son requeridos' });
+      return res.status(400).json({ success: false, message: 'Nombre, email y contraseÃ±a son requeridos' });
     }
     if (!ADMIN_ROLES.includes(rol)) {
-      return res.status(400).json({ success: false, message: 'Rol inválido' });
+      return res.status(400).json({ success: false, message: 'Rol invÃ¡lido' });
     }
     const existe = await User.findOne({ where: { email } });
-    if (existe) return res.status(409).json({ success: false, message: 'El email ya está registrado' });
+    if (existe) return res.status(409).json({ success: false, message: 'El email ya estÃ¡ registrado' });
 
     const password_hash = await bcrypt.hash(password, 12);
     const user = await User.create({
@@ -2068,7 +2290,7 @@ adminRouter.patch('/users/:id/rol', requireSuperadmin, async (req, res, next) =>
   try {
     const { rol } = req.body;
     if (!ADMIN_ROLES.includes(rol)) {
-      return res.status(400).json({ success: false, message: 'Rol inválido' });
+      return res.status(400).json({ success: false, message: 'Rol invÃ¡lido' });
     }
     const user = await User.findByPk(req.params.id);
     if (!user) return res.status(404).json({ success: false, message: 'Usuario no encontrado' });
@@ -2084,16 +2306,16 @@ adminRouter.patch('/users/:id/credentials', requireSuperadmin, async (req, res, 
       return res.status(400).json({ success: false, message: 'Nombre y email son requeridos' });
     }
     if (rol && !ADMIN_ROLES.includes(rol)) {
-      return res.status(400).json({ success: false, message: 'Rol inválido' });
+      return res.status(400).json({ success: false, message: 'Rol invÃ¡lido' });
     }
     if (password && password.length < 6) {
-      return res.status(400).json({ success: false, message: 'Contraseña mínimo 6 caracteres' });
+      return res.status(400).json({ success: false, message: 'ContraseÃ±a mÃ­nimo 6 caracteres' });
     }
     const user = await User.findByPk(req.params.id);
     if (!user) return res.status(404).json({ success: false, message: 'Usuario no encontrado' });
 
     const emailOwner = await User.findOne({ where: { email, id: { [Op.ne]: user.id } } });
-    if (emailOwner) return res.status(409).json({ success: false, message: 'Ese email ya está en uso' });
+    if (emailOwner) return res.status(409).json({ success: false, message: 'Ese email ya estÃ¡ en uso' });
 
     const nextRol = rol || user.rol || (user.is_admin ? 'admin' : 'user');
     const updates = {
@@ -2131,12 +2353,12 @@ adminRouter.post('/users/:id/reset-password', requireSuperadmin, async (req, res
   try {
     const { password } = req.body;
     if (!password || password.length < 6) {
-      return res.status(400).json({ success: false, message: 'Contraseña mínimo 6 caracteres' });
+      return res.status(400).json({ success: false, message: 'ContraseÃ±a mÃ­nimo 6 caracteres' });
     }
     const user = await User.findByPk(req.params.id);
     if (!user) return res.status(404).json({ success: false, message: 'Usuario no encontrado' });
     await user.update({ password_hash: await bcrypt.hash(password, 12), refresh_token: null });
-    res.json({ success: true, message: 'Contraseña restablecida' });
+    res.json({ success: true, message: 'ContraseÃ±a restablecida' });
   } catch (err) { next(err); }
 });
 
@@ -2151,7 +2373,7 @@ adminRouter.post('/users/:id/notificacion', async (req, res, next) => {
       cuerpo,
       metadata: { creado_por: req.user.id, from_admin: true, sender_label: 'Soporte - TratoYA' },
     });
-    res.status(201).json({ success: true, data: { usuario_id: user.id }, message: 'Notificación creada' });
+    res.status(201).json({ success: true, data: { usuario_id: user.id }, message: 'NotificaciÃ³n creada' });
   } catch (err) { next(err); }
 });
 
@@ -2167,15 +2389,21 @@ adminRouter.patch('/users/:id/security', requireSuperadmin, async (req, res, nex
 adminRouter.patch('/users/:id/kyc', async (req, res, next) => {
   try {
     const { kyc_nivel } = req.body;
-    const validLevels = ['ninguno', 'basico', 'verificado', 'premium'];
-    if (!validLevels.includes(kyc_nivel)) return res.status(400).json({ success: false, message: 'Nivel KYC inválido. Usa: ninguno, basico, verificado, premium' });
+    const validLevels = ['ninguno', 'verificado'];
+    if (!validLevels.includes(kyc_nivel)) return res.status(400).json({ success: false, message: 'Nivel de verificacion invalido. Usa: ninguno o verificado' });
     const user = await User.findByPk(req.params.id);
     if (!user) return res.status(404).json({ success: false, message: 'Usuario no encontrado' });
+    const isVerified = kyc_nivel === 'verificado';
+    const inicio = req.body.kyc_verificacion_inicio || (isVerified ? todayDateOnly() : null);
+    const fin = req.body.kyc_verificacion_fin || (isVerified ? addDaysDateOnly(30) : null);
     await user.update({
       kyc_nivel,
-      kyc_estado: kyc_nivel !== 'ninguno' ? 'aprobado' : 'pendiente',
+      kyc_estado: isVerified ? 'aprobado' : 'pendiente',
+      kyc_verificado_en: isVerified ? (user.kyc_verificado_en || new Date()) : null,
+      kyc_verificacion_inicio: inicio,
+      kyc_verificacion_fin: fin,
     });
-    res.json({ success: true, data: cleanUser(await User.findByPk(req.params.id, { attributes: { exclude: ['password_hash', 'refresh_token'] } })), message: `Nivel de verificación actualizado a ${kyc_nivel}` });
+    res.json({ success: true, data: cleanUser(await User.findByPk(req.params.id, { attributes: { exclude: ['password_hash', 'refresh_token'] } })), message: `Verificacion actualizada a ${isVerified ? 'VERIFICADO' : 'Sin verificacion'}` });
   } catch (err) { next(err); }
 });
 
@@ -2199,7 +2427,7 @@ adminRouter.delete('/users/:id', async (req, res, next) => {
     const confirmationCode = String(req.body?.confirmation_code || '');
     const expectedCode = process.env.ADMIN_DELETE_USER_CODE;
     if (!expectedCode) {
-      return res.status(503).json({ success: false, message: 'Eliminación de usuarios deshabilitada: falta ADMIN_DELETE_USER_CODE en el servidor.' });
+      return res.status(503).json({ success: false, message: 'EliminaciÃ³n de usuarios deshabilitada: falta ADMIN_DELETE_USER_CODE en el servidor.' });
     }
     const canDelete = req.user.email === 'admin@tratoya.com' || req.user.rol === 'superadmin';
 
@@ -2207,7 +2435,7 @@ adminRouter.delete('/users/:id', async (req, res, next) => {
       return res.status(403).json({ success: false, message: 'Solo el administrador principal puede eliminar usuarios.' });
     }
     if (confirmationCode !== expectedCode) {
-      return res.status(403).json({ success: false, message: 'Código de confirmación incorrecto.' });
+      return res.status(403).json({ success: false, message: 'CÃ³digo de confirmaciÃ³n incorrecto.' });
     }
     if (req.user.id === req.params.id) {
       return res.status(400).json({ success: false, message: 'No puedes eliminar tu propia cuenta administrativa.' });
@@ -2226,7 +2454,7 @@ adminRouter.delete('/users/:id', async (req, res, next) => {
     if (activeDeals > 0) {
       return res.status(409).json({
         success: false,
-        message: `No puedes eliminar este usuario: tiene ${activeDeals} trato(s) activo(s). Resuélvelos primero.`,
+        message: `No puedes eliminar este usuario: tiene ${activeDeals} trato(s) activo(s). ResuÃ©lvelos primero.`,
       });
     }
 
@@ -2257,7 +2485,7 @@ adminRouter.delete('/users/:id', async (req, res, next) => {
 adminRouter.post('/notificaciones/masiva', async (req, res, next) => {
   try {
     const { titulo, cuerpo, segmento = 'todos' } = req.body;
-    if (!titulo || !cuerpo) return res.status(400).json({ success: false, message: 'Título y mensaje requeridos' });
+    if (!titulo || !cuerpo) return res.status(400).json({ success: false, message: 'TÃ­tulo y mensaje requeridos' });
     const where = {};
     if (segmento === 'sin_kyc') where.kyc_estado = { [Op.ne]: 'aprobado' };
     if (segmento === 'con_trato_activo') {
@@ -2270,7 +2498,7 @@ adminRouter.post('/notificaciones/masiva', async (req, res, next) => {
       cuerpo,
       metadata: { segmento, creado_por: req.user.id, from_admin: true, sender_label: 'Soporte - TratoYA' },
     })));
-    res.json({ success: true, data: { enviados: users.length }, message: 'Notificación enviada' });
+    res.json({ success: true, data: { enviados: users.length }, message: 'NotificaciÃ³n enviada' });
   } catch (err) { next(err); }
 });
 
@@ -2290,7 +2518,7 @@ adminRouter.post('/tickets', async (req, res, next) => {
   try {
     const { TicketSoporte } = require('../config/database');
     const { usuario_email, categoria = 'general', asunto, descripcion, prioridad = 'media' } = req.body;
-    if (!asunto || !descripcion) return res.status(400).json({ success: false, message: 'Asunto y descripción son requeridos' });
+    if (!asunto || !descripcion) return res.status(400).json({ success: false, message: 'Asunto y descripciÃ³n son requeridos' });
     const user = usuario_email ? await User.findOne({ where: { email: usuario_email } }) : null;
     const ticket = await TicketSoporte.create({
       usuario_id: user?.id,
@@ -2327,18 +2555,47 @@ adminRouter.patch('/tickets/:id/estado', async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
-adminRouter.get('/logs', async (req, res) => {
-  res.json({
-    success: true,
-    data: [
-      { level: 'info', message: 'Panel admin operativo', timestamp: new Date().toISOString() },
-      { level: 'info', message: `Último acceso admin: ${req.user.email}`, timestamp: new Date().toISOString() },
-    ],
-  });
+adminRouter.get('/logs', async (req, res, next) => {
+  try {
+    const { AuditLog, User } = require('../config/database');
+    const logs = await AuditLog.findAll({ order: [['created_at', 'DESC']], limit: adminLimit(req.query.limit, 200, 500) });
+    const userIds = [...new Set(logs.map((l) => l.user_id).filter(Boolean))];
+    const users = userIds.length ? await User.findAll({
+      where: { id: { [Op.in]: userIds } },
+      attributes: ['id', 'nombre', 'apellido', 'email', 'rol'],
+    }).catch(() => []) : [];
+    const userMap = new Map(users.map((u) => [u.id, u]));
+    const data = logs.map((log) => {
+        const actor = userMap.get(log.user_id);
+        return {
+          id: log.id,
+          level: 'info',
+          action: log.action,
+          message: log.action + ' · ' + log.entity_type + (log.entity_id ? '/' + log.entity_id : ''),
+          timestamp: log.created_at,
+          actor: actor ? { id: actor.id, nombre: adminName(actor), email: actor.email, rol: actor.rol } : null,
+          entity_type: log.entity_type,
+          entity_id: log.entity_id,
+          metadata: log.metadata || {},
+        };
+      });
+    const summary = data.reduce((acc, item) => {
+      acc.total += 1;
+      acc.por_accion[item.action] = (acc.por_accion[item.action] || 0) + 1;
+      acc.por_entidad[item.entity_type || 'sistema'] = (acc.por_entidad[item.entity_type || 'sistema'] || 0) + 1;
+      if (item.actor?.email) acc.por_admin[item.actor.email] = (acc.por_admin[item.actor.email] || 0) + 1;
+      return acc;
+    }, { total: 0, por_accion: {}, por_entidad: {}, por_admin: {} });
+    res.json({
+      success: true,
+      data,
+      summary,
+    });
+  } catch (err) { next(err); }
 });
 
 adminRouter.put('/configuracion', async (req, res) => {
-  res.json({ success: true, data: req.body, message: 'Configuración guardada' });
+  res.json({ success: true, data: req.body, message: 'ConfiguraciÃ³n guardada' });
 });
 
 adminRouter.get('/actividad-reciente', async (req, res, next) => {
@@ -2364,7 +2621,7 @@ module.exports.admin = adminRouter;
 
 
 // =============================================
-// WEBHOOKS — src/routes/webhooks.js
+// WEBHOOKS â€” src/routes/webhooks.js
 // =============================================
 const webhooksRouter = express.Router();
 const crypto = require('crypto');
@@ -2425,7 +2682,7 @@ webhooksRouter.all('/epayco', async (req, res) => {
 
     if (!isValidSignature) {
       logger.warn(`EPAYCO_WEBHOOK_SIGNATURE_INVALID ${reference || 'sin-reference'}`);
-      await savedEvent.update({ processing_error: 'Firma ePayco inválida' });
+      await savedEvent.update({ processing_error: 'Firma ePayco invÃ¡lida' });
       return res.status(400).json({ received: false });
     }
     logger.info(`EPAYCO_WEBHOOK_SIGNATURE_VALID ${reference || 'sin-reference'}`);
@@ -2442,7 +2699,7 @@ webhooksRouter.all('/epayco', async (req, res) => {
       return res.status(400).json({ received: false });
     }
     if (currency !== intent.currency || currency !== 'COP') {
-      await savedEvent.update({ processed_at: new Date(), processing_error: 'Moneda no válida' });
+      await savedEvent.update({ processed_at: new Date(), processing_error: 'Moneda no vÃ¡lida' });
       return res.status(400).json({ received: false });
     }
 
@@ -2507,14 +2764,14 @@ webhooksRouter.all('/epayco', async (req, res) => {
           payment_intent_id: intent.id,
           type: 'PLATFORM_FEE',
           amount_cents: Math.round(Number(commission.comision_tratoya || 0) * 100),
-          description: 'Comisión neta TratoYA',
+          description: 'ComisiÃ³n neta TratoYA',
         });
         await LedgerEntry.create({
           deal_id: intent.deal_id,
           payment_intent_id: intent.id,
           type: 'GATEWAY_FEE_ESTIMATED',
           amount_cents: Math.round(Number(commission.costo_epayco || 0) * 100),
-          description: 'Costo estimado ePayco incluido en la comisión',
+          description: 'Costo estimado ePayco incluido en la comisiÃ³n',
         });
         await Pago.create({
           trato_id: intent.deal_id,
@@ -2643,7 +2900,7 @@ webhooksRouter.post('/wompi-disabled', async (req, res) => {
 
     if (!isValidSignature) {
       logger.warn(`WOMPI_WEBHOOK_SIGNATURE_INVALID ${reference || 'sin-reference'}`);
-      await savedEvent.update({ processing_error: 'Firma Wompi inválida' });
+      await savedEvent.update({ processing_error: 'Firma Wompi invÃ¡lida' });
       return res.status(401).json({ received: false });
     }
     logger.info(`WOMPI_WEBHOOK_SIGNATURE_VALID ${reference || 'sin-reference'}`);
@@ -2663,7 +2920,7 @@ webhooksRouter.post('/wompi-disabled', async (req, res) => {
       return res.status(400).json({ received: false });
     }
     if (tx.currency !== intent.currency || tx.currency !== 'COP') {
-      await savedEvent.update({ processed_at: new Date(), processing_error: 'Moneda no válida' });
+      await savedEvent.update({ processed_at: new Date(), processing_error: 'Moneda no vÃ¡lida' });
       return res.status(400).json({ received: false });
     }
 
@@ -2749,8 +3006,8 @@ webhooksRouter.post('/wompi-disabled', async (req, res) => {
   }
 });
 
-// ── WEBHOOK WhatsApp (Meta Cloud API) ────────────────────────
-// GET: verificación del webhook (Meta llama una sola vez)
+// â”€â”€ WEBHOOK WhatsApp (Meta Cloud API) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// GET: verificaciÃ³n del webhook (Meta llama una sola vez)
 webhooksRouter.get('/whatsapp', (req, res) => {
   try {
     const { verificarWebhook } = require('../services/whatsappService');
@@ -2775,15 +3032,15 @@ webhooksRouter.post('/whatsapp', (req, res) => {
 
     if (mensaje) {
       logger.info(`[WA:WEBHOOK] Mensaje de ${mensaje.de}: ${mensaje.texto?.slice(0, 80) || `[${mensaje.tipo}]`}`);
-      // Aquí puedes agregar lógica para procesar respuestas de usuarios
+      // AquÃ­ puedes agregar lÃ³gica para procesar respuestas de usuarios
       // Por ejemplo: si responden "CONFIRMAR" a un trato en curso
     }
 
-    // Procesar actualizaciones de status (entregado, leído, etc.)
+    // Procesar actualizaciones de status (entregado, leÃ­do, etc.)
     const statuses = payload?.entry?.[0]?.changes?.[0]?.value?.statuses;
     if (statuses?.length) {
       statuses.forEach(s => {
-        logger.debug(`[WA:STATUS] ${s.id} → ${s.status} para ${s.recipient_id}`);
+        logger.debug(`[WA:STATUS] ${s.id} â†’ ${s.status} para ${s.recipient_id}`);
       });
     }
   } catch (err) {

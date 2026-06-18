@@ -1,5 +1,4 @@
-import { useState, useCallback, useEffect } from "react";
-import TratoYaAdmin from "./Admin";
+import { useState, useCallback, useEffect, Suspense, lazy } from "react";
 import { clearLegacySession, getSavedUser, saveSession, API_URL } from "./lib/api";
 import { useToast, Toast } from "./components/Toast";
 import AppShell from "./pages/AppShell";
@@ -13,6 +12,8 @@ import LegalPage from "./pages/LegalPage";
 import ResetPassword from "./pages/ResetPassword";
 import { ADMIN_ENTRY_PATH } from "./lib/routes";
 import "./styles/main.css";
+
+const TratoYaAdmin = lazy(() => import("./Admin"));
 
 export default function TratoYaApp() {
   clearLegacySession();
@@ -59,7 +60,11 @@ export default function TratoYaApp() {
 
   const toastNodes = toasts.map((t) => <Toast key={t.id} message={t.message} type={t.type} onClose={() => remove(t.id)} />);
 
-  if (isAdminRoute) return <TratoYaAdmin />;
+  if (isAdminRoute) return (
+    <Suspense fallback={<div style={{ minHeight: "100vh", display: "grid", placeItems: "center", background: "#071819", color: "#dfff60", fontFamily: "Nunito Sans, sans-serif", fontWeight: 800 }}>Cargando panel admin...</div>}>
+      <TratoYaAdmin />
+    </Suspense>
+  );
   if (isWaitlistRoute) return <Espera />;
   if (isWaitlistAdminRoute) return <WaitlistAdmin />;
 

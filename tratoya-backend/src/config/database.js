@@ -72,6 +72,8 @@ async function ensureUserRegistrationColumns() {
       $$;
     `);
     await sequelize.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS usuario_unico VARCHAR(40);`);
+    await sequelize.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS kyc_verificacion_inicio DATE;`);
+    await sequelize.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS kyc_verificacion_fin DATE;`);
     await sequelize.query(`
       DO $$
       BEGIN
@@ -263,6 +265,8 @@ const User = sequelize.define('User', {
   cedula_reverso_url: { type: DataTypes.STRING(500) },
   selfie_url:    { type: DataTypes.STRING(500) },
   kyc_verificado_en:  { type: DataTypes.DATE },
+  kyc_verificacion_inicio: { type: DataTypes.DATEONLY },
+  kyc_verificacion_fin: { type: DataTypes.DATEONLY },
   reputacion:    { type: DataTypes.DECIMAL(3,2), defaultValue: 0 },
   total_resenas: { type: DataTypes.INTEGER, defaultValue: 0 },
   total_tratos:  { type: DataTypes.INTEGER, defaultValue: 0 },

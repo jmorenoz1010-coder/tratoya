@@ -17,7 +17,7 @@ export default function Topbar({ title, user, page, setPage, onMenuOpen, onBack,
           title={page === "crear" ? "Cancelar" : page === "dashboard" ? "Volver al inicio" : "Volver"}
           aria-label={page === "crear" ? "Cancelar" : page === "dashboard" ? "Volver al inicio" : "Volver"}
         >
-          {page === "crear" ? "Cancelar" : "←"}
+          &larr;
         </button>
         <span style={{ fontFamily: "Manrope", fontWeight: 700, fontSize: 15, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
           {title}

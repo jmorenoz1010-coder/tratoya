@@ -197,8 +197,27 @@ export const calcularCostoPasarelaManualUI = () => {
   return 0;
 };
 
-export const calcularCostoGmfUI = (totalCobrado, montoDesembolso) =>
-  Math.ceil(totalCobrado * 0.004) + Math.ceil(Math.max(montoDesembolso, 0) * 0.004);
+export const GMF_RATE = 0.004;
+export const GMF_MODE = ["salida", "entrada", "ambos", "ninguno"].includes(
+  String(import.meta.env?.VITE_COMMISSION_GMF_MODE || "").toLowerCase(),
+)
+  ? String(import.meta.env?.VITE_COMMISSION_GMF_MODE).toLowerCase()
+  : "salida";
+
+export const calcularCostoGmfUI = (totalCobrado, montoDesembolso, mode = GMF_MODE) => {
+  const gmfEntrada = ["entrada", "ambos"].includes(mode)
+    ? Math.ceil(Math.max(totalCobrado, 0) * GMF_RATE)
+    : 0;
+  const gmfSalida = ["salida", "ambos"].includes(mode)
+    ? Math.ceil(Math.max(montoDesembolso, 0) * GMF_RATE)
+    : 0;
+  return {
+    total: gmfEntrada + gmfSalida,
+    entrada: gmfEntrada,
+    salida: gmfSalida,
+    mode,
+  };
+};
 
 export const calcularComisionUI = (monto, quien = "comprador") => {
   let comisionTratoYa = 0;
@@ -215,12 +234,12 @@ export const calcularComisionUI = (monto, quien = "comprador") => {
     const sellerPart =
       quien === "vendedor" ? comision : quien === "compartida" ? Math.floor(comision / 2) : 0;
     const nextCostoPasarela = calcularCostoPasarelaManualUI();
-    const nextCostoGmf = calcularCostoGmfUI(monto + buyerPart, monto - sellerPart);
-    const nextComision = comisionTratoYa + nextCostoPasarela + nextCostoGmf;
-    if (nextComision === comision) { costoPasarela = nextCostoPasarela; costoGmf = nextCostoGmf; break; }
+    const nextGmf = calcularCostoGmfUI(monto + buyerPart, monto - sellerPart);
+    const nextComision = comisionTratoYa + nextCostoPasarela + nextGmf.total;
+    if (nextComision === comision) { costoPasarela = nextCostoPasarela; costoGmf = nextGmf.total; break; }
     comision = nextComision;
     costoPasarela = nextCostoPasarela;
-    costoGmf = nextCostoGmf;
+    costoGmf = nextGmf.total;
   }
 
   const comprador =
@@ -233,6 +252,9 @@ export const calcularComisionUI = (monto, quien = "comprador") => {
     comisionTratoYa,
     costoPasarela,
     costoGmf,
+    gmfEntrada: calcularCostoGmfUI(monto + comprador, monto - vendedor).entrada,
+    gmfSalida: calcularCostoGmfUI(monto + comprador, monto - vendedor).salida,
+    gmfMode: GMF_MODE,
     label,
     totalPagar: monto + comprador,
     vendedorRecibe: monto - vendedor,
