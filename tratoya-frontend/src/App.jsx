@@ -43,6 +43,7 @@ export default function TratoYaApp() {
   const legalMatch = pathname.match(/^\/legal\/(terminos|privacidad|cookies)$/);
   const isResetPassword = pathname === "/reset-password";
   const isAuthCallback = pathname === "/auth/callback";
+  const isMagicLogin = pathname === "/auth/magic";
 
   useEffect(() => {
     if (isWaitlistRoute) document.title = "Trato YA / Lista de espera";
@@ -87,6 +88,7 @@ export default function TratoYaApp() {
   );
 
   if (isAuthCallback) return <AuthCallback setSession={setSession} toast={toast} />;
+  if (isMagicLogin) return <MagicLogin toast={toast} />;
 
   if (legalMatch) return (
     <>
@@ -111,6 +113,42 @@ export default function TratoYaApp() {
           ? <Auth setSession={setSession} toast={toast} initialMode={authMode} />
           : <Landing goAuth={setAuthMode} />}
     </>
+  );
+}
+
+function MagicLogin({ toast }) {
+  useEffect(() => {
+    (async () => {
+      try {
+        const params = new URLSearchParams(window.location.search);
+        const token = params.get("token");
+        let next = params.get("next") || "/";
+        if (!token) throw new Error("Enlace inválido.");
+        const res = await fetch(`${API_URL}/auth/magic`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ token }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || !data.token || !data.user) {
+          throw new Error(data.message || "Tu enlace expiró. Inicia sesión normalmente.");
+        }
+        saveSession(data.token, data.refresh_token, data.user);
+        if (!next.startsWith("/")) next = "/";
+        // Recarga en el destino: AppShell toma ?page y ?trato y abre el paso.
+        window.location.replace(next);
+      } catch (e) {
+        try { window.sessionStorage.setItem("ty_logout_msg", e.message || "Inicia sesión para continuar."); } catch { /* noop */ }
+        window.location.replace("/");
+      }
+    })();
+  }, [toast]);
+
+  return (
+    <main className="auth-callback-screen">
+      <div className="spin" />
+      <p>Abriendo tu trato de forma segura...</p>
+    </main>
   );
 }
 

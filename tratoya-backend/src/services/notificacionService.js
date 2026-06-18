@@ -97,9 +97,17 @@ async function notificar(usuario_id, tipo, {
     if (email_template && user?.email) {
       const emailSvc = getEmail();
       if (emailSvc) {
+        // Magic-login: el botón del correo inicia sesión y abre el trato directo.
+        let cta_url;
+        try {
+          const { magicLink } = require('../utils/magicLink');
+          const next = metadata?.trato_id ? `/?page=detalle&trato=${metadata.trato_id}` : '/';
+          cta_url = magicLink(user.id, next);
+        } catch { /* sin magic link si falla */ }
         const data = {
           nombre: user.nombre || 'Usuario',
           ...email_data,
+          ...(cta_url ? { cta_url } : {}),
         };
         emailSvc.sendEmail(user.email, email_template, data).catch(err =>
           logger.warn(`[NOTIF:EMAIL] Error: ${err.message}`)
@@ -169,6 +177,8 @@ async function notificarEstadoTrato(trato) {
       titulo: `Tu trato ${codigo}: ${estado}`,
       cuerpo: `Próximo paso: ${paso}`,
       metadata: { trato_id: trato.id, estado: trato.estado },
+      email_template: 'estado_trato',
+      email_data: { codigo, estado, paso },
       wa_evento: 'estado_trato',
       wa_params: { codigo, estado, paso },
     }).catch(() => {});

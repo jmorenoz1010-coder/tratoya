@@ -359,6 +359,25 @@ router.post('/oauth/exchange', refreshLimiter, async (req, res) => {
   }
 });
 
+// POST /api/auth/magic — inicia sesión con el token del correo (un clic)
+router.post('/magic', refreshLimiter, async (req, res) => {
+  try {
+    const { token } = req.body || {};
+    const { verifyMagicToken } = require('../utils/magicLink');
+    const userId = verifyMagicToken(token);
+    if (!userId) return res.status(401).json({ success: false, message: 'Enlace expirado o inválido. Inicia sesión normalmente.' });
+    const user = await User.findByPk(userId);
+    if (!user || !user.is_active) return res.status(401).json({ success: false, message: 'Cuenta no disponible.' });
+    if (user.is_blocked) return res.status(403).json({ success: false, message: 'Cuenta suspendida. Contacta soporte.' });
+    const accessToken = signToken(user.id);
+    const refresh_token = signRefresh(user.id);
+    await user.update({ last_login: new Date(), refresh_token: await bcrypt.hash(refresh_token, 12) });
+    res.json({ success: true, token: accessToken, refresh_token, user: publicUser(user) });
+  } catch {
+    res.status(401).json({ success: false, message: 'No pudimos iniciar sesión con ese enlace.' });
+  }
+});
+
 // POST /api/auth/refresh
 router.post('/refresh', refreshLimiter, async (req, res, next) => {
   try {

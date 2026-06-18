@@ -367,6 +367,38 @@ tbody tr:hover td{background:var(--s50)}
 .pw-drop strong{font-size:14px;color:var(--n);word-break:break-word}
 .pw-drop em{font-style:normal;font-size:12px;color:var(--s500)}
 .pw-nav{display:flex;gap:9px;align-items:center;margin-top:2px}
+
+/* ── Wizard de pago en tema verde oscuro (igual al resumen, imagen base) ── */
+.manual-pay-card.pw-card{background:var(--dg-grad);border:1px solid rgba(168,196,0,.2);box-shadow:0 18px 46px rgba(0,0,0,.42)}
+.pw-card .manual-pay-head h3{color:#fff}
+.pw-card .manual-pay-kicker{color:#9ed819}
+.pw-card .manual-pay-head .btn.bg_{background:rgba(255,255,255,.08);color:rgba(255,255,255,.7)}
+.pw-card .pw-progress-bar{background:rgba(255,255,255,.14)}
+.pw-card .pw-step-help{color:rgba(255,255,255,.8)}
+.pw-card .pw-copy{background:var(--dg-grad-soft);border:1px solid rgba(168,196,0,.14)}
+.pw-card .pw-copy-info span,.pw-card .pw-copy-info em{color:rgba(255,255,255,.55)}
+.pw-card .pw-copy-info strong{color:#fff}
+.pw-card .pw-copy--key .pw-copy-info span,.pw-card .pw-copy--key .pw-copy-info em{color:rgba(7,25,47,.66)}
+.pw-card .pw-copy--key .pw-copy-info strong{color:#07192F}
+.pw-card .pw-copy-btn{background:var(--ico-dark);color:#9ed819;border:1px solid rgba(168,196,0,.25)}
+.pw-card .pw-copy--key .pw-copy-btn{background:#07192F;color:var(--g);border:0}
+.pw-card .pw-qr-toggle{color:#9ed819}
+.pw-card .pw-qr{background:var(--dg-grad-soft);border:1.5px dashed rgba(168,196,0,.3)}
+.pw-card .pw-drop{background:var(--dg-grad-soft);border:2px dashed rgba(168,196,0,.32)}
+.pw-card .pw-drop:hover{border-color:var(--g)}
+.pw-card .pw-drop.has-file{border-color:var(--g);border-style:solid}
+.pw-card .pw-drop strong{color:#fff}
+.pw-card .pw-drop em{color:rgba(255,255,255,.5)}
+.pw-card .pw-drop-ico{background:#fff}
+.pw-card .fl{color:rgba(255,255,255,.72)}
+.pw-card .inp{background:rgba(255,255,255,.07);border:1px solid rgba(168,196,0,.22);color:#fff}
+.pw-card .inp::placeholder{color:rgba(255,255,255,.42)}
+.pw-card select.inp option{color:#07192F}
+.pw-card .btn.bo{background:transparent;border:1px solid rgba(255,255,255,.28);color:rgba(255,255,255,.88)}
+.pw-card .pw-warn{background:rgba(255,193,7,.12);border:1px solid rgba(255,193,7,.34);color:#ffd591}
+.pw-card .pw-attest{color:rgba(255,255,255,.82)!important}
+.pw-card .pw-attest b{color:#fff}
+.pw-card .manual-pay-foot{color:rgba(255,255,255,.5)}
 @media(max-width:520px){.pw-amount-card strong{font-size:27px}.pw-copy-info strong{font-size:15px}}
 /* Desglose de comisión colapsable en el detalle del trato */
 .td-comm-toggle{margin-top:12px;border:1px solid var(--s100);border-radius:11px;background:var(--s50);overflow:hidden}

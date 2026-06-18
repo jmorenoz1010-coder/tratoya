@@ -160,7 +160,7 @@ export default function ManualPaymentBox({ amount, reference, busy, onReport, to
               </div>
             )}
 
-            <label style={{ display: "flex", alignItems: "flex-start", gap: 9, marginTop: 12, fontSize: 13, color: "var(--s600)", cursor: "pointer" }}>
+            <label className="pw-attest" style={{ display: "flex", alignItems: "flex-start", gap: 9, marginTop: 12, fontSize: 13, color: "var(--s600)", cursor: "pointer" }}>
               <input type="checkbox" checked={transferAttested} onChange={(e) => setTransferAttested(e.target.checked)} style={{ marginTop: 3 }} />
               <span>Confirmo que ya transferí el <b>monto exacto</b> a la cuenta oficial de TratoYa con la referencia indicada.</span>
             </label>

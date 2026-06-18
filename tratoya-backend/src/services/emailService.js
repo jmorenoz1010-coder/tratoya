@@ -71,43 +71,44 @@ function getLogoB64() {
 const wrap = (body) => `<!DOCTYPE html>
 <html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <style>
-  body{margin:0;padding:0;background:#f4f6f8;font-family:'Helvetica Neue',Arial,sans-serif}
-  .w{max-width:560px;margin:28px auto 48px;background:#fff;border-radius:14px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.09)}
-  .logo-bar{background:#ffffff;padding:18px 32px;text-align:center;border-bottom:1px solid #eef2f7}
+  body{margin:0;padding:0;background:#04110f;font-family:'Helvetica Neue',Arial,sans-serif}
+  .w{max-width:560px;margin:28px auto 48px;background:#071819;background-image:radial-gradient(circle at 88% 0%,rgba(168,196,0,.16),transparent 46%),linear-gradient(135deg,#071819 0%,#0b2927 58%,#061412 100%);border:1px solid rgba(168,196,0,.22);border-radius:18px;overflow:hidden;box-shadow:0 16px 44px rgba(0,0,0,.5)}
+  .logo-bar{padding:22px 32px 6px;text-align:center}
   .logo-bar a{display:inline-block;text-decoration:none}
-  .logo-bar img{height:64px;width:auto;display:block;margin:0 auto}
-  .hd{background:linear-gradient(135deg,#071819 0%,#0b2927 100%);padding:16px 32px 20px;text-align:center}
-  .brand-sub{color:rgba(255,255,255,.55);font-size:12px;margin:0;letter-spacing:.02em}
-  .bd{padding:32px}
-  .bd h2{color:#071819;font-size:20px;font-weight:800;margin:0 0 12px;line-height:1.25}
-  .bd p{color:#4a5568;font-size:14.5px;line-height:1.7;margin:0 0 14px}
-  .cta{display:inline-block;margin:10px 0 18px;padding:14px 28px;background:linear-gradient(135deg,#9ed819,#4fb51e);color:#fff;text-decoration:none;border-radius:9px;font-weight:800;font-size:15px}
-  .box{background:#f0f9e8;border:1.5px solid #c3e99a;border-radius:9px;padding:14px 18px;margin:14px 0}
-  .box-red{background:#fff5f5;border-color:#f5cece}
-  .box-orange{background:#fff8f0;border-color:#f5dcc0}
-  .lbl{font-size:10.5px;font-weight:700;color:#4b8800;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
-  .lbl-red{color:#c0392b}.lbl-orange{color:#e07b00}
-  .val{font-size:17px;font-weight:800;color:#071819}
-  .badge{display:inline-block;padding:4px 13px;border-radius:20px;font-size:12px;font-weight:700;margin-bottom:16px}
-  .badge-gn{background:#e8f5e9;color:#2e7d32}
-  .badge-rd{background:#ffebee;color:#c62828}
-  .badge-or{background:#fff3e0;color:#e65100}
-  .divider{height:1px;background:#eef2f7;margin:18px 0}
-  .ft{background:#f8faf5;border-top:1px solid #e5e9ee;padding:16px 32px;text-align:center}
-  .ft p{font-size:11.5px;color:#9aa5b3;margin:0}
-  .muted{font-size:12.5px!important;color:#9aa5b3!important}
+  .logo-bar img{height:60px;width:auto;display:block;margin:0 auto}
+  .hd{padding:0 32px 14px;text-align:center}
+  .brand-sub{color:#9ed819;font-size:11px;font-weight:700;margin:0;letter-spacing:.08em;text-transform:uppercase}
+  .bd{padding:26px 32px 32px}
+  .bd h2{color:#ffffff;font-size:20px;font-weight:800;margin:0 0 12px;line-height:1.25}
+  .bd p{color:#c2ccc7;font-size:14.5px;line-height:1.7;margin:0 0 14px}
+  .cta{display:inline-block;margin:10px 0 18px;padding:14px 30px;background:linear-gradient(135deg,#b5e400,#9ed819);color:#07261c;text-decoration:none;border-radius:11px;font-weight:800;font-size:15px}
+  .box{background:#0c2f2a;border:1px solid rgba(168,196,0,.2);border-radius:12px;padding:14px 18px;margin:14px 0}
+  .box-red{background:#2a1412;border-color:rgba(217,83,79,.42)}
+  .box-orange{background:#2c2410;border-color:rgba(224,123,0,.42)}
+  .lbl{font-size:10.5px;font-weight:700;color:#9ed819;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
+  .lbl-red{color:#ff8a85}.lbl-orange{color:#ffb454}
+  .val{font-size:17px;font-weight:800;color:#ffffff}
+  .badge{display:inline-block;padding:5px 14px;border-radius:20px;font-size:12px;font-weight:700;margin-bottom:16px}
+  .badge-gn{background:rgba(158,216,25,.16);color:#9ed819}
+  .badge-rd{background:rgba(217,83,79,.18);color:#ff8a85}
+  .badge-or{background:rgba(224,123,0,.18);color:#ffb454}
+  .divider{height:1px;background:rgba(255,255,255,.1);margin:18px 0}
+  .ft{background:#061412;border-top:1px solid rgba(255,255,255,.07);padding:16px 32px;text-align:center}
+  .ft p{font-size:11.5px;color:#7c918a;margin:0}
+  .muted{font-size:12.5px!important;color:#8aa39b!important}
+  a.cta{color:#07261c}
 </style></head>
 <body><div class="w">
   <div class="logo-bar">
-    <a href="${APP_URL()}" target="_blank">
+    <a href="${APP_URL()}/?ref=email" target="_blank">
       <img src="${getLogoB64()}" alt="TratoYa" />
     </a>
   </div>
   <div class="hd">
-    <p class="brand-sub">Pagos seguros entre personas</p>
+    <p class="brand-sub">Tu pago seguro hasta el final</p>
   </div>
   <div class="bd">${body}</div>
-  <div class="ft"><p>Mensaje automático de TratoYa · <a href="mailto:soporte@tratoya.com" style="color:#4b8800">soporte@tratoya.com</a></p></div>
+  <div class="ft"><p>Mensaje automático de TratoYa · <a href="mailto:soporte@tratoya.com" style="color:#9ed819">soporte@tratoya.com</a></p></div>
 </div></body></html>`;
 
 /* ── Templates ───────────────────────────────────────────────────── */
@@ -307,6 +308,25 @@ const TEMPLATES = {
       <a href="${APP_URL()}" class="cta">Reintentar verificación →</a>
     `),
   }),
+
+  // Seguimiento genérico de estado del trato (estado actual + próximo paso).
+  estado_trato: ({ nombre, codigo, estado, paso }) => ({
+    subject: `TratoYa · ${codigo}: ${estado}`,
+    html: wrap(`
+      <span class="badge badge-gn">Actualización de tu trato</span>
+      <h2>Tu trato ${codigo}</h2>
+      <p>Hola ${nombre}. Tu trato cambió de estado. Aquí va el avance en tiempo real:</p>
+      <div class="box">
+        <div class="lbl">Estado actual</div>
+        <div class="val">${estado}</div>
+      </div>
+      <div class="box">
+        <div class="lbl">Tu próximo paso</div>
+        <div class="val" style="font-size:14.5px;font-weight:600;line-height:1.5">${paso}</div>
+      </div>
+      <a href="${APP_URL()}" class="cta">Ver mi trato →</a>
+    `),
+  }),
 };
 
 /* ── Función principal ───────────────────────────────────────────── */
@@ -329,8 +349,14 @@ async function sendEmail(to, template, data = {}) {
   }
 
   const { subject, html } = builder(data);
+  // Magic-login: si la notificación trae cta_url (enlace con token), reemplaza
+  // el botón principal para que el usuario entre con un clic, sin re-login.
+  let finalHtml = html;
+  if (data.cta_url) {
+    finalHtml = finalHtml.split(`href="${APP_URL()}"`).join(`href="${data.cta_url}"`);
+  }
   try {
-    const info = await tp.sendMail({ from: FROM(), to, subject, html });
+    const info = await tp.sendMail({ from: FROM(), to, subject, html: finalHtml });
     logger.info(`[EMAIL] ✓ "${template}" → "${to}" msgId=${info.messageId}`);
   } catch (err) {
     logger.error(`[EMAIL] ✗ "${template}" → "${to}": ${err.message}`);

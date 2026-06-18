@@ -158,7 +158,7 @@ export default function AppShell({ session, setSession, toast }) {
   });
   const [pageStack, setPageStack] = useState([]);
   const [, startTransition] = useTransition();
-  const [tratoId, setTratoId] = useState(null);
+  const [tratoId, setTratoId] = useState(() => new URLSearchParams(window.location.search).get("trato") || null);
   const [disputeTratoId, setDisputeTratoId] = useState(null);
   const [floatingNote, setFloatingNote] = useState(null);
   const [celebration, setCelebration] = useState(false);
