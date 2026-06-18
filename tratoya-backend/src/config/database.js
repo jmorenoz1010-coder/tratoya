@@ -139,8 +139,28 @@ async function ensureWaitlistTables() {
   }
 }
 
+async function ensureSoftDeleteColumns() {
+  try {
+    await sequelize.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMP;`);
+    await sequelize.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS require_2fa BOOLEAN DEFAULT false;`);
+    await sequelize.query(`ALTER TABLE tratos ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMP;`);
+  } catch (e) {
+    console.warn('[DB] ensureSoftDeleteColumns warning:', e.message);
+  }
+}
+
+async function applySchemaPatches() {
+  await ensureBrebEnumValue();
+  await ensureKycNivelValues();
+  await ensureUserRegistrationColumns();
+  await ensureWaitlistTables();
+  await ensureSoftDeleteColumns();
+}
+
 async function connectDB() {
   await sequelize.authenticate();
+  // Parches idempotentes: también en producción (sin alter/sync completo).
+  await applySchemaPatches();
   const isProductionRuntime = process.env.NODE_ENV === 'production' || process.env.VERCEL === '1';
   const shouldAlterSync = process.env.DB_SYNC === 'true' || !isProductionRuntime;
   const shouldPlainSync = process.env.DB_SYNC === 'plain' || (!isProductionRuntime && process.env.DB_SYNC !== 'false');
@@ -150,13 +170,6 @@ async function connectDB() {
     await sequelize.sync();
   }
   const shouldBootstrapDb = !isProductionRuntime || process.env.DB_BOOTSTRAP === 'true';
-  if (shouldBootstrapDb) {
-    await ensureBrebEnumValue();
-    await ensureKycNivelValues();
-    await ensureUserRegistrationColumns();
-    await ensureWaitlistTables();
-  }
-
   if (shouldBootstrapDb && process.env.ADMIN_EMAIL && process.env.ADMIN_PASSWORD) {
     const adminEmail = process.env.ADMIN_EMAIL.toLowerCase();
     const adminPasswordHash = await bcrypt.hash(process.env.ADMIN_PASSWORD, 12);
