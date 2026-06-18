@@ -2502,6 +2502,65 @@ adminRouter.post('/notificaciones/masiva', async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
+// Prueba de notificaciones (email + WhatsApp + magic-login) a un destino dado.
+adminRouter.post('/notif/test', async (req, res, next) => {
+  try {
+    const { Trato } = require('../config/database');
+    const { magicLink } = require('../utils/magicLink');
+    const { estadoLabel, pasoSiguiente } = require('../utils/tratoEstado');
+    const { sendEmail } = require('../services/emailService');
+    const { notificarWA } = require('../services/whatsappService');
+
+    const email = String(req.body?.email || '').trim().toLowerCase();
+    let telefono = String(req.body?.telefono || '').trim();
+
+    // Si el email es de un usuario registrado, usamos su cuenta para el magic-link
+    // real y su teléfono como respaldo, y un trato suyo para el botón directo.
+    const user = email ? await User.findOne({ where: { email } }) : null;
+    if (!telefono && user?.telefono) telefono = user.telefono;
+
+    let trato = null;
+    if (req.body?.trato_id) trato = await Trato.findByPk(req.body.trato_id).catch(() => null);
+    if (!trato && user) {
+      trato = await Trato.findOne({
+        where: { [Op.or]: [{ comprador_id: user.id }, { vendedor_id: user.id }] },
+        order: [['createdAt', 'DESC']],
+      }).catch(() => null);
+    }
+
+    const codigo = trato?.codigo || 'TY-PRUEBA';
+    const estadoRaw = trato?.estado || 'pago_retenido';
+    const estado = estadoLabel(estadoRaw);
+    const rol = trato && user && trato.vendedor_id === user.id ? 'vendedor' : 'comprador';
+    const paso = pasoSiguiente(estadoRaw, rol);
+    const next = trato ? `/?page=detalle&trato=${trato.id}` : '/';
+    const cta_url = user ? magicLink(user.id, next) : undefined;
+    const nombre = user?.nombre || 'Prueba';
+
+    const result = { email: null, whatsapp: null, magic: Boolean(cta_url), trato: codigo };
+
+    // Email
+    if (email) {
+      try {
+        await sendEmail(email, 'estado_trato', { nombre, codigo, estado, paso, ...(cta_url ? { cta_url } : {}) });
+        result.email = user ? 'enviado (con magic-login al trato)' : 'enviado (diseño; sin magic-login: email no registrado)';
+      } catch (e) { result.email = `error: ${e.message}`; }
+    } else {
+      result.email = 'omitido (sin email)';
+    }
+
+    // WhatsApp
+    if (telefono) {
+      const wa = await notificarWA('estado_trato', telefono, { nombre, codigo, estado, paso });
+      result.whatsapp = wa?.ok ? 'enviado' : `no enviado (${wa?.razon || wa?.error?.message || wa?.error || 'revisa config/template Meta'})`;
+    } else {
+      result.whatsapp = 'omitido (sin teléfono)';
+    }
+
+    res.json({ success: true, data: result, message: 'Prueba ejecutada' });
+  } catch (err) { next(err); }
+});
+
 adminRouter.get('/tickets', async (req, res, next) => {
   try {
     const { TicketSoporte, User } = require('../config/database');
