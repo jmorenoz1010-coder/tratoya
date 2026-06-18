@@ -3,9 +3,26 @@ const bcrypt = require('bcryptjs');
 const pg = require('pg');
 const logger = require('../utils/logger');
 
+function resolveDatabaseUrl() {
+  const fallback = `postgresql://${process.env.DB_USER}:${process.env.DB_PASSWORD}@${process.env.DB_HOST}:${process.env.DB_PORT}/${process.env.DB_NAME}`;
+  const raw = String(process.env.DATABASE_URL || '').trim();
+  if (!raw) return fallback;
+  try {
+    const normalized = raw.replace(/^postgres:\/\//, 'postgresql://');
+    // eslint-disable-next-line no-new
+    new URL(normalized);
+    return raw;
+  } catch {
+    logger.warn('[DB] DATABASE_URL del entorno es inválido; se usan DB_HOST/DB_USER del .env');
+    return fallback;
+  }
+}
+
+const databaseUrl = resolveDatabaseUrl();
+const useDbSsl = process.env.DB_SSL === 'true' || /sslmode=require/i.test(databaseUrl);
+
 const sequelize = new Sequelize(
-  process.env.DATABASE_URL ||
-  `postgresql://${process.env.DB_USER}:${process.env.DB_PASSWORD}@${process.env.DB_HOST}:${process.env.DB_PORT}/${process.env.DB_NAME}`,
+  databaseUrl,
   {
     dialect: 'postgres',
     dialectModule: pg,
@@ -16,7 +33,7 @@ const sequelize = new Sequelize(
       acquire: 10000,
       idle: 10000,
     },
-    dialectOptions: process.env.DB_SSL === 'true' || process.env.VERCEL === '1' || process.env.NODE_ENV === 'production'
+    dialectOptions: useDbSsl
       ? { ssl: { require: true, rejectUnauthorized: false } }
       : {},
   }
