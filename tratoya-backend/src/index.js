@@ -93,11 +93,22 @@ if (process.env.NODE_ENV !== 'test') {
 
 // ── Acceso temporal a archivos (URLs firmadas vía token) ──
 const { verifyFileAccess } = require('./utils/fileAccess');
-app.get('/api/files/:token', (req, res) => {
+app.get('/api/files/:token', async (req, res) => {
   const info = verifyFileAccess(req.params.token);
   if (!info) {
     return res.status(403).json({ success: false, message: 'Enlace de archivo expirado o inválido.' });
   }
+  // Sirve el archivo privado de R2 con una URL firmada de corta duración.
+  try {
+    const { s3SignedUrl, isConfigured } = require('./services/s3Service');
+    if (isConfigured()) {
+      const signed = await s3SignedUrl(info.key, 300);
+      if (signed) return res.redirect(302, signed);
+    }
+  } catch (e) {
+    logger.warn(`[FILES] No se pudo firmar URL: ${e.message}`);
+  }
+  // Fallback (si R2 no está configurado): CDN público por key.
   const cdn = (process.env.CDN_BASE_URL || 'https://cdn.tratoya.co').replace(/\/$/, '');
   return res.redirect(302, `${cdn}/${info.key}`);
 });
