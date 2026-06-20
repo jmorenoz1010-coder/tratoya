@@ -74,7 +74,7 @@ export default function Dashboard({ setPage, setTratoId, user, toast, setUser })
       <div className="dashboard-head" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 18 }}>
         <div>
           <h1 className="page-hd" style={{ fontSize: 21, marginBottom: 2 }}>
-            Hola, {userStats?.nombre || user?.nombre}
+            Hola, {userStats?.nombre || user?.nombre} 👋
           </h1>
           <p className="page-sub" style={{ fontSize: 13 }}>Resumen de tu cuenta</p>
         </div>

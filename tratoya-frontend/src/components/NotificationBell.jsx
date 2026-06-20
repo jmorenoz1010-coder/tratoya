@@ -16,6 +16,18 @@ function targetFor(n, trato, step) {
   return "detalle";
 }
 
+function dedupeNotifications(list) {
+  const seen = new Set();
+  return list.filter((n) => {
+    const tratoId = n.datos?.metadata?.trato_id || n.datos?.trato_id || n.metadata?.trato_id || "";
+    const estado = n.datos?.metadata?.estado || n.metadata?.estado || "";
+    const key = [n.tipo, tratoId, estado, n.titulo, n.cuerpo].filter(Boolean).join("|") || n.id;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
 export default function NotificationBell({ setPage, setTratoId }) {
   const [open, setOpen] = useState(false);
   const [items, setItems] = useState([]);
@@ -36,7 +48,7 @@ export default function NotificationBell({ setPage, setTratoId }) {
         api.get("/tratos?limit=50").catch(() => ({ data: [] })),
         api.get("/auth/me").catch(() => ({ data: null })),
       ]);
-      setItems(notifsR.data || []);
+      setItems(dedupeNotifications(notifsR.data || []));
       const map = {};
       (tratosR.data || []).forEach((t) => { map[t.id] = t; });
       setTratosById(map);

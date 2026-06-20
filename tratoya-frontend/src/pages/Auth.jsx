@@ -132,7 +132,7 @@ export default function Auth({ setSession, toast, initialMode = "login" }) {
   };
 
   const register = async () => {
-    if (!f.nombre || !f.apellido || !f.email || !f.password || !f.cedula) { toast("Completa los campos obligatorios", "error"); return; }
+    if (!f.nombre || !f.apellido || !f.email || !f.password || !f.cedula || !f.telefono) { toast("Completa los campos obligatorios, incluido tu celular", "error"); return; }
     if (!strongPasswordOk(f.password, f)) { toast("La contraseña todavía no cumple todos los criterios.", "error"); return; }
     if (f.password !== f.confirm_password) { toast("Las contraseñas no coinciden", "error"); return; }
     setLoading(true);
@@ -388,7 +388,7 @@ export default function Auth({ setSession, toast, initialMode = "login" }) {
                           <input className="inp" type="email" autoComplete="email" placeholder="tu@correo.com" value={f.email} onChange={(e) => sf("email", e.target.value)} />
                         </div>
                         <div className="fg">
-                          <label className="fl">WhatsApp</label>
+                          <label className="fl">WhatsApp *</label>
                           <input className="inp" placeholder="+57 300 123 4567" value={f.telefono} onChange={(e) => sf("telefono", e.target.value)} />
                         </div>
                         <div className="g2 auth-tight-grid">
@@ -506,7 +506,7 @@ export default function Auth({ setSession, toast, initialMode = "login" }) {
                           </div>
                         )}
 
-                        <button type="button" className="auth-neon-btn" onClick={register} disabled={loading}>
+                        <button type="button" className="auth-neon-btn" onClick={register} disabled={loading || !f.telefono}>
                           {loading ? <><div className="spin" /> Creando cuenta...</> : "Crear cuenta →"}
                         </button>
                       </div>

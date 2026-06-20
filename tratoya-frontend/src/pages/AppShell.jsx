@@ -212,6 +212,12 @@ export default function AppShell({ session, setSession, toast }) {
   }, [pageStack]);
 
   const showFloatingNote = useCallback((note) => {
+    const noteKey = note?.id || note?.notificacion_id || [note?.tipo, note?.trato_id, note?.titulo, note?.cuerpo].filter(Boolean).join("|");
+    if (noteKey) {
+      const key = String(noteKey);
+      if (shownNotifIds.current.has(key)) return;
+      shownNotifIds.current.add(key);
+    }
     setFloatingNote(note);
     if (navigator.vibrate) try { navigator.vibrate(note?.tipo === "trato_completado" ? [45, 28, 45] : [35]); } catch {}
     playBubble();
@@ -349,10 +355,10 @@ export default function AppShell({ session, setSession, toast }) {
             try {
               const evt = JSON.parse(dataLine.slice(5).trim());
               if (evt.tipo !== "conectado") {
-                const evtId = evt.id || evt.datos?.id;
-                if (evtId) shownNotifIds.current.add(String(evtId));
+                const evtId = evt.id || evt.datos?.id || evt.datos?.notificacion_id;
                 const supportNote = isSupportNotification(evt);
                 showFloatingNote({
+                  id: evtId,
                   tipo: evt.tipo,
                   icon: supportNote || ["pago_liberado", "trato_completado"].includes(evt.tipo) ? "🔔" : "💬",
                   titulo: supportNote ? 'Mensaje de "Soporte - TratoYA"' : (evt.datos?.titulo || evt.tipo),
@@ -386,6 +392,7 @@ export default function AppShell({ session, setSession, toast }) {
           const supportNote = isSupportNotification(latest);
           const tipo = latest.tipo || "notificacion";
           showFloatingNote({
+            id: latest.id,
             tipo,
             icon: supportNote || ["pago_liberado", "trato_completado"].includes(tipo) ? "🔔" : "💬",
             titulo: supportNote ? 'Mensaje de "Soporte - TratoYA"' : (latest.titulo || "Nueva actividad"),

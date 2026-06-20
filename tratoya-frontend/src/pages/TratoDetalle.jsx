@@ -97,6 +97,7 @@ export default function TratoDetalle({ tratoId, setPage, setDisputeTratoId, user
   };
 
   useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "auto" });
     previousEstadoRef.current = null;
     load();
     const t = setInterval(() => load(true), 14000);
@@ -172,7 +173,7 @@ export default function TratoDetalle({ tratoId, setPage, setDisputeTratoId, user
     { l: "Trato creado",   s: "Condiciones aceptadas", done: true },
     { l: "Pago protegido", s: `${fmt(montoTrato)} seguro`, done: ["pago_retenido","en_entrega","confirmado","completado"].includes(trato.estado), active: trato.estado === "pago_retenido" },
     { l: "En entrega",    s: trato.guia_envio ? (medioEnvio === "en_persona" ? `📍 ${puntoEncuentro || "En persona"}` : medioEnvio === "domiciliario" ? `🛵 ${telefonoDomiciliario || "contacto"}` : `Guía ${trato.guia_envio}`) : "Pendiente", done: ["en_entrega","confirmado","completado"].includes(trato.estado), active: trato.estado === "en_entrega" },
-    { l: "Confirmación",  s: "Comprador verifica", done: ["confirmado","completado"].includes(trato.estado), active: trato.estado === "confirmado" },
+    { l: "Confirmación",  s: "Comprador verifica", done: ["confirmado","completado"].includes(trato.estado), active: ["confirmado","pendiente_confirmacion"].includes(trato.estado) },
     { l: "Pago liberado", s: `${fmt(neto)} al vendedor`, done: trato.estado === "completado" },
   ];
 
@@ -185,7 +186,7 @@ export default function TratoDetalle({ tratoId, setPage, setDisputeTratoId, user
       <div className="page-head-zone">
         <div className="page-subhead">
           <button type="button" className="page-back-link" onClick={() => setPage("tratos")}>← Volver</button>
-          <span className="page-ref-code">{trato.codigo}</span>
+          <span className="page-ref-code">🎟️ {trato.codigo}</span>
         </div>
       </div>
       <div className="page-below-head">
@@ -442,11 +443,24 @@ export default function TratoDetalle({ tratoId, setPage, setDisputeTratoId, user
 
             {/* Acción del comprador: confirmar */}
             {canConfirm && (
-              <div ref={actionRef} style={{ marginTop: 11, display: "flex", gap: 9 }}>
-                <button className="btn bp" style={{ flex: 1 }} onClick={() => action(() => api.post(`/tratos/${tratoId}/confirmar`), "¡Entrega confirmada! El pago será liberado.")} disabled={busy}>
-                  {busy ? <div className="spin" /> : "✅ Confirmar que lo recibí"}
-                </button>
-                <button className="btn bdd" onClick={abrirDisputa}>Disputar</button>
+              <div ref={actionRef} className="receive-action-box">
+                <div className="receive-warning">⚠️ 👀 <strong>Importante:</strong> NO MARQUES QUE RECIBISTE EL PRODUCTO hasta que te encuentres 100% seguro de que cumple con lo que pediste.</div>
+                {Array.isArray(trato.metadata?.prueba_entrega_urls) && trato.metadata.prueba_entrega_urls.length > 0 && (
+                  <div className="delivery-proof-box">
+                    <strong>Pruebas de entrega del vendedor</strong>
+                    <div className="delivery-proof-grid">
+                      {trato.metadata.prueba_entrega_urls.map((url, i) => (
+                        <a key={url || i} className="delivery-proof-link" href={url} target="_blank" rel="noreferrer">Ver archivo {i + 1}</a>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                <div style={{ display: "flex", gap: 9 }}>
+                  <button className="btn bp" style={{ flex: 1 }} onClick={() => action(() => api.post(`/tratos/${tratoId}/confirmar`), "¡Entrega confirmada! El pago será liberado.")} disabled={busy}>
+                    {busy ? <div className="spin" /> : "✅ Confirmar que lo recibí"}
+                  </button>
+                  <button className="btn bdd" onClick={abrirDisputa}>Disputar</button>
+                </div>
               </div>
             )}
 

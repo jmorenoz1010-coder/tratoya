@@ -74,6 +74,21 @@ export default function CrearTrato({ setPage, toast, user }) {
     : null;
   const createdLink = done ? publicTratoUrl(done.link_compartir) : "";
 
+  if (!user?.telefono || String(user.telefono).trim().length < 7) {
+    return (
+      <div className="page" style={{ display: "grid", placeItems: "center", minHeight: 420 }}>
+        <div className="card" style={{ maxWidth: 420, padding: 22, textAlign: "center" }}>
+          <div style={{ width: 64, height: 64, borderRadius: 18, margin: "0 auto 14px", display: "grid", placeItems: "center", background: "var(--n)", color: "var(--g)", fontSize: 28 }}>☎</div>
+          <h2 style={{ fontSize: 22, marginBottom: 8 }}>Agrega tu celular</h2>
+          <p style={{ color: "var(--s600)", fontSize: 14, lineHeight: 1.55, marginBottom: 16 }}>
+            Para crear o aceptar tratos necesitamos tu número de celular/WhatsApp. Así podemos enviarte alertas importantes del estado del trato.
+          </p>
+          <button className="btn bp" onClick={() => setPage?.("perfil")}>Completar perfil</button>
+        </div>
+      </div>
+    );
+  }
+
   if (done) return (
     <div className="page" style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: 480 }}>
       <div className="popi" style={{ textAlign: "center", maxWidth: 420 }}>

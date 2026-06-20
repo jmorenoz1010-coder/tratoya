@@ -162,7 +162,7 @@ function templateComponents(evento, params) {
   if (!keys.length) return [];
   return [{
     type: 'body',
-    parameters: keys.map((key) => ({ type: 'text', text: String(key === 'app_url' ? APP_URL() : params[key] ?? '-') })),
+    parameters: keys.map((key) => ({ type: 'text', text: String(key === 'app_url' ? APP_URL() : params[key] ? '-') })),
   }];
 }
 

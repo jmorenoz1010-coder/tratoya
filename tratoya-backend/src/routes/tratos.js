@@ -1,4 +1,4 @@
-const express = require('express');
+﻿const express = require('express');
 const router = express.Router();
 const { body, validationResult } = require('express-validator');
 const { Op } = require('sequelize');
@@ -28,6 +28,8 @@ const findTratoParticipante = async (id, userId) => {
   if (!trato || !esParticipante(trato, userId)) return null;
   return trato;
 };
+
+const telefonoCompleto = (user) => Boolean(user?.telefono && String(user.telefono).trim().length >= 7);
 
 // S-06: expone solo campos seguros del trato en el link público (sin notas internas,
 // metadata, IDs internos ni IP de creación).
@@ -97,6 +99,9 @@ router.put('/public/:link/activar', auth, async (req, res, next) => {
       return res.status(410).json({ success: false, message: 'Este link expiró. Pide al vendedor crear o reenviar un trato nuevo.' });
     }
     if (trato.vendedor_id === req.user.id) return res.status(400).json({ success: false, message: 'No puedes aceptar tu propio trato' });
+    if (!telefonoCompleto(req.user)) {
+      return res.status(403).json({ success: false, code: 'PHONE_REQUIRED', message: 'Agrega tu número de celular en Perfil antes de empezar un trato.' });
+    }
 
     await trato.update({ comprador_id: req.user.id, estado: 'activo', fecha_activado: new Date() });
 
@@ -328,6 +333,9 @@ router.put('/:id/activar', async (req, res, next) => {
       return res.status(403).json({ success: false, message: 'Este trato ya tiene un comprador asignado.' });
     }
     if (trato.vendedor_id === req.user.id) return res.status(400).json({ success: false, message: 'No puedes ser comprador de tu propio trato' });
+    if (!telefonoCompleto(req.user)) {
+      return res.status(403).json({ success: false, code: 'PHONE_REQUIRED', message: 'Agrega tu número de celular en Perfil antes de empezar un trato.' });
+    }
 
     await trato.update({ comprador_id: req.user.id, estado: 'activo', fecha_activado: new Date() });
 

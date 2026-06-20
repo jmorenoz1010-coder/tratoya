@@ -195,8 +195,8 @@ textarea.inp{height:auto;padding:9px 12px;resize:vertical}
 /* Badges */
 .bdg{display:inline-flex;align-items:center;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;letter-spacing:.3px;text-transform:uppercase;white-space:nowrap}
 .bdg.gn{background:var(--cr);color:var(--g2)}.bdg.nb{background:#E6EBF2;color:var(--n3)}.bdg.or{background:var(--orb);color:var(--or)}.bdg.rd{background:var(--rdb);color:var(--rd)}.bdg.bg{background:var(--s100);color:var(--s600)}.bdg.pu{background:var(--pub);color:var(--pu)}
-.verified-premium{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;background:linear-gradient(135deg,#0B2A4A,#6DCB00);color:#fff;font-size:10px;font-weight:900;letter-spacing:.6px;text-transform:uppercase;box-shadow:0 8px 18px rgba(109,203,0,.22)}
-.verified-premium:before{content:"✓";display:inline-grid;place-items:center;width:16px;height:16px;border-radius:50%;background:#fff;color:#49A000;font-size:11px;font-weight:900}
+.verified-premium,.verified-blue-badge{display:inline-flex;align-items:center;gap:6px;padding:5px 11px;border-radius:999px;background:linear-gradient(135deg,#0A58FF,#42A5FF);color:#fff;font-size:10px;font-weight:900;letter-spacing:.55px;text-transform:uppercase;box-shadow:0 10px 22px rgba(10,88,255,.24)}
+.verified-premium:before,.verified-blue-badge:before{content:"✓";display:inline-grid;place-items:center;width:16px;height:16px;border-radius:50%;background:#fff;color:#0A58FF;font-size:11px;font-weight:900}
 
 /* Table */
 .tw{overflow-x:auto;border-radius:10px;border:1px solid var(--s100)}
@@ -220,6 +220,12 @@ tbody tr:last-child td{border-bottom:none}tbody tr:hover td{background:var(--s50
 .toast-wrap{position:fixed;top:16px;right:16px;z-index:9999;display:flex;flex-direction:column;gap:7px;pointer-events:none}
 .toast{background:var(--n);color:#fff;padding:10px 16px;border-radius:10px;font-size:13px;font-weight:600;box-shadow:var(--shl);display:flex;align-items:center;gap:8px;animation:pi .25s ease both;max-width:320px}
 .toast.success{background:var(--g2)}.toast.error{background:var(--rd)}.toast.warn{background:var(--or)}
+
+.admin-ops-notifier{position:fixed;left:18px;bottom:18px;width:min(360px,calc(100vw - 36px));z-index:120;background:rgba(7,25,47,.94);color:#fff;border:1px solid rgba(168,219,0,.28);box-shadow:0 22px 60px rgba(0,0,0,.28);border-radius:16px;overflow:hidden;backdrop-filter:blur(14px)}
+.admin-ops-notifier-hd{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1px solid rgba(255,255,255,.08);font-weight:900;font-size:12px}
+.admin-ops-notifier-list{display:grid;gap:6px;padding:10px;max-height:260px;overflow:auto}
+.admin-ops-notifier button{width:100%;text-align:left;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);color:#fff;border-radius:12px;padding:10px;cursor:pointer}
+.admin-ops-notifier button strong{display:block;font-size:12px;margin-bottom:3px;color:#B9FF1C}.admin-ops-notifier button span{display:block;font-size:11px;color:rgba(255,255,255,.74)}
 
 /* Tabs */
 .tabs{display:flex;gap:2px;background:var(--s100);padding:3px;border-radius:8px;margin-bottom:14px}
@@ -589,7 +595,7 @@ function Usuarios({ toast }) {
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
         <h1 style={{ fontSize: 20 }}>Usuarios</h1>
         <div style={{ display: "flex", gap: 8 }}>
-          <div className="search" style={{ width: 260 }}>🔍 <input placeholder="Buscar nombre, email, ID o documento…" value={q} onChange={e => setQ(e.target.value)} onKeyDown={e => e.key === "Enter" && load()} /></div>
+          <div className="search" style={{ width: 280 }}>🔍 <input placeholder="Buscar nombre, email, teléfono, ID o documento…" value={q} onChange={e => setQ(e.target.value)} onKeyDown={e => e.key === "Enter" && load()} /></div>
           <button className="btn bg_" onClick={load}>↻</button>
         </div>
       </div>
@@ -1325,7 +1331,7 @@ function MiniField({ label, value, mono = false }) {
   return (
     <div style={{ background: "var(--s50)", border: "1px solid var(--s100)", borderRadius: 8, padding: "9px 10px", minWidth: 0 }}>
       <div style={{ fontSize: 9.5, color: "var(--s400)", fontWeight: 800, textTransform: "uppercase", marginBottom: 3 }}>{label}</div>
-      <div className={mono ? "mono" : ""} style={{ fontSize: 12.5, fontWeight: 700, color: "var(--n)", overflowWrap: "anywhere" }}>{value ?? "—"}</div>
+      <div className={mono ? "mono" : ""} style={{ fontSize: 12.5, fontWeight: 700, color: "var(--n)", overflowWrap: "anywhere" }}>{value || "—"}</div>
     </div>
   );
 }
@@ -2803,6 +2809,74 @@ function AdminLogin({ onLogin, toast }) {
 }
 
 // ─── ROOT ─────────────────────────────────────────────
+function AdminOpsNotifier({ active, onOpen }) {
+  const [items, setItems] = useState([]);
+  const [collapsed, setCollapsed] = useState(false);
+  const seenRef = useRef(new Set());
+  const firstLoadRef = useRef(true);
+
+  const beep = useCallback(() => {
+    try {
+      const AudioContext = window.AudioContext || window.webkitAudioContext;
+      if (!AudioContext) return;
+      const ctx = new AudioContext();
+      [660, 880].forEach((freq, i) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.frequency.value = freq;
+        osc.type = "sine";
+        gain.gain.setValueAtTime(0.0001, ctx.currentTime + i * 0.14);
+        gain.gain.exponentialRampToValueAtTime(0.08, ctx.currentTime + i * 0.14 + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + i * 0.14 + 0.13);
+        osc.connect(gain).connect(ctx.destination);
+        osc.start(ctx.currentTime + i * 0.14);
+        osc.stop(ctx.currentTime + i * 0.14 + 0.14);
+      });
+      setTimeout(() => ctx.close?.(), 700);
+    } catch { /* sonido opcional */ }
+  }, []);
+
+  const load = useCallback(async () => {
+    if (!active) return;
+    try {
+      const r = await api.get("/admin/tratos?limit=12");
+      const incoming = (r.data || []).filter((t) => !["completado", "cancelado", "expirado"].includes(t.estado));
+      const next = incoming.slice(0, 6);
+      const fresh = next.filter((t) => !seenRef.current.has(`${t.id}:${t.estado}`));
+      next.forEach((t) => seenRef.current.add(`${t.id}:${t.estado}`));
+      if (!firstLoadRef.current && fresh.length) beep();
+      firstLoadRef.current = false;
+      setItems(next);
+    } catch { /* silencioso */ }
+  }, [active, beep]);
+
+  useEffect(() => {
+    load();
+    const id = setInterval(load, 30000);
+    return () => clearInterval(id);
+  }, [load]);
+
+  if (!active || !items.length) return null;
+  return (
+    <div className="admin-ops-notifier">
+      <div className="admin-ops-notifier-hd">
+        <span>🔔 Tratos en seguimiento</span>
+        <button type="button" style={{ width: "auto", padding: "4px 8px" }} onClick={() => setCollapsed((v) => !v)}>{collapsed ? "Ver" : "Ocultar"}</button>
+      </div>
+      {!collapsed && (
+        <div className="admin-ops-notifier-list">
+          {items.map((t) => (
+            <button key={`${t.id}:${t.estado}`} onClick={() => onOpen?.(t.id)}>
+              <strong>{t.codigo || "Trato"} · {tratoLabel(t.estado)}</strong>
+              <span>{t.titulo || "Sin título"} · {fmt(t.monto || 0)}</span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function TratoYaAdmin() {
   const { ts, show, rm } = useToast();
   const toast = useCallback((m, t = "info") => show(m, t), [show]);
@@ -2920,6 +2994,7 @@ export default function TratoYaAdmin() {
               </div>
             </div>
             <div key={page}>{PAGES[page] || PAGES.dashboard}</div>
+            <AdminOpsNotifier active={Boolean(admin)} onOpen={(id) => { window.location.href = `${ADMIN_ENTRY_PATH}?trato=${encodeURIComponent(id)}&from=${encodeURIComponent(page)}`; }} />
           </div>
         </div>
       )}

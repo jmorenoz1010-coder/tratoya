@@ -1,4 +1,4 @@
-const express = require('express');
+﻿const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
@@ -60,6 +60,7 @@ const publicUser = (user) => {
     apellido: user.apellido,
     email: user.email,
     usuario_unico: user.usuario_unico,
+    telefono: user.telefono,
     tipo_identificacion: user.tipo_identificacion,
     cedula: user.cedula,
     rol,
@@ -251,6 +252,8 @@ router.post('/register', registerLimiter, [
   body('apellido').notEmpty().trim().withMessage('Apellido requerido'),
   body('email').isEmail().normalizeEmail().withMessage('Email inválido'),
   body('password').custom(isStrongPassword).withMessage('La contraseña debe tener mínimo 6 caracteres, mayúscula, minúscula, número, símbolo y no tener espacios'),
+  body('telefono').notEmpty().trim().withMessage('Número de celular requerido')
+    .matches(/^\+?[0-9\s().-]{7,20}$/).withMessage('Número de celular inválido'),
   body('tipo_identificacion').optional().isIn(['CC','CE','TI','PA','PEP','NIT','OTRO']).withMessage('Tipo de identificación inválido'),
   body('cedula').notEmpty().trim().withMessage('Número de identificación requerido'),
 ], async (req, res, next) => {
@@ -333,6 +336,7 @@ router.post('/login', authLimiter, [
         apellido: user.apellido,
         email: user.email,
         usuario_unico: user.usuario_unico,
+        telefono: user.telefono,
         tipo_identificacion: user.tipo_identificacion,
         cedula: user.cedula,
         rol,

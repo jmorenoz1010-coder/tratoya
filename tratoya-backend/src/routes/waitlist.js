@@ -404,7 +404,7 @@ router.get('/admin/export', requireAdmin, async (req, res, next) => {
       nombre: '', email: '', telefono: '', ciudad: '', posicion: '', referral_code: '',
       referidos_count: '', posicion_ganada: '', estado: '', es_fundador: '', activated_at: '', created_at: '',
     });
-    const esc = (value) => `"${String(value ?? '').replace(/"/g, '""')}"`;
+    const esc = (value) => `"${String(value ? '').replace(/"/g, '""')}"`;
     res.write(`${headers.join(',')}\n`);
     rows.forEach((row) => res.write(`${headers.map((h) => esc(row[h])).join(',')}\n`));
     return res.end();

@@ -9,6 +9,7 @@ const usersRouter = express.Router();
 const auth = require('../middleware/auth');
 const { User, CuentaBancaria, Notificacion } = require('../config/database');
 const { validateUpload } = require('../utils/fileValidation');
+const { wrapFileUrl } = require('../utils/fileAccess');
 const {
   reportePagoLimiter, disputaLimiter, uploadLimiter, chatLimiter,
 } = require('../middleware/rateLimiters');
@@ -1380,7 +1381,11 @@ adminRouter.get('/tratos', async (req, res, next) => {
         managerByDeal[log.entity_id] = actor ? { id: actor.id, nombre: adminName(actor), email: actor.email, rol: actor.rol, action: log.action, at: log.created_at } : null;
       }
     }
-    const data = tratos.map((t) => ({ ...t.toJSON(), managed_by_admin: managerByDeal[t.id] || null }));
+    const data = tratos.map((t) => {
+      const json = t.toJSON();
+      json.metadata = stripHeavyStrings(json.metadata);
+      return { ...json, managed_by_admin: managerByDeal[t.id] || null };
+    });
     res.json({ success: true, data });
   } catch (err) { next(err); }
 });
@@ -1493,9 +1498,40 @@ adminRouter.get('/tratos/:id/detalle', async (req, res, next) => {
       limit: 20,
     }), []) : [];
 
+    const wrapProofUrl = (value, dealId = trato.id) => value ? wrapFileUrl(value, req.user.id, dealId) : value;
+    const securePago = (p) => {
+      const json = p?.toJSON ? p.toJSON() : { ...(p || {}) };
+      if (json.metadata?.receipt_url) json.metadata.receipt_url = wrapProofUrl(json.metadata.receipt_url);
+      if (json.metadata?.release_receipt_url) json.metadata.release_receipt_url = wrapProofUrl(json.metadata.release_receipt_url);
+      json.metadata = stripHeavyStrings(json.metadata);
+      delete json.webhook_payload; // puede pesar MB; no se usa en el detalle
+      return json;
+    };
+    const secureTrato = trato?.toJSON ? trato.toJSON() : trato;
+    if (secureTrato?.metadata) {
+      if (secureTrato.metadata.receipt_url) secureTrato.metadata.receipt_url = wrapProofUrl(secureTrato.metadata.receipt_url);
+      if (secureTrato.metadata.release_receipt_url) secureTrato.metadata.release_receipt_url = wrapProofUrl(secureTrato.metadata.release_receipt_url);
+      if (Array.isArray(secureTrato.metadata.prueba_entrega_urls)) {
+        secureTrato.metadata.prueba_entrega_urls = secureTrato.metadata.prueba_entrega_urls.map(wrapProofUrl);
+      }
+      secureTrato.metadata = stripHeavyStrings(secureTrato.metadata);
+    }
+
+    // Quitar JSONB crudos pesados de las pasarelas (base64 / payloads grandes).
+    const lightIntents = intents.map((i) => {
+      const j = i?.toJSON ? i.toJSON() : { ...(i || {}) };
+      j.raw_response = stripHeavyStrings(j.raw_response);
+      return j;
+    });
+    const lightEvents = paymentEvents.map((e) => {
+      const j = e?.toJSON ? e.toJSON() : { ...(e || {}) };
+      j.raw_payload = stripHeavyStrings(j.raw_payload);
+      return j;
+    });
+
     res.json({
       success: true,
-      data: { trato, pagos, payment_intents: intents, payment_events: paymentEvents, ledger, disputa, mensajes, resenas, audit_logs: auditLogsWithActor, managed_by_admin: managerLog?.actor || null, cuentas_bancarias: cuentasBancarias },
+      data: { trato: secureTrato, pagos: pagos.map(securePago), payment_intents: lightIntents, payment_events: lightEvents, ledger, disputa, mensajes, resenas, audit_logs: auditLogsWithActor, managed_by_admin: managerLog?.actor || null, cuentas_bancarias: cuentasBancarias },
     });
   } catch (err) { next(err); }
 });
@@ -1886,6 +1922,20 @@ adminRouter.post('/tratos/:id/contactar', async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
+// Reemplaza strings enormes (base64/data URLs de comprobantes viejos guardados
+// en la DB) por un marcador liviano. Evita respuestas de decenas de MB.
+const stripHeavyStrings = (val) => {
+  if (val == null) return val;
+  if (typeof val === 'string') return val.length > 300 ? '[archivo]' : val;
+  if (Array.isArray(val)) return val.map(stripHeavyStrings);
+  if (typeof val === 'object') {
+    const out = {};
+    for (const k of Object.keys(val)) out[k] = stripHeavyStrings(val[k]);
+    return out;
+  }
+  return val;
+};
+
 adminRouter.get('/pagos', async (req, res, next) => {
   try {
     const { Pago, Trato, User } = require('../config/database');
@@ -1907,6 +1957,7 @@ adminRouter.get('/pagos', async (req, res, next) => {
     };
     if (tratoWhere) tratoInclude.where = tratoWhere;
     const pagos = await Pago.findAll({
+      attributes: { exclude: ['webhook_payload'] }, // puede pesar MB; no se necesita en la lista
       include: [
         tratoInclude,
         { model: User, attributes: ['id', 'nombre', 'apellido', 'email', 'telefono', 'usuario_unico'] },
@@ -1917,6 +1968,8 @@ adminRouter.get('/pagos', async (req, res, next) => {
     res.json({ success: true, data: pagos.map(p => {
       const json = p.toJSON();
       json.referencia_externa = json.pasarela_ref;
+      json.metadata = stripHeavyStrings(json.metadata);
+      if (json.Trato?.metadata) json.Trato.metadata = stripHeavyStrings(json.Trato.metadata);
       return json;
     }) });
   } catch (err) { next(err); }
@@ -2186,6 +2239,7 @@ adminRouter.get('/users', async (req, res, next) => {
         { apellido: { [Op.iLike]: `%${q}%` } },
         { email: { [Op.iLike]: `%${q}%` } },
         { usuario_unico: { [Op.iLike]: `%${q}%` } },
+        { telefono: { [Op.iLike]: `%${q}%` } },
         { cedula: { [Op.iLike]: `%${q}%` } },
       ];
     }

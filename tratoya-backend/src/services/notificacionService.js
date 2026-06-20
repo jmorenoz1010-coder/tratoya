@@ -27,6 +27,7 @@
  */
 
 const { Notificacion, User } = require('../config/database');
+const { Op } = require('sequelize');
 const logger = require('../utils/logger');
 
 // ── Importaciones lazy (no crashean si no están configurados) ──
@@ -67,6 +68,26 @@ async function notificar(usuario_id, tipo, {
 
   try {
     // ── 1. Guardar en base de datos ──────────────────────────
+    const tratoId = metadata?.trato_id || null;
+    const estado = metadata?.estado || null;
+    if (tratoId) {
+      const duplicate = await Notificacion.findOne({
+        where: {
+          usuario_id,
+          tipo,
+          createdAt: { [Op.gt]: new Date(Date.now() - 10 * 60 * 1000) },
+          metadata: estado
+            ? { [Op.contains]: { trato_id: tratoId, estado } }
+            : { [Op.contains]: { trato_id: tratoId } },
+        },
+        order: [['createdAt', 'DESC']],
+      }).catch(() => null);
+      if (duplicate) {
+        logger.info(`[NOTIF:DEDUP] ${tipo} -> ${usuario_id}: ${titulo}`);
+        return duplicate;
+      }
+    }
+
     const notif = await Notificacion.create({ usuario_id, tipo, titulo, cuerpo, metadata });
     logger.info(`[NOTIF:DB] ${tipo} → ${usuario_id}: ${titulo}`);
 
