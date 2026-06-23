@@ -6,6 +6,6 @@
     "dev:frontend": "npm --prefix tratoya-frontend run dev -- --host 0.0.0.0",
     "dev:backend": "npm --prefix tratoya-backend run dev",
     "build:frontend": "npm --prefix tratoya-frontend run build",
-    "check:backend": "node -c tratoya-backend/src/index.js && node -c tratoya-backend/src/routes/all-routes.js && node -c tratoya-backend/src/routes/tratos.js"
+    "check:backend": "node -c tratoya-backend/src/index.js && node -c tratoya-backend/src/routes/all-routes.js && node -c tratoya-backend/src/routes/tratos.js && node -c tratoya-backend/src/routes/waitlist.js"
   }
 }
