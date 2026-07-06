@@ -221,7 +221,7 @@ tbody tr:last-child td{border-bottom:none}tbody tr:hover td{background:var(--s50
 .toast{background:var(--n);color:#fff;padding:10px 16px;border-radius:10px;font-size:13px;font-weight:600;box-shadow:var(--shl);display:flex;align-items:center;gap:8px;animation:pi .25s ease both;max-width:320px}
 .toast.success{background:var(--g2)}.toast.error{background:var(--rd)}.toast.warn{background:var(--or)}
 
-.admin-ops-notifier{position:fixed;left:18px;bottom:18px;width:min(360px,calc(100vw - 36px));z-index:120;background:rgba(7,25,47,.94);color:#fff;border:1px solid rgba(168,219,0,.28);box-shadow:0 22px 60px rgba(0,0,0,.28);border-radius:16px;overflow:hidden;backdrop-filter:blur(14px)}
+.admin-ops-notifier{position:fixed;right:18px;bottom:18px;width:min(360px,calc(100vw - 36px));z-index:120;background:rgba(7,25,47,.94);color:#fff;border:1px solid rgba(168,219,0,.28);box-shadow:0 22px 60px rgba(0,0,0,.28);border-radius:16px;overflow:hidden;backdrop-filter:blur(14px)}
 .admin-ops-notifier-hd{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1px solid rgba(255,255,255,.08);font-weight:900;font-size:12px}
 .admin-ops-notifier-list{display:grid;gap:6px;padding:10px;max-height:260px;overflow:auto}
 .admin-ops-notifier button{width:100%;text-align:left;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);color:#fff;border-radius:12px;padding:10px;cursor:pointer}

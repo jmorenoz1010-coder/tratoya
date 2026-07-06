@@ -496,24 +496,27 @@ export default function AppShell({ session, setSession, toast }) {
       )}
 
       {showSsoRequirements && (
-        <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 999 }} onClick={() => setShowSsoRequirements(false)}>
-          <div style={{ background: "#071819", border: "1px solid rgba(168,219,0,.2)", borderRadius: 16, padding: "28px 24px", maxWidth: 380, width: "calc(100% - 32px)", boxShadow: "0 20px 60px rgba(0,0,0,.4)", position: "relative" }} onClick={(e) => e.stopPropagation()}>
-            <button type="button" style={{ position: "absolute", top: 12, right: 12, background: "none", border: "none", color: "rgba(255,255,255,.4)", fontSize: 20, cursor: "pointer", width: 32, height: 32, display: "flex", alignItems: "center", justifyContent: "center" }} onClick={() => setShowSsoRequirements(false)}>✕</button>
-            <div style={{ textAlign: "center", marginBottom: 16 }}>
-              <svg width="48" height="48" viewBox="0 0 48 48" style={{ margin: "0 auto" }}>
-                <text x="24" y="32" fontSize="40" textAnchor="middle" fill="#A8C400">📋</text>
-              </svg>
+        <div style={{ position: "fixed", top: 20, right: 20, maxWidth: 380, zIndex: 999, animation: "slideInRight 0.4s ease-out" }}>
+          <div style={{ background: "linear-gradient(135deg, rgba(7,25,25,.96) 0%, rgba(7,25,25,.92) 100%)", border: "1px solid rgba(168,219,0,.25)", borderRadius: 14, padding: "16px 18px", boxShadow: "0 12px 40px rgba(0,0,0,.35)", backdropFilter: "blur(14px)", display: "flex", gap: 14, alignItems: "flex-start" }}>
+            <div style={{ fontSize: 24, flexShrink: 0 }}>📋</div>
+            <div style={{ flex: 1 }}>
+              <p style={{ fontSize: 13, color: "rgba(255,255,255,.9)", lineHeight: 1.5, margin: "0 0 10px 0" }}>Recuerda completar tu email, WhatsApp y cuenta bancaria o Llave Bre-B. Es necesario para poder hacer tratos y recibir pagos</p>
+              <button
+                type="button"
+                onClick={() => { navigateTo("perfil"); setShowSsoRequirements(false); }}
+                style={{ fontSize: 12, color: "#A8C400", background: "none", border: "none", cursor: "pointer", fontWeight: 600, textDecoration: "underline" }}
+              >
+                Ir a Mi perfil →
+              </button>
             </div>
-            <h2 style={{ fontSize: 18, fontWeight: 700, color: "#fff", marginBottom: 12, textAlign: "center" }}>Completa tus datos</h2>
-            <p style={{ fontSize: 14, color: "rgba(255,255,255,.7)", lineHeight: 1.5, marginBottom: 20, textAlign: "center" }}>Recuerda completar tu email, WhatsApp y cuenta bancaria (o Nequi). Es necesario para poder hacer tratos y recibir pagos. 🔐</p>
-            <button
-              type="button"
-              onClick={() => { navigateTo("perfil"); setShowSsoRequirements(false); }}
-              style={{ width: "100%", padding: "12px 16px", background: "#A8C400", border: "none", borderRadius: 10, color: "#071819", fontWeight: 700, fontSize: 14, cursor: "pointer" }}
-            >
-              Completar datos en Mi perfil →
-            </button>
+            <button type="button" style={{ background: "none", border: "none", color: "rgba(255,255,255,.3)", fontSize: 18, cursor: "pointer", flexShrink: 0, padding: "2px 6px" }} onClick={() => setShowSsoRequirements(false)}>✕</button>
           </div>
+          <style>{`
+            @keyframes slideInRight {
+              from { opacity: 0; transform: translateX(400px); }
+              to { opacity: 1; transform: translateX(0); }
+            }
+          `}</style>
         </div>
       )}
     </div>
