@@ -148,21 +148,7 @@ const upsertSocialUser = async ({ email, nombre, apellido }) => {
   return user;
 };
 
-const appleClientSecret = () => {
-  const privateKey = String(process.env.APPLE_PRIVATE_KEY || '').replace(/\\n/g, '\n');
-  if (!process.env.APPLE_TEAM_ID || !process.env.APPLE_CLIENT_ID || !process.env.APPLE_KEY_ID || !privateKey) return null;
-  return jwt.sign(
-    {
-      iss: process.env.APPLE_TEAM_ID,
-      iat: Math.floor(Date.now() / 1000),
-      exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 30,
-      aud: 'https://appleid.apple.com',
-      sub: process.env.APPLE_CLIENT_ID,
-    },
-    privateKey,
-    { algorithm: 'ES256', keyid: process.env.APPLE_KEY_ID }
-  );
-};
+const facebookIsConfigured = () => process.env.FACEBOOK_APP_ID && process.env.FACEBOOK_APP_SECRET;
 
 const isStrongPassword = (password) =>
   typeof password === 'string'
@@ -176,7 +162,7 @@ const isStrongPassword = (password) =>
 // GET /api/auth/oauth/:provider
 router.get('/oauth/:provider', (req, res) => {
   const provider = String(req.params.provider || '').toLowerCase();
-  if (!['google', 'apple'].includes(provider)) {
+  if (!['google', 'facebook'].includes(provider)) {
     return res.status(404).json({ success: false, message: 'Proveedor social no soportado' });
   }
 
@@ -195,18 +181,17 @@ router.get('/oauth/:provider', (req, res) => {
     return res.redirect(`https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`);
   }
 
-  if (!process.env.APPLE_CLIENT_ID || !appleClientSecret()) {
-    return res.status(501).json({ success: false, message: 'Configura APPLE_CLIENT_ID, APPLE_TEAM_ID, APPLE_KEY_ID y APPLE_PRIVATE_KEY para activar Apple.' });
+  if (!facebookIsConfigured()) {
+    return res.status(501).json({ success: false, message: 'Configura FACEBOOK_APP_ID y FACEBOOK_APP_SECRET para activar Facebook.' });
   }
-  const redirectUri = process.env.APPLE_REDIRECT_URI || callbackUrl('apple') || localCallbackUrl(req, 'apple');
+  const redirectUri = process.env.FACEBOOK_REDIRECT_URI || callbackUrl('facebook') || localCallbackUrl(req, 'facebook');
   const params = new URLSearchParams({
-    client_id: process.env.APPLE_CLIENT_ID,
+    client_id: process.env.FACEBOOK_APP_ID,
     redirect_uri: redirectUri,
+    scope: 'email public_profile',
     response_type: 'code',
-    response_mode: 'form_post',
-    scope: 'name email',
   });
-  return res.redirect(`https://appleid.apple.com/auth/authorize?${params.toString()}`);
+  return res.redirect(`https://www.facebook.com/v18.0/dialog/oauth?${params.toString()}`);
 });
 
 router.get('/oauth/google/callback', async (req, res, next) => {
@@ -242,32 +227,38 @@ router.get('/oauth/google/callback', async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
-router.post('/oauth/apple/callback', async (req, res, next) => {
+router.get('/oauth/facebook/callback', async (req, res, next) => {
   try {
-    const { code, user: rawUser } = req.body || {};
+    const { code } = req.query;
     if (!code) return res.status(400).json({ success: false, message: 'Código OAuth requerido' });
-    const clientSecret = appleClientSecret();
-    const redirectUri = process.env.APPLE_REDIRECT_URI || callbackUrl('apple') || localCallbackUrl(req, 'apple');
-    const tokenResp = await fetch('https://appleid.apple.com/auth/token', {
+    const redirectUri = process.env.FACEBOOK_REDIRECT_URI || callbackUrl('facebook') || localCallbackUrl(req, 'facebook');
+
+    // Obtener access token
+    const tokenResp = await fetch('https://graph.facebook.com/v18.0/oauth/access_token', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: new URLSearchParams({
-        code,
-        client_id: process.env.APPLE_CLIENT_ID,
-        client_secret: clientSecret,
+        client_id: process.env.FACEBOOK_APP_ID,
+        client_secret: process.env.FACEBOOK_APP_SECRET,
         redirect_uri: redirectUri,
-        grant_type: 'authorization_code',
+        code,
       }),
     });
     const tokenData = await tokenResp.json();
-    if (!tokenResp.ok) return res.status(400).json({ success: false, message: tokenData.error_description || 'Apple no autorizó el inicio de sesión' });
-    const decoded = jwt.decode(tokenData.id_token) || {};
-    let appleUser = {};
-    try { appleUser = rawUser ? JSON.parse(rawUser) : {}; } catch { appleUser = {}; }
+    if (!tokenResp.ok) return res.status(400).json({ success: false, message: tokenData.error?.message || 'Facebook no autorizó el inicio de sesión' });
+
+    const accessToken = tokenData.access_token;
+    if (!accessToken) return res.status(400).json({ success: false, message: 'No se pudo obtener el token de acceso' });
+
+    // Obtener perfil del usuario
+    const profileResp = await fetch(`https://graph.facebook.com/me?fields=id,name,email,picture&access_token=${accessToken}`);
+    const profile = await profileResp.json();
+    if (!profileResp.ok) return res.status(400).json({ success: false, message: 'No se pudo obtener el perfil de Facebook' });
+
     const user = await upsertSocialUser({
-      email: decoded.email,
-      nombre: appleUser.name?.firstName || 'Usuario',
-      apellido: appleUser.name?.lastName || 'Apple',
+      email: profile.email,
+      nombre: (profile.name || 'Usuario').split(' ')[0],
+      apellido: (profile.name || 'Facebook').split(' ').slice(1).join(' ') || 'Facebook',
     });
     await syncAdminAllowlist(user);
     return socialRedirect(res, user);
