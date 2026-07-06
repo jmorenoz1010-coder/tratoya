@@ -620,7 +620,7 @@ function Usuarios({ toast }) {
                         </div>
                       </div>
                     </td>
-                    <td style={{ fontSize: 12 }}>{u.email}</td>
+                    <td style={{ fontSize: 12, minWidth: 200, whiteSpace: 'nowrap' }}>{u.email}</td>
                     <td className="mono" style={{ fontSize: 11.5 }}>{u.usuario_unico || "—"}</td>
                     <td className="mono" style={{ fontSize: 11.5 }}>{[u.tipo_identificacion, u.cedula].filter(Boolean).join(" ") || "—"}</td>
                     <td style={{ fontSize: 11.5 }}>{(u.CuentaBancarias || u.CuentaBancaria || [])[0]?.banco || "—"}</td>
@@ -2847,6 +2847,7 @@ function AdminLogin({ onLogin, toast }) {
 function AdminOpsNotifier({ active, onOpen }) {
   const [items, setItems] = useState([]);
   const [collapsed, setCollapsed] = useState(false);
+  const [closed, setClosed] = useState(false);
   const seenRef = useRef(new Set());
   const firstLoadRef = useRef(true);
 
@@ -2891,12 +2892,15 @@ function AdminOpsNotifier({ active, onOpen }) {
     return () => clearInterval(id);
   }, [load]);
 
-  if (!active || !items.length) return null;
+  if (!active || !items.length || closed) return null;
   return (
     <div className="admin-ops-notifier">
       <div className="admin-ops-notifier-hd">
         <span>🔔 Tratos en seguimiento</span>
-        <button type="button" style={{ width: "auto", padding: "4px 8px" }} onClick={() => setCollapsed((v) => !v)}>{collapsed ? "Ver" : "Ocultar"}</button>
+        <div style={{ display: "flex", gap: 6 }}>
+          <button type="button" style={{ width: "auto", padding: "4px 8px", fontSize: 12 }} onClick={() => setCollapsed((v) => !v)}>{collapsed ? "Ver" : "Ocultar"}</button>
+          <button type="button" style={{ width: "auto", padding: "4px 8px", fontSize: 12, color: "rgba(255,255,255,.5)" }} onClick={() => setClosed(true)}>✕</button>
+        </div>
       </div>
       {!collapsed && (
         <div className="admin-ops-notifier-list">
