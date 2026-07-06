@@ -516,7 +516,39 @@ export default function Auth({ setSession, toast, initialMode = "login" }) {
               </motion.div>
             </AnimatePresence>
 
-            {!forgotMode && (
+            {!forgotMode && mode === "register" && (
+              <>
+                <div className="auth-divider"><span>Opción rápida: continúa con</span></div>
+                <motion.div
+                  className="auth-social-stack auth-social-stack--top"
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.05, duration: 0.4, ease: EASE }}
+                >
+                  <motion.button
+                    type="button"
+                    className="auth-social-btn"
+                    onClick={() => socialLogin("Google")}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    <ProviderIcon name="google" /> Google
+                  </motion.button>
+                  <motion.button
+                    type="button"
+                    className="auth-social-btn"
+                    onClick={() => socialLogin("Facebook")}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    <ProviderIcon name="facebook" /> Facebook
+                  </motion.button>
+                </motion.div>
+                <div className="auth-divider"><span>o regístrate manualmente</span></div>
+              </>
+            )}
+
+            {!forgotMode && mode === "login" && (
               <>
                 <div className="auth-divider"><span>o continúa con</span></div>
                 <motion.div

@@ -74,16 +74,27 @@ export default function CrearTrato({ setPage, toast, user }) {
     : null;
   const createdLink = done ? publicTratoUrl(done.link_compartir) : "";
 
-  if (!user?.telefono || String(user.telefono).trim().length < 7) {
+  const isSsoUser = typeof window !== "undefined" && window.localStorage?.getItem("ty_registered_by_sso") === "1";
+  const missingEmail = isSsoUser && !user?.email_verificado;
+  const missingPhone = !user?.telefono || String(user.telefono).trim().length < 7;
+  const hasBankAccount = user?.cuenta_bancaria_id || user?.CuentaBancaria?.length > 0;
+  const missingBank = isSsoUser && !hasBankAccount;
+
+  if (missingPhone || missingEmail || missingBank) {
+    const msgs = [];
+    if (missingPhone) msgs.push("número de celular/WhatsApp");
+    if (missingEmail) msgs.push("email verificado");
+    if (missingBank) msgs.push("cuenta bancaria o Nequi");
+
     return (
       <div className="page" style={{ display: "grid", placeItems: "center", minHeight: 420 }}>
         <div className="card" style={{ maxWidth: 420, padding: 22, textAlign: "center" }}>
-          <div style={{ width: 64, height: 64, borderRadius: 18, margin: "0 auto 14px", display: "grid", placeItems: "center", background: "var(--n)", color: "var(--g)", fontSize: 28 }}>☎</div>
-          <h2 style={{ fontSize: 22, marginBottom: 8 }}>Agrega tu celular</h2>
+          <div style={{ width: 64, height: 64, borderRadius: 18, margin: "0 auto 14px", display: "grid", placeItems: "center", background: "var(--n)", color: "var(--g)", fontSize: 28 }}>📋</div>
+          <h2 style={{ fontSize: 22, marginBottom: 8 }}>Completa tus datos</h2>
           <p style={{ color: "var(--s600)", fontSize: 14, lineHeight: 1.55, marginBottom: 16 }}>
-            Para crear o aceptar tratos necesitamos tu número de celular/WhatsApp. Así podemos enviarte alertas importantes del estado del trato.
+            Para crear tratos necesitamos que completes: {msgs.join(", ")}. Es indispensable para poder pagarte. 🔐
           </p>
-          <button className="btn bp" onClick={() => setPage?.("perfil")}>Completar perfil</button>
+          <button className="btn bp" onClick={() => setPage?.("perfil")}>Ir a Mi perfil →</button>
         </div>
       </div>
     );

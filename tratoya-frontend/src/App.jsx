@@ -169,6 +169,7 @@ function AuthCallback({ setSession, toast }) {
           throw new Error(data.message || "No se pudo completar el inicio de sesión social.");
         }
         saveSession(data.token, data.refresh_token, data.user);
+        try { window.localStorage.setItem("ty_registered_by_sso", "1"); } catch { /* noop */ }
         setSession({ user: data.user, token: data.token });
         toast(`Bienvenido, ${data.user.nombre || "TratoYa"}!`, "success");
         // Si el login social se inició desde el panel admin y el usuario es admin,

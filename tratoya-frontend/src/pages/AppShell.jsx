@@ -168,6 +168,7 @@ export default function AppShell({ session, setSession, toast }) {
   const [unreadTratoIds, setUnreadTratoIds] = useState(new Set());
   const [pendingTratosAlert, setPendingTratosAlert] = useState(false);
   const [pendingBubble, setPendingBubble] = useState(null);
+  const [showSsoRequirements, setShowSsoRequirements] = useState(false);
 
   const navigateTo = useCallback((next) => {
     startTransition(() => {
@@ -416,6 +417,16 @@ export default function AppShell({ session, setSession, toast }) {
 
   const sharedProps = { toast, user: session.user };
 
+  useEffect(() => {
+    try {
+      const isSso = window.localStorage.getItem("ty_registered_by_sso") === "1";
+      if (isSso && !window.localStorage.getItem("ty_sso_modal_shown")) {
+        setShowSsoRequirements(true);
+        window.localStorage.setItem("ty_sso_modal_shown", "1");
+      }
+    } catch { /* noop */ }
+  }, []);
+
   return (
     <div>
       <Sidebar
@@ -482,6 +493,28 @@ export default function AppShell({ session, setSession, toast }) {
         >
           📋 {pendingBubble.count} trato{pendingBubble.count > 1 ? "s" : ""} activo{pendingBubble.count > 1 ? "s" : ""} →
         </button>
+      )}
+
+      {showSsoRequirements && (
+        <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 999 }} onClick={() => setShowSsoRequirements(false)}>
+          <div style={{ background: "#071819", border: "1px solid rgba(168,219,0,.2)", borderRadius: 16, padding: "28px 24px", maxWidth: 380, width: "calc(100% - 32px)", boxShadow: "0 20px 60px rgba(0,0,0,.4)", position: "relative" }} onClick={(e) => e.stopPropagation()}>
+            <button type="button" style={{ position: "absolute", top: 12, right: 12, background: "none", border: "none", color: "rgba(255,255,255,.4)", fontSize: 20, cursor: "pointer", width: 32, height: 32, display: "flex", alignItems: "center", justifyContent: "center" }} onClick={() => setShowSsoRequirements(false)}>✕</button>
+            <div style={{ textAlign: "center", marginBottom: 16 }}>
+              <svg width="48" height="48" viewBox="0 0 48 48" style={{ margin: "0 auto" }}>
+                <text x="24" y="32" fontSize="40" textAnchor="middle" fill="#A8C400">📋</text>
+              </svg>
+            </div>
+            <h2 style={{ fontSize: 18, fontWeight: 700, color: "#fff", marginBottom: 12, textAlign: "center" }}>Completa tus datos</h2>
+            <p style={{ fontSize: 14, color: "rgba(255,255,255,.7)", lineHeight: 1.5, marginBottom: 20, textAlign: "center" }}>Recuerda completar tu email, WhatsApp y cuenta bancaria (o Nequi). Es necesario para poder hacer tratos y recibir pagos. 🔐</p>
+            <button
+              type="button"
+              onClick={() => { navigateTo("perfil"); setShowSsoRequirements(false); }}
+              style={{ width: "100%", padding: "12px 16px", background: "#A8C400", border: "none", borderRadius: 10, color: "#071819", fontWeight: 700, fontSize: 14, cursor: "pointer" }}
+            >
+              Completar datos en Mi perfil →
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );
