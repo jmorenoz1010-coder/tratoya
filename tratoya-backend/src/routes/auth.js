@@ -52,6 +52,32 @@ const makeUniqueHandle = async (base, currentId = null) => {
   return `${root}${Date.now().toString().slice(-5)}`;
 };
 
+// Allowlist de administradores por variable de entorno (ADMIN_EMAILS, separados por coma).
+// Regla segura de elevación: SOLO promueve, nunca degrada. Un usuario que entra por
+// Google/Apple o login normal nunca es admin salvo que su email esté en esta lista
+// (o ya tenga rol admin/superadmin asignado en base de datos).
+const adminAllowlist = () => String(process.env.ADMIN_EMAILS || '')
+  .split(',')
+  .map((e) => e.trim().toLowerCase())
+  .filter(Boolean);
+
+const syncAdminAllowlist = async (user) => {
+  try {
+    const list = adminAllowlist();
+    if (!list.length || !user) return user;
+    const email = String(user.email || '').toLowerCase();
+    const currentRol = user.rol || (user.is_admin ? 'admin' : 'user');
+    const yaEsPrivilegiado = user.is_admin || ['admin', 'superadmin'].includes(currentRol);
+    if (list.includes(email) && !yaEsPrivilegiado) {
+      await user.update({ rol: 'admin', is_admin: true });
+      logger.info(`[AUTH] Usuario ${email} promovido a admin vía ADMIN_EMAILS`);
+    }
+  } catch (e) {
+    logger.warn(`[AUTH] syncAdminAllowlist falló: ${e.message}`);
+  }
+  return user;
+};
+
 const publicUser = (user) => {
   const rol = user.rol || (user.is_admin ? 'admin' : 'user');
   return {
@@ -211,6 +237,7 @@ router.get('/oauth/google/callback', async (req, res, next) => {
       nombre: profile.given_name || profile.name,
       apellido: profile.family_name || '',
     });
+    await syncAdminAllowlist(user);
     return socialRedirect(res, user);
   } catch (err) { next(err); }
 });
@@ -242,6 +269,7 @@ router.post('/oauth/apple/callback', async (req, res, next) => {
       nombre: appleUser.name?.firstName || 'Usuario',
       apellido: appleUser.name?.lastName || 'Apple',
     });
+    await syncAdminAllowlist(user);
     return socialRedirect(res, user);
   } catch (err) { next(err); }
 });
@@ -319,6 +347,9 @@ router.post('/login', authLimiter, [
     if (!user.usuario_unico) {
       await user.update({ usuario_unico: await makeUniqueHandle(user.email.split('@')[0], user.id) });
     }
+
+    // Elevación segura por allowlist (ADMIN_EMAILS). Solo promueve, nunca degrada.
+    await syncAdminAllowlist(user);
 
     const rol = user.rol || (user.is_admin ? 'admin' : 'user');
     const isAdminSession = ['admin', 'superadmin'].includes(rol);

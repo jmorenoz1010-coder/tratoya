@@ -171,6 +171,15 @@ function AuthCallback({ setSession, toast }) {
         saveSession(data.token, data.refresh_token, data.user);
         setSession({ user: data.user, token: data.token });
         toast(`Bienvenido, ${data.user.nombre || "TratoYa"}!`, "success");
+        // Si el login social se inició desde el panel admin y el usuario es admin,
+        // regresa al panel (el token se adopta al montar AdminLogin).
+        let adminReturn = false;
+        try { adminReturn = window.sessionStorage.getItem("ty_admin_return") === "1"; window.sessionStorage.removeItem("ty_admin_return"); } catch { /* noop */ }
+        const rol = data.user?.rol || (data.user?.is_admin ? "admin" : "user");
+        if (adminReturn && (rol === "admin" || rol === "superadmin")) {
+          window.location.replace(ADMIN_ENTRY_PATH);
+          return;
+        }
         window.history.replaceState(null, "", "/");
       } catch (e) {
         toast(e.message || "No se pudo completar el inicio de sesión social.", "error");

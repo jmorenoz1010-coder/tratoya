@@ -2758,7 +2758,35 @@ function AdminLogin({ onLogin, toast }) {
     localStorage.removeItem("ty_admin_refresh_v2");
     localStorage.removeItem("ty_admin_user_v2");
     localStorage.removeItem("ty_admin_token");
-  }, []);
+
+    // SSO: si ya existe una sesión válida de TratoYa (Google o normal) y el
+    // usuario tiene rol admin/superadmin, adopta ese token para el panel.
+    // La autorización real la impone el backend (adminRouter exige rol admin).
+    (async () => {
+      const mainTok = localStorage.getItem("ty_token");
+      if (!mainTok) return;
+      try {
+        const res = await fetch(`${API_URL}/auth/me`, { headers: { Authorization: `Bearer ${mainTok}` } });
+        const data = await res.json().catch(() => ({}));
+        const u = data?.data;
+        const rol = u?.rol || (u?.is_admin ? "admin" : "user");
+        if (res.ok && (rol === "admin" || rol === "superadmin")) {
+          const adminUser = { ...u, rol };
+          localStorage.setItem("ty_admin_token_v2", mainTok);
+          localStorage.setItem("ty_admin_refresh_v2", localStorage.getItem("ty_refresh") || "");
+          localStorage.setItem("ty_admin_user_v2", JSON.stringify(adminUser));
+          onLogin(adminUser);
+          toast(`Bienvenido, ${adminUser.nombre || "Admin"}`, "success");
+        }
+      } catch { /* continúa con login manual */ }
+    })();
+  }, [onLogin, toast]);
+
+  const googleAdminLogin = () => {
+    // Marca el retorno al panel: tras el callback OAuth, App.jsx redirige aquí si es admin.
+    try { sessionStorage.setItem("ty_admin_return", "1"); } catch { /* noop */ }
+    window.location.href = `${API_URL}/auth/oauth/google`;
+  };
 
   const login = async (e) => {
     e.preventDefault();
@@ -2798,6 +2826,13 @@ function AdminLogin({ onLogin, toast }) {
               {loading ? <><div className="spin" /> Verificando…</> : "🔐 Acceder al panel"}
             </button>
           </form>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, margin: "16px 0 12px", color: "rgba(255,255,255,.3)", fontSize: 11 }}>
+            <span style={{ flex: 1, height: 1, background: "rgba(255,255,255,.1)" }} />o<span style={{ flex: 1, height: 1, background: "rgba(255,255,255,.1)" }} />
+          </div>
+          <button type="button" onClick={googleAdminLogin} style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "11px 14px", borderRadius: 10, border: "1px solid rgba(255,255,255,.14)", background: "rgba(255,255,255,.06)", color: "#fff", fontSize: 14, fontWeight: 600, cursor: "pointer" }}>
+            <svg width="17" height="17" viewBox="0 0 24 24" aria-hidden="true"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1Z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84A11 11 0 0 0 12 23Z"/><path fill="#FBBC05" d="M5.84 14.1a6.6 6.6 0 0 1 0-4.2V7.06H2.18a11 11 0 0 0 0 9.88l3.66-2.84Z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1A11 11 0 0 0 2.18 7.06l3.66 2.84C6.71 7.31 9.14 5.38 12 5.38Z"/></svg>
+            Continuar con Google
+          </button>
         </div>
 
         <div style={{ textAlign: "center", marginTop: 18 }}>
