@@ -1174,13 +1174,14 @@ const isSuperadmin = (user) => (user?.rol || '').toLowerCase() === 'superadmin';
 
 const requireCancellationAuthorization = (req, res, next) => {
   if (isSuperadmin(req.user)) return next();
-  const expected = process.env.ADMIN_CANCEL_DEAL_CODE || process.env.ADMIN_DELETE_USER_CODE;
-  const provided = String(req.body?.confirmation_code || req.body?.codigo_confirmacion || '');
+  // trim(): tolera saltos de línea/espacios invisibles guardados con la variable.
+  const expected = String(process.env.ADMIN_CANCEL_DEAL_CODE || process.env.ADMIN_DELETE_USER_CODE || '').trim();
+  const provided = String(req.body?.confirmation_code || req.body?.codigo_confirmacion || '').trim();
   if (!expected) {
-    return res.status(503).json({ success: false, message: 'Cancelacion deshabilitada: falta ADMIN_CANCEL_DEAL_CODE.' });
+    return res.status(503).json({ success: false, message: 'Cancelación deshabilitada: falta ADMIN_CANCEL_DEAL_CODE.' });
   }
   if (provided !== expected) {
-    return res.status(403).json({ success: false, message: 'Codigo de autorizacion incorrecto para cancelar el trato.' });
+    return res.status(403).json({ success: false, message: 'Código de autorización incorrecto para cancelar el trato.' });
   }
   return next();
 };
@@ -2478,8 +2479,10 @@ adminRouter.delete('/users/:id', async (req, res, next) => {
       CuentaBancaria: CuentaModel,
       Notificacion: NotificacionModel,
     } = require('../config/database');
-    const confirmationCode = String(req.body?.confirmation_code || '');
-    const expectedCode = process.env.ADMIN_DELETE_USER_CODE;
+    // trim(): los CLI/paneles suelen guardar la variable con un salto de línea
+    // final invisible que rompería la comparación exacta.
+    const confirmationCode = String(req.body?.confirmation_code || '').trim();
+    const expectedCode = String(process.env.ADMIN_DELETE_USER_CODE || '').trim();
     if (!expectedCode) {
       return res.status(503).json({ success: false, message: 'Eliminación de usuarios deshabilitada: falta ADMIN_DELETE_USER_CODE en el servidor.' });
     }
