@@ -575,35 +575,55 @@ export default function AppShell({ session, setSession, toast }) {
       )}
 
       {showSsoRequirements && (
-        <div style={{ position: "fixed", top: 20, right: 20, maxWidth: 380, zIndex: 999, animation: "slideInRight 0.45s cubic-bezier(.22,1,.36,1)" }}>
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Completa tu perfil"
+          onClick={() => setShowSsoRequirements(false)}
+          style={{ position: "fixed", inset: 0, zIndex: 999, display: "grid", placeItems: "center", padding: 18, background: "rgba(4,14,14,.55)", backdropFilter: "blur(7px)", WebkitBackdropFilter: "blur(7px)", animation: "ssoFadeIn .3s ease-out" }}
+        >
           <div
-            role="button"
-            tabIndex={0}
-            onClick={() => { navigateTo("perfil"); setShowSsoRequirements(false); }}
-            onKeyDown={(e) => { if (e.key === "Enter") { navigateTo("perfil"); setShowSsoRequirements(false); } }}
-            style={{ background: "linear-gradient(135deg, rgba(7,25,25,.96) 0%, rgba(10,35,32,.94) 100%)", border: "1px solid rgba(168,196,0,.3)", borderRadius: 16, padding: "15px 16px", boxShadow: "0 12px 40px rgba(0,0,0,.35), 0 0 0 1px rgba(168,196,0,.06)", backdropFilter: "blur(14px)", display: "flex", gap: 13, alignItems: "flex-start", cursor: "pointer" }}
+            onClick={(e) => e.stopPropagation()}
+            style={{ position: "relative", width: "100%", maxWidth: 380, textAlign: "center", background: "linear-gradient(160deg, rgba(9,32,30,.98) 0%, rgba(6,20,18,.98) 100%)", border: "1px solid rgba(168,196,0,.32)", borderRadius: 22, padding: "30px 24px 24px", boxShadow: "0 24px 70px rgba(0,0,0,.5), 0 0 0 1px rgba(168,196,0,.08), 0 0 60px rgba(168,196,0,.12)", animation: "ssoPopIn .45s cubic-bezier(.22,1.3,.36,1)" }}
           >
-            <div style={{ width: 38, height: 38, borderRadius: 12, flexShrink: 0, display: "grid", placeItems: "center", background: "linear-gradient(140deg,#A8C400,#479818)", boxShadow: "0 4px 12px rgba(168,196,0,.35)" }}>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 22c5.5 0 10-4.5 10-10S17.5 2 12 2 2 6.5 2 12s4.5 10 10 10Z" stroke="#071819" strokeWidth="1.8"/><path d="M12 8v5" stroke="#071819" strokeWidth="2" strokeLinecap="round"/><circle cx="12" cy="16.2" r="1.2" fill="#071819"/></svg>
-            </div>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 13, fontWeight: 800, color: "#dfff60", marginBottom: 4, letterSpacing: .2 }}>Completa tu perfil</div>
-              <p style={{ fontSize: 12.5, color: "rgba(255,255,255,.88)", lineHeight: 1.5, margin: "0 0 8px 0" }}>Recuerda completar tu email, WhatsApp y cuenta bancaria o Llave Bre-B. Es necesario para poder hacer tratos y recibir pagos.</p>
-              <span style={{ fontSize: 12, color: "#A8C400", fontWeight: 700 }}>Ir a Mi perfil →</span>
-            </div>
             <button
               type="button"
               aria-label="Cerrar recordatorio"
-              style={{ background: "none", border: "none", color: "rgba(255,255,255,.35)", fontSize: 17, cursor: "pointer", flexShrink: 0, padding: "2px 6px", lineHeight: 1 }}
-              onClick={(e) => { e.stopPropagation(); setShowSsoRequirements(false); }}
+              style={{ position: "absolute", top: 12, right: 12, width: 30, height: 30, borderRadius: 10, background: "rgba(255,255,255,.06)", border: "1px solid rgba(255,255,255,.1)", color: "rgba(255,255,255,.55)", fontSize: 14, cursor: "pointer", lineHeight: 1 }}
+              onClick={() => setShowSsoRequirements(false)}
             >
               ✕
             </button>
+            <div style={{ width: 58, height: 58, borderRadius: 18, margin: "0 auto 14px", display: "grid", placeItems: "center", background: "linear-gradient(140deg,#A8C400,#479818)", boxShadow: "0 8px 24px rgba(168,196,0,.4)" }}>
+              <svg width="30" height="30" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 22c5.5 0 10-4.5 10-10S17.5 2 12 2 2 6.5 2 12s4.5 10 10 10Z" stroke="#071819" strokeWidth="1.8"/><path d="M12 8v5" stroke="#071819" strokeWidth="2.2" strokeLinecap="round"/><circle cx="12" cy="16.4" r="1.3" fill="#071819"/></svg>
+            </div>
+            <h3 style={{ fontSize: 18, fontWeight: 800, color: "#dfff60", margin: "0 0 10px", letterSpacing: .2 }}>Completa tu perfil</h3>
+            <p style={{ fontSize: 13.5, color: "rgba(255,255,255,.88)", lineHeight: 1.6, margin: "0 0 20px" }}>
+              Recuerda completar tu <strong style={{ color: "#fff" }}>email</strong>, <strong style={{ color: "#fff" }}>WhatsApp</strong> y <strong style={{ color: "#fff" }}>cuenta bancaria o Llave Bre-B</strong>. Es necesario para poder hacer tratos y recibir pagos.
+            </p>
+            <button
+              type="button"
+              onClick={() => { navigateTo("perfil"); setShowSsoRequirements(false); }}
+              style={{ display: "block", width: "100%", padding: "13px 16px", borderRadius: 14, border: 0, cursor: "pointer", fontFamily: "inherit", fontSize: 14, fontWeight: 800, color: "#071819", background: "linear-gradient(140deg,#dfff60,#A8C400)", boxShadow: "0 8px 22px rgba(168,196,0,.35)", marginBottom: 10 }}
+            >
+              Completar mi perfil →
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowSsoRequirements(false)}
+              style={{ background: "none", border: "none", color: "rgba(255,255,255,.5)", fontSize: 12.5, cursor: "pointer", fontFamily: "inherit", padding: "6px 10px" }}
+            >
+              Ahora no
+            </button>
           </div>
           <style>{`
-            @keyframes slideInRight {
-              from { opacity: 0; transform: translateX(400px); }
-              to { opacity: 1; transform: translateX(0); }
+            @keyframes ssoFadeIn {
+              from { opacity: 0; }
+              to { opacity: 1; }
+            }
+            @keyframes ssoPopIn {
+              from { opacity: 0; transform: translateY(26px) scale(.92); }
+              to { opacity: 1; transform: translateY(0) scale(1); }
             }
           `}</style>
         </div>

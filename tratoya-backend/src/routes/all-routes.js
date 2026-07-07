@@ -1,5 +1,5 @@
 // =============================================
-// USERS ROUTE â€” src/routes/users.js
+// USERS ROUTE — src/routes/users.js
 // =============================================
 const express = require('express');
 const bcrypt = require('bcryptjs');
@@ -47,20 +47,20 @@ usersRouter.put('/profile', async (req, res, next) => {
     if (usuario_unico !== undefined) {
       const handle = normalizeHandle(usuario_unico);
       if (!/^[a-z0-9]{5,24}$/.test(handle)) {
-        return res.status(400).json({ success: false, message: 'El ID Ãºnico debe tener entre 5 y 24 letras/nÃºmeros, sin espacios ni sÃ­mbolos' });
+        return res.status(400).json({ success: false, message: 'El ID único debe tener entre 5 y 24 letras/números, sin espacios ni símbolos' });
       }
       const existing = await User.findOne({ where: { usuario_unico: handle, id: { [Op.ne]: req.user.id } } });
-      if (existing) return res.status(409).json({ success: false, message: 'Ese ID Ãºnico ya estÃ¡ en uso' });
+      if (existing) return res.status(409).json({ success: false, message: 'Ese ID único ya está en uso' });
       updates.usuario_unico = handle;
     }
 
     if (cedula !== undefined) {
       const existingDoc = await User.findOne({ where: { cedula, id: { [Op.ne]: req.user.id } } });
-      if (existingDoc) return res.status(409).json({ success: false, message: 'Ese nÃºmero de identificaciÃ³n ya estÃ¡ registrado' });
+      if (existingDoc) return res.status(409).json({ success: false, message: 'Ese número de identificación ya está registrado' });
     }
     if (telefono !== undefined && telefono) {
       const existingTel = await User.findOne({ where: { telefono, id: { [Op.ne]: req.user.id } } });
-      if (existingTel) return res.status(409).json({ success: false, message: 'Ese nÃºmero de WhatsApp ya estÃ¡ registrado en otra cuenta' });
+      if (existingTel) return res.status(409).json({ success: false, message: 'Ese número de WhatsApp ya está registrado en otra cuenta' });
     }
 
     await req.user.update(updates);
@@ -73,7 +73,7 @@ usersRouter.get('/lookup/:usuario_unico', async (req, res, next) => {
   try {
     const handle = normalizeHandle(req.params.usuario_unico);
     if (!/^[a-z0-9]{5,24}$/.test(handle)) {
-      return res.status(400).json({ success: false, message: 'ID Ãºnico invÃ¡lido' });
+      return res.status(400).json({ success: false, message: 'ID único inválido' });
     }
     const user = await User.findOne({
       where: { usuario_unico: handle, is_active: true, is_blocked: false },
@@ -105,7 +105,7 @@ usersRouter.get('/notifications', async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
-// GET /api/users/stream â€” SSE push notifications en tiempo real
+// GET /api/users/stream — SSE push notifications en tiempo real
 usersRouter.get('/stream', (req, res) => {
   res.setHeader('Content-Type', 'text/event-stream');
   res.setHeader('Cache-Control', 'no-cache');
@@ -113,19 +113,19 @@ usersRouter.get('/stream', (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.flushHeaders();
 
-  // Registrar conexiÃ³n
+  // Registrar conexión
   try {
     const { registrarConexion } = require('../services/pushService');
     registrarConexion(req.user.id, res);
   } catch { /* pushService no disponible */ }
 
-  // Heartbeat cada 25s para mantener conexiÃ³n activa
+  // Heartbeat cada 25s para mantener conexión activa
   const heartbeat = setInterval(() => {
     try { res.write(': heartbeat\n\n'); } catch { clearInterval(heartbeat); }
   }, 25000);
 
   // Bienvenida inicial
-  res.write(`data: ${JSON.stringify({ tipo: 'conectado', mensaje: 'ConexiÃ³n establecida', usuario_id: req.user.id })}\n\n`);
+  res.write(`data: ${JSON.stringify({ tipo: 'conectado', mensaje: 'Conexión establecida', usuario_id: req.user.id })}\n\n`);
 
   req.on('close', () => clearInterval(heartbeat));
 });
@@ -154,8 +154,8 @@ usersRouter.get('/bank-accounts', async (req, res, next) => {
 usersRouter.post('/bank-accounts', async (req, res, next) => {
   try {
     const { banco, tipo, numero, titular } = req.body;
-    if (!banco || !tipo || !numero) return res.status(400).json({ success: false, message: 'Banco, tipo y nÃºmero son requeridos' });
-    if (!['ahorros','corriente','nequi','daviplata','breb'].includes(tipo)) return res.status(400).json({ success: false, message: 'Tipo de cuenta invÃ¡lido' });
+    if (!banco || !tipo || !numero) return res.status(400).json({ success: false, message: 'Banco, tipo y número son requeridos' });
+    if (!['ahorros','corriente','nequi','daviplata','breb'].includes(tipo)) return res.status(400).json({ success: false, message: 'Tipo de cuenta inválido' });
     const cuenta = await CuentaBancaria.create({
       usuario_id: req.user.id,
       banco,
@@ -173,7 +173,7 @@ module.exports.users = usersRouter;
 
 
 // =============================================
-// PAYMENTS ROUTE â€” src/routes/payments.js
+// PAYMENTS ROUTE — src/routes/payments.js
 // =============================================
 const paymentsRouter = express.Router();
 const {
@@ -195,7 +195,7 @@ const paymentFailedStatuses = ['PAYMENT_DECLINED', 'PAYMENT_ERROR', 'PAYMENT_VOI
 
 const envBool = (value, fallback = false) => {
   if (value === undefined || value === null || value === '') return fallback;
-  return ['1', 'true', 'yes', 'si', 'sÃ­', 'on'].includes(String(value).trim().toLowerCase());
+  return ['1', 'true', 'yes', 'si', 'sí', 'on'].includes(String(value).trim().toLowerCase());
 };
 
 function getEpaycoConfig() {
@@ -221,7 +221,7 @@ function getEpaycoConfig() {
     throw err;
   }
   if (!customerId || !pKey) {
-    logger.warn('EPAYCO_SIGNATURE_KEYS_MISSING: faltan EPAYCO_CUSTOMER_ID/EPAYCO_P_CUST_ID y EPAYCO_P_KEY para sesiÃ³n v2 o validaciÃ³n de webhook');
+    logger.warn('EPAYCO_SIGNATURE_KEYS_MISSING: faltan EPAYCO_CUSTOMER_ID/EPAYCO_P_CUST_ID y EPAYCO_P_KEY para sesión v2 o validación de webhook');
   }
   return { env, isTest, publicKey, customerId, pKey, frontendUrl, backendUrl, realEnabled, maxTestAmountCop, checkoutVersion, checkoutType };
 }
@@ -243,7 +243,7 @@ async function createEpaycoSmartSession(config, sessionPayload) {
   });
   const token = login.data?.token || login.data?.data?.token;
   if (!token) {
-    const err = new Error(login.data?.textResponse || login.data?.titleResponse || login.data?.message || 'ePayco no devolviÃ³ token de autenticaciÃ³n');
+    const err = new Error(login.data?.textResponse || login.data?.titleResponse || login.data?.message || 'ePayco no devolvió token de autenticación');
     err.statusCode = 502;
     err.expose = true;
     throw err;
@@ -257,7 +257,7 @@ async function createEpaycoSmartSession(config, sessionPayload) {
   });
   const sessionId = session.data?.data?.sessionId || session.data?.sessionId;
   if (!sessionId) {
-    const err = new Error(session.data?.textResponse || session.data?.titleResponse || 'ePayco no devolviÃ³ sessionId');
+    const err = new Error(session.data?.textResponse || session.data?.titleResponse || 'ePayco no devolvió sessionId');
     err.statusCode = 502;
     err.expose = true;
     throw err;
@@ -310,7 +310,7 @@ paymentsRouter.post('/epayco/create', async (req, res, next) => {
 
     const config = getEpaycoConfig();
     if (!config.isTest && !config.realEnabled) {
-      return res.status(403).json({ success: false, message: 'Pagos reales deshabilitados por configuraciÃ³n' });
+      return res.status(403).json({ success: false, message: 'Pagos reales deshabilitados por configuración' });
     }
 
     const trato = await Trato.findByPk(dealId);
@@ -330,7 +330,7 @@ paymentsRouter.post('/epayco/create', async (req, res, next) => {
     const commission = calcularComision(montoBase, trato.quien_paga_comision || 'comprador');
     const amountCop = commission.total_a_pagar;
     if (!Number.isFinite(amountCop) || amountCop <= 0) {
-      return res.status(400).json({ success: false, message: 'El monto del trato no es vÃ¡lido' });
+      return res.status(400).json({ success: false, message: 'El monto del trato no es válido' });
     }
     if (config.isTest && amountCop > config.maxTestAmountCop) {
       return res.status(400).json({
@@ -608,7 +608,7 @@ paymentsRouter.post('/manual/report', reportePagoLimiter, paymentUpload.single('
       },
     });
 
-    // Pasos no crÃ­ticos: nunca deben tumbar un pago ya registrado.
+    // Pasos no críticos: nunca deben tumbar un pago ya registrado.
     try {
       await AuditLog.create({
         user_id: req.user.id,
@@ -618,14 +618,14 @@ paymentsRouter.post('/manual/report', reportePagoLimiter, paymentUpload.single('
         metadata: { deal_id: trato.id, reference, transaction_ref: cleanRef, amount_cop: amountCop },
       });
     } catch (e) {
-      require('../utils/logger').warn(`[PAYMENT] AuditLog fallÃ³ (no bloquea): ${e.message}`);
+      require('../utils/logger').warn(`[PAYMENT] AuditLog falló (no bloquea): ${e.message}`);
     }
 
     try {
       const { notificar } = require('../services/notificacionService');
       await notificar(trato.comprador_id, 'pago_reportado', {
         titulo: 'Comprobante recibido',
-        cuerpo: `Recibimos el comprobante del trato ${trato.codigo}. Nuestro equipo validarÃ¡ el pago manualmente.`,
+        cuerpo: `Recibimos el comprobante del trato ${trato.codigo}. Nuestro equipo validará el pago manualmente.`,
         metadata: { trato_id: trato.id, payment_intent_id: intent.id },
         email_template: 'pago_recibido_comprador',
         email_data: { codigo: trato.codigo, titulo: trato.titulo, monto: Number(amountCop).toLocaleString('es-CO') },
@@ -634,13 +634,13 @@ paymentsRouter.post('/manual/report', reportePagoLimiter, paymentUpload.single('
       });
       if (trato.vendedor_id) {
         await notificar(trato.vendedor_id, 'pago_reportado_vendedor', {
-          titulo: 'El comprador reportÃ³ el pago',
-          cuerpo: `El comprador subiÃ³ el comprobante del trato ${trato.codigo}. Lo estamos verificando.`,
+          titulo: 'El comprador reportó el pago',
+          cuerpo: `El comprador subió el comprobante del trato ${trato.codigo}. Lo estamos verificando.`,
           metadata: { trato_id: trato.id, payment_intent_id: intent.id },
         });
       }
     } catch (e) {
-      require('../utils/logger').warn(`[PAYMENT] NotificaciÃ³n fallÃ³ (no bloquea): ${e.message}`);
+      require('../utils/logger').warn(`[PAYMENT] Notificación falló (no bloquea): ${e.message}`);
     }
 
     try {
@@ -651,7 +651,7 @@ paymentsRouter.post('/manual/report', reportePagoLimiter, paymentUpload.single('
     res.json({
       success: true,
       ok: true,
-      message: 'Pago reportado. Lo revisaremos en mÃ¡ximo 1 hora.',
+      message: 'Pago reportado. Lo revisaremos en máximo 1 hora.',
       data: {
         reference,
         amountCop,
@@ -713,7 +713,7 @@ paymentsRouter.post('/create-order-disabled/:trato_id', async (req, res, next) =
 });
 
 paymentsRouter.get('/status/:transaction_id', async (req, res, next) => {
-  return res.status(410).json({ success: false, message: 'La verificaciÃ³n Wompi fue desactivada. Usa /api/payments/status?reference=...' });
+  return res.status(410).json({ success: false, message: 'La verificación Wompi fue desactivada. Usa /api/payments/status?reference=...' });
 });
 
 paymentsRouter.get('/status-disabled/:transaction_id', async (req, res, next) => {
@@ -722,7 +722,7 @@ paymentsRouter.get('/status-disabled/:transaction_id', async (req, res, next) =>
     const trx = await verificarTransaccionWompi(req.params.transaction_id);
     const codigo = (trx.reference || '').split('-')[0];
     const trato = await Trato.findOne({ where: { codigo } });
-    if (!trato) return res.status(404).json({ success: false, message: 'Trato no encontrado para esta transacciÃ³n' });
+    if (!trato) return res.status(404).json({ success: false, message: 'Trato no encontrado para esta transacción' });
 
     if (trx.status === 'APPROVED') {
       await registrarPagoAprobado({
@@ -740,12 +740,12 @@ paymentsRouter.get('/status-disabled/:transaction_id', async (req, res, next) =>
 
 paymentsRouter.post('/sandbox-approve/:trato_id', async (req, res, next) => {
   try {
-    // S-03: la simulaciÃ³n de pago NUNCA estÃ¡ disponible en producciÃ³n. Es un bypass
+    // S-03: la simulación de pago NUNCA está disponible en producción. Es un bypass
     // del escrow (marca pago_retenido sin pago real) y solo debe usarse en entornos
-    // de prueba (NODE_ENV !== 'production'). Los pagos reales se confirman vÃ­a webhook
-    // de pasarela o confirmaciÃ³n manual del admin.
+    // de prueba (NODE_ENV !== 'production'). Los pagos reales se confirman vía webhook
+    // de pasarela o confirmación manual del admin.
     if (process.env.NODE_ENV === 'production') {
-      return res.status(403).json({ success: false, message: 'SimulaciÃ³n no disponible en producciÃ³n' });
+      return res.status(403).json({ success: false, message: 'Simulación no disponible en producción' });
     }
     const trato = await Trato.findByPk(req.params.trato_id);
     if (!trato) return res.status(404).json({ success: false, message: 'Trato no encontrado' });
@@ -778,14 +778,14 @@ paymentsRouter.post('/sandbox-approve/:trato_id', async (req, res, next) => {
       trato.comprador_id, trato.vendedor_id, 'pago_retenido',
       {
         titulo: 'ðŸ”’ Pago retenido',
-        cuerpo: `Tu pago de $${parseFloat(trato.monto).toLocaleString('es-CO')} COP estÃ¡ seguro en TratoYa.`,
+        cuerpo: `Tu pago de $${parseFloat(trato.monto).toLocaleString('es-CO')} COP está seguro en TratoYa.`,
         metadata: { trato_id: trato.id },
         sms_evento: 'pago_retenido_comprador',
         sms_params: { codigo: trato.codigo },
       },
       {
-        titulo: 'ðŸ”’ Pago retenido â€” procede a entregar',
-        cuerpo: `$${parseFloat(trato.monto).toLocaleString('es-CO')} COP del trato ${trato.codigo} estÃ¡n seguros. EnvÃ­a el producto.`,
+        titulo: 'ðŸ”’ Pago retenido — procede a entregar',
+        cuerpo: `$${parseFloat(trato.monto).toLocaleString('es-CO')} COP del trato ${trato.codigo} están seguros. Envía el producto.`,
         metadata: { trato_id: trato.id, sandbox: true },
         sms_evento: 'pago_retenido_vendedor',
         sms_params: { codigo: trato.codigo, monto: trato.monto },
@@ -805,7 +805,7 @@ paymentsRouter.get('/history', async (req, res, next) => {
     const tratoIds = tratos.map(t => t.id);
     const tratoMap = Object.fromEntries(tratos.map(t => [t.id, t]));
 
-    // PaymentIntents â€” estado real de cada cobro ePayco
+    // PaymentIntents — estado real de cada cobro ePayco
     const intents = await PaymentIntent.findAll({
       where: { deal_id: { [Op.in]: tratoIds } },
       order: [['createdAt', 'DESC']],
@@ -856,7 +856,7 @@ module.exports.payments = paymentsRouter;
 
 
 // =============================================
-// MESSAGES ROUTE â€” src/routes/messages.js
+// MESSAGES ROUTE — src/routes/messages.js
 // =============================================
 const messagesRouter = express.Router();
 const { Mensaje } = require('../config/database');
@@ -885,7 +885,7 @@ messagesRouter.get('/:trato_id', async (req, res, next) => {
 });
 
 messagesRouter.post('/:trato_id', chatLimiter, [
-  bodyMsg('contenido').notEmpty().trim().withMessage('Mensaje vacÃ­o'),
+  bodyMsg('contenido').notEmpty().trim().withMessage('Mensaje vacío'),
 ], async (req, res, next) => {
   const errors = validMsg(req);
   if (!errors.isEmpty()) {
@@ -902,7 +902,7 @@ messagesRouter.post('/:trato_id', chatLimiter, [
     });
     if (!trato) return res.status(404).json({ success: false, message: 'Trato no encontrado' });
 
-    // Seguridad escrow: censurar telÃ©fonos, correos y enlaces para que las
+    // Seguridad escrow: censurar teléfonos, correos y enlaces para que las
     // partes no se salgan de la plataforma.
     const { censurarTexto } = require('../utils/censura');
     const { texto: contenidoSeguro, censurado } = censurarTexto(req.body.contenido);
@@ -930,7 +930,7 @@ module.exports.messages = messagesRouter;
 
 
 // =============================================
-// REVIEWS ROUTE â€” src/routes/reviews.js
+// REVIEWS ROUTE — src/routes/reviews.js
 // =============================================
 const reviewsRouter = express.Router();
 reviewsRouter.use(auth);
@@ -973,17 +973,17 @@ reviewsRouter.post('/deal/:trato_id', async (req, res, next) => {
     const { calificacion, comentario = '' } = req.body;
     const rating = Number(calificacion);
     if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
-      return res.status(400).json({ success: false, message: 'La valoraciÃ³n debe estar entre 1 y 5 estrellas' });
+      return res.status(400).json({ success: false, message: 'La valoración debe estar entre 1 y 5 estrellas' });
     }
     const trato = await Trato.findByPk(req.params.trato_id);
     if (!trato || ![trato.comprador_id, trato.vendedor_id].includes(req.user.id)) {
       return res.status(404).json({ success: false, message: 'Trato no encontrado' });
     }
     if (trato.estado !== 'completado') {
-      return res.status(400).json({ success: false, message: 'Solo puedes reseÃ±ar tratos completados' });
+      return res.status(400).json({ success: false, message: 'Solo puedes reseñar tratos completados' });
     }
     const destinatarioId = req.user.id === trato.comprador_id ? trato.vendedor_id : trato.comprador_id;
-    if (!destinatarioId) return res.status(400).json({ success: false, message: 'El trato no tiene contraparte para reseÃ±ar' });
+    if (!destinatarioId) return res.status(400).json({ success: false, message: 'El trato no tiene contraparte para reseñar' });
 
     const [resena, created] = await Resena.findOrCreate({
       where: { trato_id: trato.id, autor_id: req.user.id },
@@ -999,7 +999,7 @@ reviewsRouter.post('/deal/:trato_id', async (req, res, next) => {
       await resena.update({ calificacion: rating, comentario: comentario.trim().slice(0, 1000), destinatario_id: destinatarioId });
     }
     await recalcularReputacionPorResenas(destinatarioId);
-    res.status(created ? 201 : 200).json({ success: true, data: resena, message: created ? 'ReseÃ±a publicada' : 'ReseÃ±a actualizada' });
+    res.status(created ? 201 : 200).json({ success: true, data: resena, message: created ? 'Reseña publicada' : 'Reseña actualizada' });
   } catch (err) { next(err); }
 });
 
@@ -1007,7 +1007,7 @@ module.exports.reviews = reviewsRouter;
 
 
 // =============================================
-// DISPUTES ROUTE â€” src/routes/disputes.js
+// DISPUTES ROUTE — src/routes/disputes.js
 // =============================================
 const disputesRouter = express.Router();
 const { Disputa } = require('../config/database');
@@ -1017,9 +1017,9 @@ const dayjs = require('dayjs');
 disputesRouter.use(auth);
 
 disputesRouter.post('/', disputaLimiter, [
-  bodyD('trato_id').isUUID().withMessage('trato_id invÃ¡lido'),
+  bodyD('trato_id').isUUID().withMessage('trato_id inválido'),
   bodyD('motivo').notEmpty().withMessage('Motivo requerido'),
-  bodyD('descripcion').isLength({ min: 20 }).withMessage('DescripciÃ³n mÃ­nimo 20 caracteres'),
+  bodyD('descripcion').isLength({ min: 20 }).withMessage('Descripción mínimo 20 caracteres'),
   bodyD('tipo').isIn(['producto_danado','no_recibido','diferente','servicio_incompleto','fraude','otro']),
 ], async (req, res, next) => {
   const errors = validD(req);
@@ -1038,7 +1038,7 @@ disputesRouter.post('/', disputaLimiter, [
     // S-12: solo se puede disputar un trato con pago ya protegido / en proceso de entrega.
     const ESTADOS_DISPUTABLES = ['pago_retenido', 'en_entrega', 'pendiente_confirmacion', 'confirmado'];
     if (!ESTADOS_DISPUTABLES.includes(trato.estado)) {
-      return res.status(400).json({ success: false, message: 'Solo puedes abrir una disputa cuando el pago ya estÃ¡ protegido y hay una entrega en curso.' });
+      return res.status(400).json({ success: false, message: 'Solo puedes abrir una disputa cuando el pago ya está protegido y hay una entrega en curso.' });
     }
 
     const yaExiste = await Disputa.findOne({ where: { trato_id } });
@@ -1067,11 +1067,11 @@ disputesRouter.post('/', disputaLimiter, [
     const { notificar } = require('../services/notificacionService');
     await notificar(contraparte, 'disputa_abierta', {
       titulo: 'âš–ï¸ Disputa abierta en tu trato',
-      cuerpo: `El trato "${trato.titulo}" tiene una disputa. Responderemos en mÃ¡ximo 72h.`,
+      cuerpo: `El trato "${trato.titulo}" tiene una disputa. Responderemos en máximo 72h.`,
       metadata: { disputa_id: disputa.id, trato_id },
     });
 
-    res.status(201).json({ success: true, message: 'Disputa abierta. Un mediador revisarÃ¡ en 72 horas.', data: disputa });
+    res.status(201).json({ success: true, message: 'Disputa abierta. Un mediador revisará en 72 horas.', data: disputa });
   } catch (err) { next(err); }
 });
 
@@ -1093,7 +1093,7 @@ module.exports.disputes = disputesRouter;
 
 
 // =============================================
-// KYC ROUTE â€” src/routes/kyc.js
+// KYC ROUTE — src/routes/kyc.js
 // =============================================
 const kycRouter = express.Router();
 const multer = require('multer');
@@ -1121,7 +1121,7 @@ kycRouter.post('/upload', uploadLimiter, upload.fields([
     if (req.body.cedula) updates.cedula = req.body.cedula;
     if (req.body.fecha_nacimiento) updates.fecha_nacimiento = req.body.fecha_nacimiento;
 
-    // En desarrollo: aprobar automÃ¡ticamente
+    // En desarrollo: aprobar automáticamente
     if (process.env.NODE_ENV === 'development') {
       updates.kyc_nivel = 'basico';
       updates.kyc_estado = 'aprobado';
@@ -1150,7 +1150,7 @@ module.exports.kyc = kycRouter;
 
 
 // =============================================
-// ADMIN ROUTE â€” src/routes/admin.js
+// ADMIN ROUTE — src/routes/admin.js
 // =============================================
 const adminRouter = express.Router();
 
@@ -1581,7 +1581,7 @@ adminRouter.post('/tratos/:id/cancelar', requireCancellationAuthorization, async
         deal_id: trato.id,
         type: 'escrow_refund_initiated',
         amount_cents: Math.round(montoDevolucion * 100),
-        description: `DevoluciÃ³n iniciada por cancelaciÃ³n admin ${trato.codigo}`,
+        description: `Devolución iniciada por cancelación admin ${trato.codigo}`,
       }).catch(() => {});
     } else if (pagosActivos.length) {
       await Pago.update({ estado: 'anulado' }, { where: { id: { [Op.in]: pagosActivos.map((p) => p.id) } } });
@@ -1602,7 +1602,7 @@ adminRouter.post('/tratos/:id/cancelar', requireCancellationAuthorization, async
       'trato_cancelado_admin',
       {
         titulo: 'Trato cancelado',
-        cuerpo: `El trato ${trato.codigo} fue cancelado por soporte.${pagoRetenido ? ' Iniciamos la devoluciÃ³n de tu pago.' : ''}`,
+        cuerpo: `El trato ${trato.codigo} fue cancelado por soporte.${pagoRetenido ? ' Iniciamos la devolución de tu pago.' : ''}`,
         metadata: { trato_id: trato.id },
       },
       {
@@ -1612,7 +1612,7 @@ adminRouter.post('/tratos/:id/cancelar', requireCancellationAuthorization, async
       },
     ).catch(() => {});
 
-    res.json({ success: true, data: trato, message: pagoRetenido ? 'Trato cancelado. DevoluciÃ³n iniciada.' : 'Trato cancelado' });
+    res.json({ success: true, data: trato, message: pagoRetenido ? 'Trato cancelado. Devolución iniciada.' : 'Trato cancelado' });
   } catch (err) { next(err); }
 });
 
@@ -1639,7 +1639,7 @@ adminRouter.post('/tratos/:id/liberar', requireSuperadmin, paymentUpload.single(
     await trato.update({
       estado: 'completado',
       fecha_liberacion: new Date(),
-      notas_internas: `Liberado por admin ${req.user.email}${referenciaLiberacion ? ` Â· Ref: ${referenciaLiberacion}` : ''}`,
+      notas_internas: `Liberado por admin ${req.user.email}${referenciaLiberacion ? ` · Ref: ${referenciaLiberacion}` : ''}`,
       metadata: {
         ...(trato.metadata || {}),
         release_reference: referenciaLiberacion || undefined,
@@ -1672,7 +1672,7 @@ adminRouter.post('/tratos/:id/liberar', requireSuperadmin, paymentUpload.single(
       'pago_liberado',
       {
         titulo: 'Pago liberado',
-        cuerpo: `El pago del trato ${trato.codigo} fue liberado. Se verÃ¡ reflejado mÃ¡ximo en 1 hora.`,
+        cuerpo: `El pago del trato ${trato.codigo} fue liberado. Se verá reflejado máximo en 1 hora.`,
         metadata: { trato_id: trato.id, referencia_liberacion: referenciaLiberacion || null, release_receipt_url: releaseReceiptUrl },
         email_template: 'trato_completado',
         email_data: { codigo: trato.codigo, titulo: trato.titulo },
@@ -1681,7 +1681,7 @@ adminRouter.post('/tratos/:id/liberar', requireSuperadmin, paymentUpload.single(
       },
       {
         titulo: 'Pago liberado a tu favor',
-        cuerpo: `Liberamos los fondos del trato ${trato.codigo}. Se verÃ¡ reflejado mÃ¡ximo en 1 hora.`,
+        cuerpo: `Liberamos los fondos del trato ${trato.codigo}. Se verá reflejado máximo en 1 hora.`,
         metadata: { trato_id: trato.id, referencia_liberacion: referenciaLiberacion || null, release_receipt_url: releaseReceiptUrl },
         email_template: 'entrega_confirmada_vendedor',
         email_data: { codigo: trato.codigo, neto: Number(trato.monto_neto || trato.monto).toLocaleString('es-CO') },
@@ -1714,7 +1714,7 @@ adminRouter.post('/pagos/:id/confirmar', async (req, res, next) => {
     const pago = await Pago.findByPk(req.params.id);
     if (!pago) return res.status(404).json({ success: false, message: 'Pago no encontrado' });
     if (!['pendiente', 'procesando'].includes(pago.estado)) {
-      return res.status(409).json({ success: false, message: `Este pago ya estÃ¡ en estado ${pago.estado}.` });
+      return res.status(409).json({ success: false, message: `Este pago ya está en estado ${pago.estado}.` });
     }
     const trato = await Trato.findByPk(pago.trato_id);
     if (!trato) return res.status(404).json({ success: false, message: 'Trato no encontrado' });
@@ -1782,7 +1782,7 @@ adminRouter.post('/pagos/:id/confirmar', async (req, res, next) => {
       'pago_retenido',
       {
         titulo: 'Pago confirmado',
-        cuerpo: `Tu pago del trato ${trato.codigo} quedÃ³ confirmado y en custodia TratoYA.`,
+        cuerpo: `Tu pago del trato ${trato.codigo} quedó confirmado y en custodia TratoYA.`,
         metadata: { trato_id: trato.id, pago_id: pago.id },
         email_template: 'pago_confirmado_comprador',
         email_data: { codigo: trato.codigo, titulo: trato.titulo },
@@ -1791,7 +1791,7 @@ adminRouter.post('/pagos/:id/confirmar', async (req, res, next) => {
       },
       {
         titulo: 'Pago confirmado, puedes entregar',
-        cuerpo: `El pago del trato ${trato.codigo} estÃ¡ en custodia TratoYA. Puedes entregar con seguridad.`,
+        cuerpo: `El pago del trato ${trato.codigo} está en custodia TratoYA. Puedes entregar con seguridad.`,
         metadata: { trato_id: trato.id, pago_id: pago.id },
         email_template: 'pago_confirmado_vendedor',
         email_data: { codigo: trato.codigo, titulo: trato.titulo },
@@ -1813,12 +1813,12 @@ adminRouter.post('/pagos/:id/rechazar', async (req, res, next) => {
     const pago = await Pago.findByPk(req.params.id);
     if (!pago) return res.status(404).json({ success: false, message: 'Pago no encontrado' });
     if (!['pendiente', 'procesando'].includes(pago.estado)) {
-      return res.status(409).json({ success: false, message: `Este pago ya estÃ¡ en estado ${pago.estado}.` });
+      return res.status(409).json({ success: false, message: `Este pago ya está en estado ${pago.estado}.` });
     }
     const trato = await Trato.findByPk(pago.trato_id);
     if (!trato) return res.status(404).json({ success: false, message: 'Trato no encontrado' });
     const metadata = pago.metadata || {};
-    // RazÃ³n de rechazo opcional enviada desde el admin
+    // Razón de rechazo opcional enviada desde el admin
     const motivo = req.body.motivo || null;
     const montoRecibido = req.body.monto_recibido ? Number(req.body.monto_recibido) : null;
     await pago.update({
@@ -1852,8 +1852,8 @@ adminRouter.post('/pagos/:id/rechazar', async (req, res, next) => {
     }).catch(() => {});
     const { notificar } = require('../services/notificacionService');
     const cuerpoPush = motivo
-      ? `Pago no verificado para el trato ${trato.codigo}: ${motivo}. PodrÃ¡s intentarlo de nuevo en 10 minutos.`
-      : `No pudimos verificar el pago del trato ${trato.codigo}. PodrÃ¡s intentarlo de nuevo en 10 minutos.`;
+      ? `Pago no verificado para el trato ${trato.codigo}: ${motivo}. Podrás intentarlo de nuevo en 10 minutos.`
+      : `No pudimos verificar el pago del trato ${trato.codigo}. Podrás intentarlo de nuevo en 10 minutos.`;
     await notificar(trato.comprador_id, 'pago_rechazado', {
       titulo: 'Pago no verificado',
       cuerpo: cuerpoPush,
@@ -1897,7 +1897,7 @@ adminRouter.post('/tratos/:id/contactar', async (req, res, next) => {
     if (['comprador', 'ambos'].includes(destino) && trato.comprador_id) targets.push(trato.comprador_id);
     if (['vendedor', 'ambos'].includes(destino) && trato.vendedor_id) targets.push(trato.vendedor_id);
     const uniqueTargets = [...new Set(targets)];
-    if (!uniqueTargets.length) return res.status(400).json({ success: false, message: 'El trato aÃºn no tiene destinatarios disponibles' });
+    if (!uniqueTargets.length) return res.status(400).json({ success: false, message: 'El trato aún no tiene destinatarios disponibles' });
 
     const { notificar } = require('../services/notificacionService');
     await Promise.all(uniqueTargets.map(usuario_id => notificar(usuario_id, 'admin_trato', {
@@ -2029,7 +2029,7 @@ adminRouter.post('/disputes/:id/resolver', async (req, res, next) => {
         },
       });
     } else {
-      // A favor del comprador o acuerdo con devoluciÃ³n.
+      // A favor del comprador o acuerdo con devolución.
       await trato.update({
         estado: 'cancelado',
         metadata: {
@@ -2055,7 +2055,7 @@ adminRouter.post('/disputes/:id/resolver', async (req, res, next) => {
           deal_id: trato.id,
           type: 'escrow_refund_initiated',
           amount_cents: Math.round(montoDevolucion * 100),
-          description: `DevoluciÃ³n por disputa resuelta a favor comprador Â· ${trato.codigo}`,
+          description: `Devolución por disputa resuelta a favor comprador · ${trato.codigo}`,
         }).catch(() => {});
       }
     }
@@ -2084,12 +2084,12 @@ adminRouter.post('/disputes/:id/resolver', async (req, res, next) => {
         'disputa_resuelta_vendedor',
         {
           titulo: 'Disputa resuelta',
-          cuerpo: `La disputa del trato ${trato.codigo} se resolviÃ³ a favor del vendedor. El pago quedarÃ¡ listo para liberaciÃ³n.`,
+          cuerpo: `La disputa del trato ${trato.codigo} se resolvió a favor del vendedor. El pago quedará listo para liberación.`,
           metadata: { trato_id: trato.id, disputa_id: disputa.id },
         },
         {
           titulo: 'Disputa resuelta a tu favor',
-          cuerpo: `Ganaste la disputa del trato ${trato.codigo}. TratoYa liberarÃ¡ el pago tras verificaciÃ³n final.`,
+          cuerpo: `Ganaste la disputa del trato ${trato.codigo}. TratoYa liberará el pago tras verificación final.`,
           metadata: { trato_id: trato.id, disputa_id: disputa.id },
         },
       ).catch(() => {});
@@ -2099,13 +2099,13 @@ adminRouter.post('/disputes/:id/resolver', async (req, res, next) => {
         trato.vendedor_id,
         'disputa_resuelta_comprador',
         {
-          titulo: 'Disputa resuelta â€” devoluciÃ³n iniciada',
-          cuerpo: `La disputa del trato ${trato.codigo} se resolviÃ³ a tu favor.${pagoRetenido ? ' Iniciamos la devoluciÃ³n de tu pago.' : ''}`,
+          titulo: 'Disputa resuelta — devolución iniciada',
+          cuerpo: `La disputa del trato ${trato.codigo} se resolvió a tu favor.${pagoRetenido ? ' Iniciamos la devolución de tu pago.' : ''}`,
           metadata: { trato_id: trato.id, disputa_id: disputa.id },
         },
         {
           titulo: 'Disputa resuelta',
-          cuerpo: `La disputa del trato ${trato.codigo} se resolviÃ³ a favor del comprador.`,
+          cuerpo: `La disputa del trato ${trato.codigo} se resolvió a favor del comprador.`,
           metadata: { trato_id: trato.id, disputa_id: disputa.id },
         },
       ).catch(() => {});
@@ -2115,8 +2115,8 @@ adminRouter.post('/disputes/:id/resolver', async (req, res, next) => {
       success: true,
       data: disputa,
       message: fallo === 'vendedor'
-        ? 'Disputa resuelta. El trato quedÃ³ confirmado; libera fondos desde admin.'
-        : 'Disputa resuelta. DevoluciÃ³n iniciada si habÃ­a pago retenido.',
+        ? 'Disputa resuelta. El trato quedó confirmado; libera fondos desde admin.'
+        : 'Disputa resuelta. Devolución iniciada si había pago retenido.',
     });
   } catch (err) { next(err); }
 });
@@ -2264,7 +2264,7 @@ adminRouter.get('/users', async (req, res, next) => {
           if (!cuentasMap[c.usuario_id]) cuentasMap[c.usuario_id] = [];
           if (cuentasMap[c.usuario_id].length < 5) cuentasMap[c.usuario_id].push(c.toJSON());
         });
-      } catch { /* no crash si la tabla de cuentas no estÃ¡ disponible */ }
+      } catch { /* no crash si la tabla de cuentas no está disponible */ }
     }
     const data = users.map(u => {
       const clean = cleanUser(u);
@@ -2317,13 +2317,13 @@ adminRouter.post('/users', requireSuperadmin, async (req, res, next) => {
   try {
     const { nombre, apellido = '', email, password, telefono, rol = 'user' } = req.body;
     if (!nombre || !email || !password) {
-      return res.status(400).json({ success: false, message: 'Nombre, email y contraseÃ±a son requeridos' });
+      return res.status(400).json({ success: false, message: 'Nombre, email y contraseña son requeridos' });
     }
     if (!ADMIN_ROLES.includes(rol)) {
-      return res.status(400).json({ success: false, message: 'Rol invÃ¡lido' });
+      return res.status(400).json({ success: false, message: 'Rol inválido' });
     }
     const existe = await User.findOne({ where: { email } });
-    if (existe) return res.status(409).json({ success: false, message: 'El email ya estÃ¡ registrado' });
+    if (existe) return res.status(409).json({ success: false, message: 'El email ya está registrado' });
 
     const password_hash = await bcrypt.hash(password, 12);
     const user = await User.create({
@@ -2344,7 +2344,7 @@ adminRouter.patch('/users/:id/rol', requireSuperadmin, async (req, res, next) =>
   try {
     const { rol } = req.body;
     if (!ADMIN_ROLES.includes(rol)) {
-      return res.status(400).json({ success: false, message: 'Rol invÃ¡lido' });
+      return res.status(400).json({ success: false, message: 'Rol inválido' });
     }
     const user = await User.findByPk(req.params.id);
     if (!user) return res.status(404).json({ success: false, message: 'Usuario no encontrado' });
@@ -2360,16 +2360,16 @@ adminRouter.patch('/users/:id/credentials', requireSuperadmin, async (req, res, 
       return res.status(400).json({ success: false, message: 'Nombre y email son requeridos' });
     }
     if (rol && !ADMIN_ROLES.includes(rol)) {
-      return res.status(400).json({ success: false, message: 'Rol invÃ¡lido' });
+      return res.status(400).json({ success: false, message: 'Rol inválido' });
     }
     if (password && password.length < 6) {
-      return res.status(400).json({ success: false, message: 'ContraseÃ±a mÃ­nimo 6 caracteres' });
+      return res.status(400).json({ success: false, message: 'Contraseña mínimo 6 caracteres' });
     }
     const user = await User.findByPk(req.params.id);
     if (!user) return res.status(404).json({ success: false, message: 'Usuario no encontrado' });
 
     const emailOwner = await User.findOne({ where: { email, id: { [Op.ne]: user.id } } });
-    if (emailOwner) return res.status(409).json({ success: false, message: 'Ese email ya estÃ¡ en uso' });
+    if (emailOwner) return res.status(409).json({ success: false, message: 'Ese email ya está en uso' });
 
     const nextRol = rol || user.rol || (user.is_admin ? 'admin' : 'user');
     const updates = {
@@ -2407,12 +2407,12 @@ adminRouter.post('/users/:id/reset-password', requireSuperadmin, async (req, res
   try {
     const { password } = req.body;
     if (!password || password.length < 6) {
-      return res.status(400).json({ success: false, message: 'ContraseÃ±a mÃ­nimo 6 caracteres' });
+      return res.status(400).json({ success: false, message: 'Contraseña mínimo 6 caracteres' });
     }
     const user = await User.findByPk(req.params.id);
     if (!user) return res.status(404).json({ success: false, message: 'Usuario no encontrado' });
     await user.update({ password_hash: await bcrypt.hash(password, 12), refresh_token: null });
-    res.json({ success: true, message: 'ContraseÃ±a restablecida' });
+    res.json({ success: true, message: 'Contraseña restablecida' });
   } catch (err) { next(err); }
 });
 
@@ -2427,7 +2427,7 @@ adminRouter.post('/users/:id/notificacion', async (req, res, next) => {
       cuerpo,
       metadata: { creado_por: req.user.id, from_admin: true, sender_label: 'Soporte - TratoYA' },
     });
-    res.status(201).json({ success: true, data: { usuario_id: user.id }, message: 'NotificaciÃ³n creada' });
+    res.status(201).json({ success: true, data: { usuario_id: user.id }, message: 'Notificación creada' });
   } catch (err) { next(err); }
 });
 
@@ -2481,7 +2481,7 @@ adminRouter.delete('/users/:id', async (req, res, next) => {
     const confirmationCode = String(req.body?.confirmation_code || '');
     const expectedCode = process.env.ADMIN_DELETE_USER_CODE;
     if (!expectedCode) {
-      return res.status(503).json({ success: false, message: 'EliminaciÃ³n de usuarios deshabilitada: falta ADMIN_DELETE_USER_CODE en el servidor.' });
+      return res.status(503).json({ success: false, message: 'Eliminación de usuarios deshabilitada: falta ADMIN_DELETE_USER_CODE en el servidor.' });
     }
     // Cualquier admin autenticado puede eliminar si presenta el código de
     // confirmación (segundo factor). El gate del router ya exige rol admin.
@@ -2492,7 +2492,7 @@ adminRouter.delete('/users/:id', async (req, res, next) => {
       return res.status(403).json({ success: false, message: 'Solo un administrador puede eliminar usuarios.' });
     }
     if (confirmationCode !== expectedCode) {
-      return res.status(403).json({ success: false, message: 'CÃ³digo de confirmaciÃ³n incorrecto.' });
+      return res.status(403).json({ success: false, message: 'Código de confirmación incorrecto.' });
     }
     if (req.user.id === req.params.id) {
       return res.status(400).json({ success: false, message: 'No puedes eliminar tu propia cuenta administrativa.' });
@@ -2511,7 +2511,7 @@ adminRouter.delete('/users/:id', async (req, res, next) => {
     if (activeDeals > 0) {
       return res.status(409).json({
         success: false,
-        message: `No puedes eliminar este usuario: tiene ${activeDeals} trato(s) activo(s). ResuÃ©lvelos primero.`,
+        message: `No puedes eliminar este usuario: tiene ${activeDeals} trato(s) activo(s). Resuélvelos primero.`,
       });
     }
 
@@ -2542,7 +2542,7 @@ adminRouter.delete('/users/:id', async (req, res, next) => {
 adminRouter.post('/notificaciones/masiva', async (req, res, next) => {
   try {
     const { titulo, cuerpo, segmento = 'todos' } = req.body;
-    if (!titulo || !cuerpo) return res.status(400).json({ success: false, message: 'TÃ­tulo y mensaje requeridos' });
+    if (!titulo || !cuerpo) return res.status(400).json({ success: false, message: 'Título y mensaje requeridos' });
     const where = {};
     if (segmento === 'sin_kyc') where.kyc_estado = { [Op.ne]: 'aprobado' };
     if (segmento === 'con_trato_activo') {
@@ -2555,7 +2555,7 @@ adminRouter.post('/notificaciones/masiva', async (req, res, next) => {
       cuerpo,
       metadata: { segmento, creado_por: req.user.id, from_admin: true, sender_label: 'Soporte - TratoYA' },
     })));
-    res.json({ success: true, data: { enviados: users.length }, message: 'NotificaciÃ³n enviada' });
+    res.json({ success: true, data: { enviados: users.length }, message: 'Notificación enviada' });
   } catch (err) { next(err); }
 });
 
@@ -2634,7 +2634,7 @@ adminRouter.post('/tickets', async (req, res, next) => {
   try {
     const { TicketSoporte } = require('../config/database');
     const { usuario_email, categoria = 'general', asunto, descripcion, prioridad = 'media' } = req.body;
-    if (!asunto || !descripcion) return res.status(400).json({ success: false, message: 'Asunto y descripciÃ³n son requeridos' });
+    if (!asunto || !descripcion) return res.status(400).json({ success: false, message: 'Asunto y descripción son requeridos' });
     const user = usuario_email ? await User.findOne({ where: { email: usuario_email } }) : null;
     const ticket = await TicketSoporte.create({
       usuario_id: user?.id,
@@ -2711,7 +2711,7 @@ adminRouter.get('/logs', async (req, res, next) => {
 });
 
 adminRouter.put('/configuracion', async (req, res) => {
-  res.json({ success: true, data: req.body, message: 'ConfiguraciÃ³n guardada' });
+  res.json({ success: true, data: req.body, message: 'Configuración guardada' });
 });
 
 adminRouter.get('/actividad-reciente', async (req, res, next) => {
@@ -2737,7 +2737,7 @@ module.exports.admin = adminRouter;
 
 
 // =============================================
-// WEBHOOKS â€” src/routes/webhooks.js
+// WEBHOOKS — src/routes/webhooks.js
 // =============================================
 const webhooksRouter = express.Router();
 const crypto = require('crypto');
@@ -2798,7 +2798,7 @@ webhooksRouter.all('/epayco', async (req, res) => {
 
     if (!isValidSignature) {
       logger.warn(`EPAYCO_WEBHOOK_SIGNATURE_INVALID ${reference || 'sin-reference'}`);
-      await savedEvent.update({ processing_error: 'Firma ePayco invÃ¡lida' });
+      await savedEvent.update({ processing_error: 'Firma ePayco inválida' });
       return res.status(400).json({ received: false });
     }
     logger.info(`EPAYCO_WEBHOOK_SIGNATURE_VALID ${reference || 'sin-reference'}`);
@@ -2815,7 +2815,7 @@ webhooksRouter.all('/epayco', async (req, res) => {
       return res.status(400).json({ received: false });
     }
     if (currency !== intent.currency || currency !== 'COP') {
-      await savedEvent.update({ processed_at: new Date(), processing_error: 'Moneda no vÃ¡lida' });
+      await savedEvent.update({ processed_at: new Date(), processing_error: 'Moneda no válida' });
       return res.status(400).json({ received: false });
     }
 
@@ -2880,14 +2880,14 @@ webhooksRouter.all('/epayco', async (req, res) => {
           payment_intent_id: intent.id,
           type: 'PLATFORM_FEE',
           amount_cents: Math.round(Number(commission.comision_tratoya || 0) * 100),
-          description: 'ComisiÃ³n neta TratoYA',
+          description: 'Comisión neta TratoYA',
         });
         await LedgerEntry.create({
           deal_id: intent.deal_id,
           payment_intent_id: intent.id,
           type: 'GATEWAY_FEE_ESTIMATED',
           amount_cents: Math.round(Number(commission.costo_epayco || 0) * 100),
-          description: 'Costo estimado ePayco incluido en la comisiÃ³n',
+          description: 'Costo estimado ePayco incluido en la comisión',
         });
         await Pago.create({
           trato_id: intent.deal_id,
@@ -3016,7 +3016,7 @@ webhooksRouter.post('/wompi-disabled', async (req, res) => {
 
     if (!isValidSignature) {
       logger.warn(`WOMPI_WEBHOOK_SIGNATURE_INVALID ${reference || 'sin-reference'}`);
-      await savedEvent.update({ processing_error: 'Firma Wompi invÃ¡lida' });
+      await savedEvent.update({ processing_error: 'Firma Wompi inválida' });
       return res.status(401).json({ received: false });
     }
     logger.info(`WOMPI_WEBHOOK_SIGNATURE_VALID ${reference || 'sin-reference'}`);
@@ -3036,7 +3036,7 @@ webhooksRouter.post('/wompi-disabled', async (req, res) => {
       return res.status(400).json({ received: false });
     }
     if (tx.currency !== intent.currency || tx.currency !== 'COP') {
-      await savedEvent.update({ processed_at: new Date(), processing_error: 'Moneda no vÃ¡lida' });
+      await savedEvent.update({ processed_at: new Date(), processing_error: 'Moneda no válida' });
       return res.status(400).json({ received: false });
     }
 
@@ -3123,7 +3123,7 @@ webhooksRouter.post('/wompi-disabled', async (req, res) => {
 });
 
 // â”€â”€ WEBHOOK WhatsApp (Meta Cloud API) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// GET: verificaciÃ³n del webhook (Meta llama una sola vez)
+// GET: verificación del webhook (Meta llama una sola vez)
 webhooksRouter.get('/whatsapp', (req, res) => {
   try {
     const { verificarWebhook } = require('../services/whatsappService');
@@ -3148,15 +3148,15 @@ webhooksRouter.post('/whatsapp', (req, res) => {
 
     if (mensaje) {
       logger.info(`[WA:WEBHOOK] Mensaje de ${mensaje.de}: ${mensaje.texto?.slice(0, 80) || `[${mensaje.tipo}]`}`);
-      // AquÃ­ puedes agregar lÃ³gica para procesar respuestas de usuarios
+      // Aquí puedes agregar lógica para procesar respuestas de usuarios
       // Por ejemplo: si responden "CONFIRMAR" a un trato en curso
     }
 
-    // Procesar actualizaciones de status (entregado, leÃ­do, etc.)
+    // Procesar actualizaciones de status (entregado, leído, etc.)
     const statuses = payload?.entry?.[0]?.changes?.[0]?.value?.statuses;
     if (statuses?.length) {
       statuses.forEach(s => {
-        logger.debug(`[WA:STATUS] ${s.id} â†’ ${s.status} para ${s.recipient_id}`);
+        logger.debug(`[WA:STATUS] ${s.id} → ${s.status} para ${s.recipient_id}`);
       });
     }
   } catch (err) {
