@@ -74,31 +74,26 @@ export default function CrearTrato({ setPage, toast, user }) {
     : null;
   const createdLink = done ? publicTratoUrl(done.link_compartir) : "";
 
-  const isSsoUser = typeof window !== "undefined" && window.localStorage?.getItem("ty_registered_by_sso") === "1";
-  const missingEmail = isSsoUser && !user?.email_verificado;
+  // Datos incompletos ya NO bloquean la creación de tratos: solo se muestra un
+  // aviso sutil. La exigencia real es al recibir el pago (popup al completar el trato).
   const missingPhone = !user?.telefono || String(user.telefono).trim().length < 7;
   const hasBankAccount = user?.cuenta_bancaria_id || user?.CuentaBancaria?.length > 0;
-  const missingBank = isSsoUser && !hasBankAccount;
-
-  if (missingPhone || missingEmail || missingBank) {
-    const msgs = [];
-    if (missingPhone) msgs.push("número de celular/WhatsApp");
-    if (missingEmail) msgs.push("email verificado");
-    if (missingBank) msgs.push("cuenta bancaria o Nequi");
-
-    return (
-      <div className="page" style={{ display: "grid", placeItems: "center", minHeight: 420 }}>
-        <div className="card" style={{ maxWidth: 420, padding: 22, textAlign: "center" }}>
-          <div style={{ width: 64, height: 64, borderRadius: 18, margin: "0 auto 14px", display: "grid", placeItems: "center", background: "var(--n)", color: "var(--g)", fontSize: 28 }}>📋</div>
-          <h2 style={{ fontSize: 22, marginBottom: 8 }}>Completa tus datos</h2>
-          <p style={{ color: "var(--s600)", fontSize: 14, lineHeight: 1.55, marginBottom: 16 }}>
-            Para crear tratos necesitamos que completes: {msgs.join(", ")}. Es indispensable para poder pagarte. 🔐
-          </p>
-          <button className="btn bp" onClick={() => setPage?.("perfil")}>Ir a Mi perfil →</button>
-        </div>
-      </div>
-    );
-  }
+  const datosIncompletos = missingPhone || !hasBankAccount || !user?.email_verificado;
+  const avisoDatos = datosIncompletos && !done ? (
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={() => setPage?.("perfil")}
+      onKeyDown={(e) => { if (e.key === "Enter") setPage?.("perfil"); }}
+      style={{ display: "flex", alignItems: "center", gap: 10, maxWidth: 640, margin: "0 auto 14px", padding: "10px 14px", borderRadius: 12, cursor: "pointer", background: "linear-gradient(135deg, rgba(168,196,0,.1), rgba(71,152,24,.08))", border: "1px solid rgba(71,152,24,.25)" }}
+    >
+      <span aria-hidden="true" style={{ fontSize: 16 }}>💡</span>
+      <span style={{ flex: 1, fontSize: 12.5, color: "var(--s600)", lineHeight: 1.45 }}>
+        Puedes crear tu trato ya, pero para <strong>recibir tu pago</strong> necesitas completar tu email, WhatsApp y cuenta bancaria o Llave Bre-B.
+      </span>
+      <span style={{ fontSize: 12, fontWeight: 800, color: "var(--g2)", whiteSpace: "nowrap" }}>Completar →</span>
+    </div>
+  ) : null;
 
   if (done) return (
     <div className="page" style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: 480 }}>
@@ -146,6 +141,7 @@ export default function CrearTrato({ setPage, toast, user }) {
 
   return (
     <div className="page crear-trato-page">
+      {avisoDatos}
       <div className="crear-trato-head">
         <button type="button" className="crear-cancel-btn" onClick={() => setPage("dashboard")}>Cancelar</button>
         <div className="wz crear-trato-wz">

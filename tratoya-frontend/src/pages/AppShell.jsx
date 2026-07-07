@@ -300,6 +300,26 @@ export default function AppShell({ session, setSession, toast }) {
     []
   );
 
+  // ¿Faltan datos del perfil (teléfono, cuenta bancaria o email)? Si está todo
+  // completo, limpia las banderas de recordatorio SSO.
+  const checkProfileIncomplete = useCallback(async () => {
+    try {
+      const [profile, banks] = await Promise.all([
+        api.get("/users/profile").catch(() => null),
+        api.get("/users/bank-accounts").catch(() => null),
+      ]);
+      const u = profile?.data || {};
+      const hasPhone = u.telefono && String(u.telefono).trim().length >= 7;
+      const hasBank = Array.isArray(banks?.data) && banks.data.length > 0;
+      if (hasPhone && hasBank && u.email_verificado) {
+        window.localStorage.removeItem("ty_registered_by_sso");
+        window.localStorage.removeItem("ty_sso_modal_shown");
+        return false;
+      }
+      return true;
+    } catch { return false; }
+  }, []);
+
   const showCompletionCelebration = useCallback(() => {
     setCelebration(true);
     if (navigator.vibrate) try { navigator.vibrate([45, 28, 45]); } catch {}
@@ -322,7 +342,17 @@ export default function AppShell({ session, setSession, toast }) {
   }, []);
 
   const notifyStatusUpdate = useCallback((trato, _prev, nextEstado) => {
-    if (nextEstado === "completado") showCompletionCelebration();
+    if (nextEstado === "completado") {
+      showCompletionCelebration();
+      // Si el usuario recibe el pago (es el vendedor) y sus datos siguen
+      // incompletos, recordárselo justo después de la celebración.
+      const esVendedor = trato?.vendedor_id && session?.user?.id && trato.vendedor_id === session.user.id;
+      if (esVendedor) {
+        checkProfileIncomplete().then((incomplete) => {
+          if (incomplete) setTimeout(() => { setShowSsoRequirements("pago"); playBubble(); }, 3000);
+        });
+      }
+    }
     showFloatingNote({
       tipo: "estado_trato",
       icon: nextEstado === "completado" ? "🔔" : "💬",
@@ -330,7 +360,7 @@ export default function AppShell({ session, setSession, toast }) {
       cuerpo: `${trato.codigo || "Tu trato"} ahora está en ${estadoLabel(nextEstado)}.`,
       trato_id: trato.id,
     });
-  }, [showFloatingNote, estadoLabel, showCompletionCelebration]);
+  }, [showFloatingNote, estadoLabel, showCompletionCelebration, checkProfileIncomplete, session?.user?.id]);
 
   const logout = useCallback((message = "Sesión cerrada") => {
     // Cierre determinista en un solo intento: limpiamos sesión y hacemos una
@@ -483,9 +513,8 @@ export default function AppShell({ session, setSession, toast }) {
 
   const sharedProps = { toast, user: session.user };
 
-  // Recordatorio para usuarios registrados por SSO: se muestra una vez por sesión
-  // mientras falten datos (teléfono, cuenta bancaria o email). Al completar el
-  // perfil deja de aparecer de forma definitiva.
+  // Recordatorio al inicio SOLO para usuarios registrados por SSO: una vez por
+  // sesión mientras falten datos. Al completar el perfil deja de aparecer.
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -493,28 +522,16 @@ export default function AppShell({ session, setSession, toast }) {
         const isSso = window.localStorage.getItem("ty_registered_by_sso") === "1";
         if (!isSso) return;
         if (window.sessionStorage.getItem("ty_sso_reminder_shown") === "1") return;
-        const [profile, banks] = await Promise.all([
-          api.get("/users/profile").catch(() => null),
-          api.get("/users/bank-accounts").catch(() => null),
-        ]);
-        const u = profile?.data || {};
-        const hasPhone = u.telefono && String(u.telefono).trim().length >= 7;
-        const hasBank = Array.isArray(banks?.data) && banks.data.length > 0;
-        if (hasPhone && hasBank && u.email_verificado) {
-          // Perfil completo: no volver a recordar
-          window.localStorage.removeItem("ty_registered_by_sso");
-          window.localStorage.removeItem("ty_sso_modal_shown");
-          return;
-        }
-        if (cancelled) return;
-        setShowSsoRequirements(true);
+        const incomplete = await checkProfileIncomplete();
+        if (!incomplete || cancelled) return;
+        setShowSsoRequirements("inicio");
         window.sessionStorage.setItem("ty_sso_reminder_shown", "1");
         playBubble(); // campanita sutil (mejor esfuerzo: el navegador puede requerir interacción previa)
         if (navigator.vibrate) try { navigator.vibrate([25]); } catch { /* noop */ }
       } catch { /* noop */ }
     })();
     return () => { cancelled = true; };
-  }, []);
+  }, [checkProfileIncomplete]);
 
   return (
     <div>
@@ -597,9 +614,15 @@ export default function AppShell({ session, setSession, toast }) {
             <div style={{ width: 58, height: 58, borderRadius: 18, margin: "0 auto 14px", display: "grid", placeItems: "center", background: "linear-gradient(140deg,#A8C400,#479818)", boxShadow: "0 8px 24px rgba(168,196,0,.4)" }}>
               <svg width="30" height="30" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 22c5.5 0 10-4.5 10-10S17.5 2 12 2 2 6.5 2 12s4.5 10 10 10Z" stroke="#071819" strokeWidth="1.8"/><path d="M12 8v5" stroke="#071819" strokeWidth="2.2" strokeLinecap="round"/><circle cx="12" cy="16.4" r="1.3" fill="#071819"/></svg>
             </div>
-            <h3 style={{ fontSize: 18, fontWeight: 800, color: "#dfff60", margin: "0 0 10px", letterSpacing: .2 }}>Completa tu perfil</h3>
+            <h3 style={{ fontSize: 18, fontWeight: 800, color: "#dfff60", margin: "0 0 10px", letterSpacing: .2 }}>
+              {showSsoRequirements === "pago" ? "¡Trato completado! 🎉" : "Completa tu perfil"}
+            </h3>
             <p style={{ fontSize: 13.5, color: "rgba(255,255,255,.88)", lineHeight: 1.6, margin: "0 0 20px" }}>
-              Recuerda completar tu <strong style={{ color: "#fff" }}>email</strong>, <strong style={{ color: "#fff" }}>WhatsApp</strong> y <strong style={{ color: "#fff" }}>cuenta bancaria o Llave Bre-B</strong>. Es necesario para poder hacer tratos y recibir pagos.
+              {showSsoRequirements === "pago" ? (
+                <>Para <strong style={{ color: "#fff" }}>recibir tu pago</strong> necesitas tener completos tu <strong style={{ color: "#fff" }}>email</strong>, <strong style={{ color: "#fff" }}>WhatsApp</strong> y <strong style={{ color: "#fff" }}>cuenta bancaria o Llave Bre-B</strong>. Complétalos ahora para que te podamos transferir.</>
+              ) : (
+                <>Recuerda completar tu <strong style={{ color: "#fff" }}>email</strong>, <strong style={{ color: "#fff" }}>WhatsApp</strong> y <strong style={{ color: "#fff" }}>cuenta bancaria o Llave Bre-B</strong>. Es necesario para poder hacer tratos y recibir pagos.</>
+              )}
             </p>
             <button
               type="button"
