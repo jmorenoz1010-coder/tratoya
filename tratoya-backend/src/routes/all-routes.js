@@ -2483,10 +2483,13 @@ adminRouter.delete('/users/:id', async (req, res, next) => {
     if (!expectedCode) {
       return res.status(503).json({ success: false, message: 'EliminaciÃ³n de usuarios deshabilitada: falta ADMIN_DELETE_USER_CODE en el servidor.' });
     }
-    const canDelete = req.user.email === 'admin@tratoya.com' || req.user.rol === 'superadmin';
+    // Cualquier admin autenticado puede eliminar si presenta el código de
+    // confirmación (segundo factor). El gate del router ya exige rol admin.
+    const rolActual = (req.user.rol || (req.user.is_admin ? 'admin' : 'user')).toLowerCase();
+    const canDelete = req.user.email === 'admin@tratoya.com' || ['admin', 'superadmin'].includes(rolActual);
 
     if (!canDelete) {
-      return res.status(403).json({ success: false, message: 'Solo el administrador principal puede eliminar usuarios.' });
+      return res.status(403).json({ success: false, message: 'Solo un administrador puede eliminar usuarios.' });
     }
     if (confirmationCode !== expectedCode) {
       return res.status(403).json({ success: false, message: 'CÃ³digo de confirmaciÃ³n incorrecto.' });

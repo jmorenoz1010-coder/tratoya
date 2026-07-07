@@ -774,7 +774,7 @@ function Usuarios({ toast }) {
               </div>
               <div className="fg">
                 <label className="fl">Código de confirmación</label>
-                <input className="inp" type="password" inputMode="numeric" value={deleteCode} onChange={e => setDeleteCode(e.target.value)} placeholder="Ingresa el código administrativo" />
+                <input className="inp" type="password" autoComplete="off" value={deleteCode} onChange={e => setDeleteCode(e.target.value)} onKeyDown={e => { if (e.key === "Enter" && deleteCode && !busy) deleteUser(); }} placeholder="Ingresa el código administrativo" />
               </div>
             </div>
             <div className="modal-ft">
