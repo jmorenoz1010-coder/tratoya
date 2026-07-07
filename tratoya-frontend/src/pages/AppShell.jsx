@@ -140,6 +140,75 @@ function MobileDrawer({ open, onClose, user, onProfile, onLogout, onDisputas }) 
   );
 }
 
+// FAB "Crear trato": estilizado, con brillo animado y arrastrable — la posición
+// elegida se recuerda entre sesiones.
+function CreateFab({ onCreate }) {
+  const btnRef = useRef(null);
+  const dragRef = useRef(null);
+  const posRef = useRef(null);
+  const [pos, setPos] = useState(() => {
+    try {
+      const saved = JSON.parse(window.localStorage.getItem("ty_fab_pos"));
+      if (saved && Number.isFinite(saved.x) && Number.isFinite(saved.y)) return saved;
+    } catch { /* noop */ }
+    return null;
+  });
+  const [dragging, setDragging] = useState(false);
+  useEffect(() => { posRef.current = pos; }, [pos]);
+
+  const clampPos = (x, y, w, h) => ({
+    x: Math.min(Math.max(6, x), window.innerWidth - w - 6),
+    y: Math.min(Math.max(6, y), window.innerHeight - h - 6),
+  });
+
+  const onPointerDown = (e) => {
+    const rect = btnRef.current.getBoundingClientRect();
+    dragRef.current = { startX: e.clientX, startY: e.clientY, origX: rect.left, origY: rect.top, w: rect.width, h: rect.height, moved: false };
+    try { btnRef.current.setPointerCapture(e.pointerId); } catch { /* noop */ }
+  };
+
+  const onPointerMove = (e) => {
+    const d = dragRef.current;
+    if (!d) return;
+    const dx = e.clientX - d.startX;
+    const dy = e.clientY - d.startY;
+    if (!d.moved && Math.abs(dx) + Math.abs(dy) > 8) { d.moved = true; setDragging(true); }
+    if (d.moved) {
+      d.lastPos = clampPos(d.origX + dx, d.origY + dy, d.w, d.h);
+      setPos(d.lastPos);
+    }
+  };
+
+  const onPointerUp = () => {
+    const d = dragRef.current;
+    dragRef.current = null;
+    setDragging(false);
+    if (d?.moved) {
+      const final = d.lastPos || posRef.current;
+      if (final) try { window.localStorage.setItem("ty_fab_pos", JSON.stringify(final)); } catch { /* noop */ }
+    } else {
+      onCreate();
+    }
+  };
+
+  return (
+    <button
+      ref={btnRef}
+      className={`mobile-create-fab${dragging ? " dragging" : ""}`}
+      type="button"
+      style={pos ? { left: pos.x, top: pos.y, right: "auto", bottom: "auto" } : undefined}
+      onPointerDown={onPointerDown}
+      onPointerMove={onPointerMove}
+      onPointerUp={onPointerUp}
+      onPointerCancel={() => { dragRef.current = null; setDragging(false); }}
+      aria-label="Crear trato"
+    >
+      <span className="fab-plus" aria-hidden="true">+</span>
+      <span className="fab-label">Crear trato</span>
+    </button>
+  );
+}
+
 const PAGE_TITLES = {
   dashboard:  "Inicio",
   tratos:     "Mis Tratos",
@@ -156,7 +225,6 @@ export default function AppShell({ session, setSession, toast }) {
     const requested = new URLSearchParams(window.location.search).get("page");
     return PAGE_TITLES[requested] ? requested : "dashboard";
   });
-  const [pageStack, setPageStack] = useState([]);
   const [, startTransition] = useTransition();
   const [tratoId, setTratoId] = useState(() => new URLSearchParams(window.location.search).get("trato") || null);
   const [disputeTratoId, setDisputeTratoId] = useState(null);
@@ -170,47 +238,45 @@ export default function AppShell({ session, setSession, toast }) {
   const [pendingBubble, setPendingBubble] = useState(null);
   const [showSsoRequirements, setShowSsoRequirements] = useState(false);
 
+  // Historial interno: la flecha del navegador y la de la app comparten la misma
+  // pila, así "atrás" siempre lleva a la página inmediatamente anterior.
+  const pageRef = useRef(page);
+  useEffect(() => { pageRef.current = page; }, [page]);
+  const pageStackRef = useRef([]);
+
   const navigateTo = useCallback((next) => {
+    if (next === pageRef.current) return;
     startTransition(() => {
-      setPageStack((s) => [...s, page]);
+      pageStackRef.current.push(pageRef.current);
       setPage(next);
       window.history.pushState({ tratoyaPage: next }, "");
     });
-  }, [page]);
+  }, []);
 
+  // La flecha de la app usa el historial nativo: mismo comportamiento que el navegador.
   const goBack = useCallback(() => {
-    startTransition(() => {
-      if (pageStack.length > 0) {
-        const prev = pageStack[pageStack.length - 1];
-        setPageStack((s) => s.slice(0, -1));
-        setPage(prev);
-      } else {
-        // No salir de la app — volver al dashboard
-        setPage("dashboard");
-      }
-      window.history.pushState(null, "");
-    });
-  }, [pageStack]);
+    window.history.back();
+  }, []);
 
   // Captura el botón "atrás" nativo del navegador
   useEffect(() => {
-    window.history.pushState(null, "");
+    // Sentinela: evita que la primera pulsación de "atrás" saque de la app
+    window.history.pushState({ tratoyaPage: pageRef.current }, "");
     const handlePop = () => {
       startTransition(() => {
-        if (pageStack.length > 0) {
-          const prev = pageStack[pageStack.length - 1];
-          setPageStack((s) => s.slice(0, -1));
+        const prev = pageStackRef.current.pop();
+        if (prev) {
           setPage(prev);
         } else {
-          // Mantener dentro de la app
+          // Pila vacía: quedarse en el dashboard y re-armar la sentinela
           setPage("dashboard");
+          window.history.pushState({ tratoyaPage: "dashboard" }, "");
         }
-        window.history.pushState(null, "");
       });
     };
     window.addEventListener("popstate", handlePop);
     return () => window.removeEventListener("popstate", handlePop);
-  }, [pageStack]);
+  }, []);
 
   const showFloatingNote = useCallback((note) => {
     const noteKey = note?.id || note?.notificacion_id || [note?.tipo, note?.trato_id, note?.titulo, note?.cuerpo].filter(Boolean).join("|");
@@ -417,14 +483,37 @@ export default function AppShell({ session, setSession, toast }) {
 
   const sharedProps = { toast, user: session.user };
 
+  // Recordatorio para usuarios registrados por SSO: se muestra una vez por sesión
+  // mientras falten datos (teléfono, cuenta bancaria o email). Al completar el
+  // perfil deja de aparecer de forma definitiva.
   useEffect(() => {
-    try {
-      const isSso = window.localStorage.getItem("ty_registered_by_sso") === "1";
-      if (isSso && !window.localStorage.getItem("ty_sso_modal_shown")) {
+    let cancelled = false;
+    (async () => {
+      try {
+        const isSso = window.localStorage.getItem("ty_registered_by_sso") === "1";
+        if (!isSso) return;
+        if (window.sessionStorage.getItem("ty_sso_reminder_shown") === "1") return;
+        const [profile, banks] = await Promise.all([
+          api.get("/users/profile").catch(() => null),
+          api.get("/users/bank-accounts").catch(() => null),
+        ]);
+        const u = profile?.data || {};
+        const hasPhone = u.telefono && String(u.telefono).trim().length >= 7;
+        const hasBank = Array.isArray(banks?.data) && banks.data.length > 0;
+        if (hasPhone && hasBank && u.email_verificado) {
+          // Perfil completo: no volver a recordar
+          window.localStorage.removeItem("ty_registered_by_sso");
+          window.localStorage.removeItem("ty_sso_modal_shown");
+          return;
+        }
+        if (cancelled) return;
         setShowSsoRequirements(true);
-        window.localStorage.setItem("ty_sso_modal_shown", "1");
-      }
-    } catch { /* noop */ }
+        window.sessionStorage.setItem("ty_sso_reminder_shown", "1");
+        playBubble(); // campanita sutil (mejor esfuerzo: el navegador puede requerir interacción previa)
+        if (navigator.vibrate) try { navigator.vibrate([25]); } catch { /* noop */ }
+      } catch { /* noop */ }
+    })();
+    return () => { cancelled = true; };
   }, []);
 
   return (
@@ -462,17 +551,7 @@ export default function AppShell({ session, setSession, toast }) {
         </Suspense>
       </div>
 
-      {page !== "crear" && (
-        <button
-          className="mobile-create-fab"
-          type="button"
-          onClick={() => navigateTo("crear")}
-          aria-label="Crear trato"
-        >
-          <span className="fab-plus" aria-hidden="true">+</span>
-          <span className="fab-label">Crear trato</span>
-        </button>
-      )}
+      {page !== "crear" && <CreateFab onCreate={() => navigateTo("crear")} />}
 
       <MobileDrawer
         open={drawerOpen}
@@ -496,20 +575,30 @@ export default function AppShell({ session, setSession, toast }) {
       )}
 
       {showSsoRequirements && (
-        <div style={{ position: "fixed", top: 20, right: 20, maxWidth: 380, zIndex: 999, animation: "slideInRight 0.4s ease-out" }}>
-          <div style={{ background: "linear-gradient(135deg, rgba(7,25,25,.96) 0%, rgba(7,25,25,.92) 100%)", border: "1px solid rgba(168,219,0,.25)", borderRadius: 14, padding: "16px 18px", boxShadow: "0 12px 40px rgba(0,0,0,.35)", backdropFilter: "blur(14px)", display: "flex", gap: 14, alignItems: "flex-start" }}>
-            <div style={{ fontSize: 24, flexShrink: 0 }}>📋</div>
-            <div style={{ flex: 1 }}>
-              <p style={{ fontSize: 13, color: "rgba(255,255,255,.9)", lineHeight: 1.5, margin: "0 0 10px 0" }}>Recuerda completar tu email, WhatsApp y cuenta bancaria o Llave Bre-B. Es necesario para poder hacer tratos y recibir pagos</p>
-              <button
-                type="button"
-                onClick={() => { navigateTo("perfil"); setShowSsoRequirements(false); }}
-                style={{ fontSize: 12, color: "#A8C400", background: "none", border: "none", cursor: "pointer", fontWeight: 600, textDecoration: "underline" }}
-              >
-                Ir a Mi perfil →
-              </button>
+        <div style={{ position: "fixed", top: 20, right: 20, maxWidth: 380, zIndex: 999, animation: "slideInRight 0.45s cubic-bezier(.22,1,.36,1)" }}>
+          <div
+            role="button"
+            tabIndex={0}
+            onClick={() => { navigateTo("perfil"); setShowSsoRequirements(false); }}
+            onKeyDown={(e) => { if (e.key === "Enter") { navigateTo("perfil"); setShowSsoRequirements(false); } }}
+            style={{ background: "linear-gradient(135deg, rgba(7,25,25,.96) 0%, rgba(10,35,32,.94) 100%)", border: "1px solid rgba(168,196,0,.3)", borderRadius: 16, padding: "15px 16px", boxShadow: "0 12px 40px rgba(0,0,0,.35), 0 0 0 1px rgba(168,196,0,.06)", backdropFilter: "blur(14px)", display: "flex", gap: 13, alignItems: "flex-start", cursor: "pointer" }}
+          >
+            <div style={{ width: 38, height: 38, borderRadius: 12, flexShrink: 0, display: "grid", placeItems: "center", background: "linear-gradient(140deg,#A8C400,#479818)", boxShadow: "0 4px 12px rgba(168,196,0,.35)" }}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 22c5.5 0 10-4.5 10-10S17.5 2 12 2 2 6.5 2 12s4.5 10 10 10Z" stroke="#071819" strokeWidth="1.8"/><path d="M12 8v5" stroke="#071819" strokeWidth="2" strokeLinecap="round"/><circle cx="12" cy="16.2" r="1.2" fill="#071819"/></svg>
             </div>
-            <button type="button" style={{ background: "none", border: "none", color: "rgba(255,255,255,.3)", fontSize: 18, cursor: "pointer", flexShrink: 0, padding: "2px 6px" }} onClick={() => setShowSsoRequirements(false)}>✕</button>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 13, fontWeight: 800, color: "#dfff60", marginBottom: 4, letterSpacing: .2 }}>Completa tu perfil</div>
+              <p style={{ fontSize: 12.5, color: "rgba(255,255,255,.88)", lineHeight: 1.5, margin: "0 0 8px 0" }}>Recuerda completar tu email, WhatsApp y cuenta bancaria o Llave Bre-B. Es necesario para poder hacer tratos y recibir pagos.</p>
+              <span style={{ fontSize: 12, color: "#A8C400", fontWeight: 700 }}>Ir a Mi perfil →</span>
+            </div>
+            <button
+              type="button"
+              aria-label="Cerrar recordatorio"
+              style={{ background: "none", border: "none", color: "rgba(255,255,255,.35)", fontSize: 17, cursor: "pointer", flexShrink: 0, padding: "2px 6px", lineHeight: 1 }}
+              onClick={(e) => { e.stopPropagation(); setShowSsoRequirements(false); }}
+            >
+              ✕
+            </button>
           </div>
           <style>{`
             @keyframes slideInRight {

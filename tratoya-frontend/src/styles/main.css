@@ -902,33 +902,51 @@ tbody tr:hover td{background:var(--s50)}
   .quick-create-pill{border-radius:999px!important;padding:8px 14px!important;align-items:center;box-shadow:0 12px 28px rgba(181,228,0,.24)}
   .mobile-create-fab{
     position:fixed;
-    right:14px;
-    bottom:max(88px,calc(72px + env(safe-area-inset-bottom) + 12px));
+    right:16px;
+    bottom:max(92px,calc(72px + env(safe-area-inset-bottom) + 16px));
     z-index:110;
-    width:72px;
-    height:72px;
-    border-radius:18px;
+    width:76px;
+    height:76px;
+    border-radius:24px;
     border:0;
     display:flex;
     flex-direction:column;
     align-items:center;
     justify-content:center;
-    gap:2px;
+    gap:3px;
     font-family:'Manrope',sans-serif;
-    color:#071819;
-    background:linear-gradient(135deg,#A8C400 0%,#479818 100%);
-    box-shadow:0 8px 24px rgba(168,196,0,.4),0 2px 8px rgba(0,0,0,.15);
-    cursor:pointer;
+    color:#fff;
+    background:linear-gradient(140deg,var(--g) 0%,#5cae1c 55%,var(--g2) 100%);
+    box-shadow:0 10px 28px rgba(71,152,24,.45),0 3px 10px rgba(7,25,25,.25),inset 0 1px 0 rgba(255,255,255,.35);
+    cursor:grab;
+    touch-action:none;
+    overflow:hidden;
     -webkit-tap-highlight-color:transparent;
-    transition:all .3s cubic-bezier(.34,1.56,.64,1);
-    transform:translateY(0);
-    animation:fabPulse 2.5s ease-in-out infinite;
+    transition:box-shadow .25s ease;
+    animation:fabFloat 3s ease-in-out infinite,fabHalo 2.6s ease-out infinite;
   }
-  @keyframes fabPulse{0%,100%{transform:translateY(0);box-shadow:0 8px 24px rgba(168,196,0,.4),0 2px 8px rgba(0,0,0,.15)}50%{transform:translateY(-4px);box-shadow:0 12px 32px rgba(168,196,0,.5),0 4px 12px rgba(0,0,0,.2)}}
-  .mobile-create-fab:hover,.mobile-create-fab:focus-visible{width:76px;height:76px;box-shadow:0 12px 36px rgba(168,196,0,.5),0 4px 12px rgba(0,0,0,.2);transform:translateY(-2px);animation:none}
-  .mobile-create-fab:active{transform:scale(.92) translateY(2px)!important;box-shadow:0 4px 12px rgba(168,196,0,.3),0 1px 4px rgba(0,0,0,.1)!important}
-  .mobile-create-fab .fab-plus{font-size:28px;font-weight:900;line-height:1;color:#071819;display:block}
-  .mobile-create-fab .fab-label{font-size:7px;font-weight:900;letter-spacing:.4px;text-transform:uppercase;color:#071819;line-height:1;display:block;opacity:.85}
+  .mobile-create-fab::before{
+    content:"";
+    position:absolute;
+    inset:0;
+    border-radius:inherit;
+    background:linear-gradient(115deg,transparent 32%,rgba(255,255,255,.5) 50%,transparent 68%);
+    transform:translateX(-130%);
+    animation:fabShine 3.6s ease-in-out infinite;
+    pointer-events:none;
+  }
+  @keyframes fabFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+  @keyframes fabHalo{
+    0%{outline:0 solid rgba(168,196,0,.45);outline-offset:0}
+    70%{outline:12px solid rgba(168,196,0,0);outline-offset:6px}
+    100%{outline:0 solid rgba(168,196,0,0);outline-offset:0}
+  }
+  @keyframes fabShine{0%,55%{transform:translateX(-130%)}85%,100%{transform:translateX(130%)}}
+  .mobile-create-fab:hover,.mobile-create-fab:focus-visible{box-shadow:0 14px 38px rgba(71,152,24,.55),0 4px 14px rgba(7,25,25,.3),inset 0 1px 0 rgba(255,255,255,.45)}
+  .mobile-create-fab:active{transform:scale(.92);animation:none;cursor:grabbing}
+  .mobile-create-fab.dragging{transform:scale(1.08);animation:none;cursor:grabbing;box-shadow:0 18px 44px rgba(71,152,24,.55),0 6px 16px rgba(7,25,25,.35)}
+  .mobile-create-fab .fab-plus{position:relative;font-size:30px;font-weight:900;line-height:1;color:#fff;display:block;text-shadow:0 1px 3px rgba(7,25,25,.3)}
+  .mobile-create-fab .fab-label{position:relative;font-size:8px;font-weight:900;letter-spacing:.5px;text-transform:uppercase;color:#fff;line-height:1;display:block;opacity:.95;text-shadow:0 1px 2px rgba(7,25,25,.3)}
   .lnav{height:auto;min-height:62px;padding:10px 14px;gap:10px;align-items:center}
   .lnav .btn{height:36px;font-size:12px;padding:0 12px}
   .hero{padding:42px 18px 46px}

@@ -269,9 +269,9 @@ export default function Auth({ setSession, toast, initialMode = "login" }) {
               </p>
             </div>
 
-            {mode === "register" && !forgotMode && (
+            {!forgotMode && (
               <>
-                <div className="auth-divider"><span>Opción rápida: continúa con</span></div>
+                <div className="auth-divider"><span>{mode === "register" ? "Opción rápida: continúa con" : "Continúa con"}</span></div>
                 <motion.div
                   className="auth-social-stack"
                   initial={{ opacity: 0, y: 12 }}
@@ -297,12 +297,14 @@ export default function Auth({ setSession, toast, initialMode = "login" }) {
                     <ProviderIcon name="facebook" /> Facebook
                   </motion.button>
                 </motion.div>
-                <div className="auth-divider"><span></span></div>
-                <div className="auth-step-dots" aria-hidden="true">
-                  {[1, 2, 3].map((n) => (
-                    <div key={n} className={`auth-step-dot${step >= n ? " active" : ""}`} />
-                  ))}
-                </div>
+                <div className="auth-divider"><span>{mode === "login" ? "o con tu correo" : ""}</span></div>
+                {mode === "register" && (
+                  <div className="auth-step-dots" aria-hidden="true">
+                    {[1, 2, 3].map((n) => (
+                      <div key={n} className={`auth-step-dot${step >= n ? " active" : ""}`} />
+                    ))}
+                  </div>
+                )}
               </>
             )}
 
@@ -544,37 +546,6 @@ export default function Auth({ setSession, toast, initialMode = "login" }) {
                 )}
               </motion.div>
             </AnimatePresence>
-
-            {!forgotMode && mode === "login" && (
-              <>
-                <div className="auth-divider"><span>o continúa con</span></div>
-                <motion.div
-                  className="auth-social-stack auth-social-stack--bottom"
-                  initial={{ opacity: 0, y: 12 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.15, duration: 0.45, ease: EASE }}
-                >
-                  <motion.button
-                    type="button"
-                    className="auth-social-btn"
-                    onClick={() => socialLogin("Google")}
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                  >
-                    <ProviderIcon name="google" /> Google
-                  </motion.button>
-                  <motion.button
-                    type="button"
-                    className="auth-social-btn"
-                    onClick={() => socialLogin("Facebook")}
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                  >
-                    <ProviderIcon name="facebook" /> Facebook
-                  </motion.button>
-                </motion.div>
-              </>
-            )}
 
             {!forgotMode && (
               <p className="auth-switch">
