@@ -53,50 +53,48 @@ function getTransporter() {
 const FROM    = () => process.env.EMAIL_FROM || '"TratoYa" <soporte@tratoya.com>';
 const APP_URL = () => process.env.PUBLIC_FRONTEND_URL || process.env.FRONTEND_URL || 'https://tratoya.com';
 
-// Logo incrustado como base64 (13 KB) — no depende de URLs externas
-let _logoB64 = null;
+// Logo por URL pública: Gmail y otros clientes BLOQUEAN data: URIs (base64),
+// que era la causa del recuadro roto en los correos.
+let _logoUrl = null;
 function getLogoB64() {
-  if (_logoB64) return _logoB64;
-  try {
-    const path = require('path');
-    _logoB64 = require('fs').readFileSync(path.join(__dirname, '../assets/logo-email-b64.txt'), 'utf8').trim();
-  } catch {
-    // Fallback a URL pública si no hay base64
-    _logoB64 = `${(process.env.FRONTEND_URL || 'https://tratoya.com').replace(/\/$/, '')}/logo-email.png`;
-  }
-  return _logoB64;
+  if (_logoUrl) return _logoUrl;
+  _logoUrl = `${APP_URL().replace(/\/$/, '')}/logo-email.png`;
+  return _logoUrl;
 }
 
 /* ── Layout base ─────────────────────────────────────────────────── */
 const wrap = (body) => `<!DOCTYPE html>
 <html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="dark"><meta name="supported-color-schemes" content="dark">
 <style>
+  :root{color-scheme:dark;supported-color-schemes:dark}
   body{margin:0;padding:0;background:#04110f;font-family:'Helvetica Neue',Arial,sans-serif}
   .w{max-width:560px;margin:28px auto 48px;background:#071819;background-image:radial-gradient(circle at 88% 0%,rgba(168,196,0,.16),transparent 46%),linear-gradient(135deg,#071819 0%,#0b2927 58%,#061412 100%);border:1px solid rgba(168,196,0,.22);border-radius:18px;overflow:hidden;box-shadow:0 16px 44px rgba(0,0,0,.5)}
   .logo-bar{padding:22px 32px 6px;text-align:center}
   .logo-bar a{display:inline-block;text-decoration:none}
   .logo-bar img{height:60px;width:auto;display:block;margin:0 auto}
   .hd{padding:0 32px 14px;text-align:center}
-  .brand-sub{color:#9ed819;font-size:11px;font-weight:700;margin:0;letter-spacing:.08em;text-transform:uppercase}
+  .brand-sub{color:#b5e400!important;font-size:11px;font-weight:700;margin:0;letter-spacing:.08em;text-transform:uppercase}
   .bd{padding:26px 32px 32px}
-  .bd h2{color:#ffffff;font-size:20px;font-weight:800;margin:0 0 12px;line-height:1.25}
-  .bd p{color:#c2ccc7;font-size:14.5px;line-height:1.7;margin:0 0 14px}
-  .cta{display:inline-block;margin:10px 0 18px;padding:14px 30px;background:linear-gradient(135deg,#b5e400,#9ed819);color:#07261c;text-decoration:none;border-radius:11px;font-weight:800;font-size:15px}
+  .bd h2{color:#ffffff!important;font-size:20px;font-weight:800;margin:0 0 12px;line-height:1.25}
+  .bd p{color:#f2f7f3!important;font-size:14.5px;line-height:1.7;margin:0 0 14px}
+  .bd strong,.bd b{color:#ffffff!important}
+  .cta{display:inline-block;margin:10px 0 18px;padding:14px 30px;background:linear-gradient(135deg,#b5e400,#9ed819);color:#07261c!important;text-decoration:none;border-radius:11px;font-weight:800;font-size:15px}
   .box{background:#0c2f2a;border:1px solid rgba(168,196,0,.2);border-radius:12px;padding:14px 18px;margin:14px 0}
   .box-red{background:#2a1412;border-color:rgba(217,83,79,.42)}
   .box-orange{background:#2c2410;border-color:rgba(224,123,0,.42)}
-  .lbl{font-size:10.5px;font-weight:700;color:#9ed819;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
-  .lbl-red{color:#ff8a85}.lbl-orange{color:#ffb454}
-  .val{font-size:17px;font-weight:800;color:#ffffff}
+  .lbl{font-size:10.5px;font-weight:700;color:#b5e400!important;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
+  .lbl-red{color:#ff9d99!important}.lbl-orange{color:#ffc064!important}
+  .val{font-size:17px;font-weight:800;color:#ffffff!important}
   .badge{display:inline-block;padding:5px 14px;border-radius:20px;font-size:12px;font-weight:700;margin-bottom:16px}
-  .badge-gn{background:rgba(158,216,25,.16);color:#9ed819}
-  .badge-rd{background:rgba(217,83,79,.18);color:#ff8a85}
-  .badge-or{background:rgba(224,123,0,.18);color:#ffb454}
+  .badge-gn{background:rgba(158,216,25,.16);color:#c8f04a!important}
+  .badge-rd{background:rgba(217,83,79,.18);color:#ff9d99!important}
+  .badge-or{background:rgba(224,123,0,.18);color:#ffc064!important}
   .divider{height:1px;background:rgba(255,255,255,.1);margin:18px 0}
   .ft{background:#061412;border-top:1px solid rgba(255,255,255,.07);padding:16px 32px;text-align:center}
-  .ft p{font-size:11.5px;color:#7c918a;margin:0}
-  .muted{font-size:12.5px!important;color:#8aa39b!important}
-  a.cta{color:#07261c}
+  .ft p{font-size:11.5px;color:#a9bcb4!important;margin:0}
+  .muted{font-size:12.5px!important;color:#b7c9c1!important}
+  a.cta{color:#07261c!important}
 </style></head>
 <body><div class="w">
   <div class="logo-bar">

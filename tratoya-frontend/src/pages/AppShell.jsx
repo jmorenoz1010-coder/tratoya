@@ -378,7 +378,23 @@ export default function AppShell({ session, setSession, toast }) {
     window.location.replace("/");
   }, [setSession]);
 
-  const updateUser = (u) => setSession((s) => ({ ...s, user: u }));
+  const updateUser = (u) => {
+    setSession((s) => ({ ...s, user: u }));
+    // Si el usuario vino a Perfil desde el recordatorio/banner a completar sus
+    // datos, al quedar completos lo regresamos al paso donde estaba.
+    try {
+      const ret = JSON.parse(window.sessionStorage.getItem("ty_profile_return") || "null");
+      if (ret?.page) {
+        checkProfileIncomplete().then((incomplete) => {
+          if (incomplete) return;
+          window.sessionStorage.removeItem("ty_profile_return");
+          if (ret.tratoId) setTratoId(ret.tratoId);
+          navigateTo(ret.page);
+          toast("¡Datos completos! Continúa donde ibas 🎉", "success");
+        });
+      }
+    } catch { /* noop */ }
+  };
 
   useEffect(() => {
     if (!session?.token) return;
@@ -477,12 +493,17 @@ export default function AppShell({ session, setSession, toast }) {
 
   useEffect(() => {
     if (!session?.token) return;
-    const INTERVAL = 40000;
+    // Respaldo del stream SSE (que en serverless se corta): sondea cada 12s.
+    // La dedupe es por id (shownNotifIds, sembrado al montar con las no leídas
+    // existentes) — sin filtro por hora, que fallaba con desfases de zona horaria.
+    const INTERVAL = 12000;
     const poll = async () => {
       try {
         const r = await api.get("/users/notifications");
         const notifs = r.data || [];
-        const unread = notifs.filter((n) => !n.leida && !shownNotifIds.current.has(String(n.id)) && new Date(n.createdAt || n.updatedAt).getTime() > sessionLoadTimeRef.current - 5000);
+        const unread = notifs
+          .filter((n) => !n.leida && !shownNotifIds.current.has(String(n.id)))
+          .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
         if (unread.length > 0) {
           const latest = unread[0];
           shownNotifIds.current.add(String(latest.id));
@@ -626,7 +647,11 @@ export default function AppShell({ session, setSession, toast }) {
             </p>
             <button
               type="button"
-              onClick={() => { navigateTo("perfil"); setShowSsoRequirements(false); }}
+              onClick={() => {
+                try { window.sessionStorage.setItem("ty_profile_return", JSON.stringify({ page: pageRef.current, tratoId: pageRef.current === "detalle" ? tratoId : null })); } catch { /* noop */ }
+                navigateTo("perfil");
+                setShowSsoRequirements(false);
+              }}
               style={{ display: "block", width: "100%", padding: "13px 16px", borderRadius: 14, border: 0, cursor: "pointer", fontFamily: "inherit", fontSize: 14, fontWeight: 800, color: "#071819", background: "linear-gradient(140deg,#dfff60,#A8C400)", boxShadow: "0 8px 22px rgba(168,196,0,.35)", marginBottom: 10 }}
             >
               Completar mi perfil →

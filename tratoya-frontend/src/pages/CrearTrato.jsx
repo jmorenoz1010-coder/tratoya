@@ -83,15 +83,15 @@ export default function CrearTrato({ setPage, toast, user }) {
     <div
       role="button"
       tabIndex={0}
-      onClick={() => setPage?.("perfil")}
-      onKeyDown={(e) => { if (e.key === "Enter") setPage?.("perfil"); }}
-      style={{ display: "flex", alignItems: "center", gap: 10, maxWidth: 640, margin: "0 auto 14px", padding: "10px 14px", borderRadius: 12, cursor: "pointer", background: "linear-gradient(135deg, rgba(168,196,0,.1), rgba(71,152,24,.08))", border: "1px solid rgba(71,152,24,.25)" }}
+      onClick={() => { try { window.sessionStorage.setItem("ty_profile_return", JSON.stringify({ page: "crear" })); } catch { /* noop */ } setPage?.("perfil"); }}
+      onKeyDown={(e) => { if (e.key === "Enter") { try { window.sessionStorage.setItem("ty_profile_return", JSON.stringify({ page: "crear" })); } catch { /* noop */ } setPage?.("perfil"); } }}
+      style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 10, maxWidth: 640, margin: "0 auto 14px", padding: "12px 14px", borderRadius: 14, cursor: "pointer", background: "#fff", border: "1.5px solid rgba(71,152,24,.35)", borderLeft: "5px solid var(--g)", boxShadow: "0 6px 18px rgba(7,25,47,.1)" }}
     >
-      <span aria-hidden="true" style={{ fontSize: 16 }}>💡</span>
-      <span style={{ flex: 1, fontSize: 12.5, color: "var(--s600)", lineHeight: 1.45 }}>
-        Puedes crear tu trato ya, pero para <strong>recibir tu pago</strong> necesitas completar tu email, WhatsApp y cuenta bancaria o Llave Bre-B.
+      <span aria-hidden="true" style={{ flexShrink: 0, width: 32, height: 32, borderRadius: 10, display: "grid", placeItems: "center", fontSize: 15, background: "linear-gradient(140deg,#A8C400,#479818)" }}>💡</span>
+      <span style={{ flex: "1 1 200px", minWidth: 0, fontSize: 13, color: "var(--n)", lineHeight: 1.5 }}>
+        Puedes crear tu trato ya, pero para <strong style={{ color: "var(--g2)" }}>recibir tu pago</strong> necesitas completar tu email, WhatsApp y cuenta bancaria o Llave Bre-B.
       </span>
-      <span style={{ fontSize: 12, fontWeight: 800, color: "var(--g2)", whiteSpace: "nowrap" }}>Completar →</span>
+      <span style={{ flexShrink: 0, fontSize: 12.5, fontWeight: 800, color: "#fff", background: "var(--g2)", padding: "7px 13px", borderRadius: 9, whiteSpace: "nowrap" }}>Completar →</span>
     </div>
   ) : null;
 

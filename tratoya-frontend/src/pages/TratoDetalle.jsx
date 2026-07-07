@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { api } from "../lib/api";
+import { api, resolveFileUrl } from "../lib/api";
 import { fmt, fmtDate, timeAgo, ESTADO, TIPO_ICO, calcularComisionUI, parseCopAmount, publicTratoUrl } from "../lib/utils";
 import CommissionBreakdown from "../components/CommissionBreakdown";
 import DealProgress from "../components/DealProgress";
@@ -169,12 +169,17 @@ export default function TratoDetalle({ tratoId, setPage, setDisputeTratoId, user
   const telefonoDomiciliario = entrega.numero_contacto || trato.metadata?.numero_contacto_domiciliario;
   const puntoEncuentro = entrega.punto_encuentro || trato.metadata?.punto_encuentro;
 
+  // Orden real del flujo: los pasos anteriores al estado actual se pintan en
+  // verde (done) y el paso actual queda con el efecto de pulsación (active).
+  const FLOW_ORDER = ["borrador", "activo", "pago_pendiente", "pago_retenido", "en_entrega", "pendiente_confirmacion", "confirmado", "completado"];
+  const flowIdx = FLOW_ORDER.indexOf(trato.estado);
+  const pastOf = (estado) => flowIdx >= FLOW_ORDER.indexOf(estado);
   const steps = [
     { l: "Trato creado",   s: "Condiciones aceptadas", done: true },
-    { l: "Pago protegido", s: `${fmt(montoTrato)} seguro`, done: ["pago_retenido","en_entrega","confirmado","completado"].includes(trato.estado), active: trato.estado === "pago_retenido" },
-    { l: "En entrega",    s: trato.guia_envio ? (medioEnvio === "en_persona" ? `📍 ${puntoEncuentro || "En persona"}` : medioEnvio === "domiciliario" ? `🛵 ${telefonoDomiciliario || "contacto"}` : `Guía ${trato.guia_envio}`) : "Pendiente", done: ["en_entrega","confirmado","completado"].includes(trato.estado), active: trato.estado === "en_entrega" },
-    { l: "Confirmación",  s: "Comprador verifica", done: ["confirmado","completado"].includes(trato.estado), active: ["confirmado","pendiente_confirmacion"].includes(trato.estado) },
-    { l: "Pago liberado", s: `${fmt(neto)} al vendedor`, done: trato.estado === "completado" },
+    { l: "Pago protegido", s: `${fmt(montoTrato)} seguro`, done: pastOf("pago_retenido"), active: ["activo", "pago_pendiente"].includes(trato.estado) },
+    { l: "En entrega",    s: trato.guia_envio ? (medioEnvio === "en_persona" ? `📍 ${puntoEncuentro || "En persona"}` : medioEnvio === "domiciliario" ? `🛵 ${telefonoDomiciliario || "contacto"}` : `Guía ${trato.guia_envio}`) : "Pendiente", done: pastOf("pendiente_confirmacion"), active: ["pago_retenido", "en_entrega"].includes(trato.estado) },
+    { l: "Confirmación",  s: "Comprador verifica", done: pastOf("confirmado"), active: trato.estado === "pendiente_confirmacion" },
+    { l: "Pago liberado", s: `${fmt(neto)} al vendedor`, done: trato.estado === "completado", active: trato.estado === "confirmado" },
   ];
 
   const canPay = esC && trato.estado === "activo";
@@ -441,34 +446,39 @@ export default function TratoDetalle({ tratoId, setPage, setDisputeTratoId, user
               </div>
             )}
 
+            {/* Pruebas de entrega: visibles para ambas partes en cualquier estado */}
+            {Array.isArray(trato.metadata?.prueba_entrega_urls) && trato.metadata.prueba_entrega_urls.length > 0 && (
+              <div className="delivery-proof-box" style={{ marginTop: 11 }}>
+                <strong>📸 Pruebas de entrega{esV ? " (las que subiste)" : " del vendedor"}</strong>
+                <div className="delivery-proof-grid">
+                  {trato.metadata.prueba_entrega_urls.map((url, i) => (
+                    <a key={url || i} className="delivery-proof-link" href={resolveFileUrl(url)} target="_blank" rel="noreferrer">Ver archivo {i + 1}</a>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Acción del comprador: confirmar */}
             {canConfirm && (
               <div ref={actionRef} className="receive-action-box">
                 <div className="receive-warning">⚠️ 👀 <strong>Importante:</strong> NO MARQUES QUE RECIBISTE EL PRODUCTO hasta que te encuentres 100% seguro de que cumple con lo que pediste.</div>
-                {Array.isArray(trato.metadata?.prueba_entrega_urls) && trato.metadata.prueba_entrega_urls.length > 0 && (
-                  <div className="delivery-proof-box">
-                    <strong>Pruebas de entrega del vendedor</strong>
-                    <div className="delivery-proof-grid">
-                      {trato.metadata.prueba_entrega_urls.map((url, i) => (
-                        <a key={url || i} className="delivery-proof-link" href={url} target="_blank" rel="noreferrer">Ver archivo {i + 1}</a>
-                      ))}
-                    </div>
-                  </div>
-                )}
-                <div style={{ display: "flex", gap: 9 }}>
-                  <button className="btn bp" style={{ flex: 1 }} onClick={() => action(() => api.post(`/tratos/${tratoId}/confirmar`), "¡Entrega confirmada! El pago será liberado.")} disabled={busy}>
+                <div style={{ display: "flex", gap: 8, alignItems: "stretch" }}>
+                  <button className="btn bp" style={{ flex: 1, minWidth: 0, whiteSpace: "nowrap", padding: "0 12px", fontSize: 13.5 }} onClick={() => action(() => api.post(`/tratos/${tratoId}/confirmar`), "¡Entrega confirmada! El pago será liberado.")} disabled={busy}>
                     {busy ? <div className="spin" /> : "✅ Confirmar que lo recibí"}
                   </button>
-                  <button className="btn bdd" onClick={abrirDisputa}>Disputar</button>
+                  <button className="btn bdd bsm" style={{ flexShrink: 0, alignSelf: "center", fontSize: 12, padding: "0 12px" }} onClick={abrirDisputa}>Disputar</button>
                 </div>
               </div>
             )}
 
             {/* Completado */}
             {trato.estado === "completado" && (
-              <div style={{ marginTop: 14, background: "var(--cr)", borderRadius: 11, padding: "13px 15px", textAlign: "center" }}>
-                <div style={{ fontSize: 22, marginBottom: 4 }}>🎉</div>
-                <div style={{ fontWeight: 800, fontSize: 14, color: "var(--g2)" }}>¡Trato completado con éxito!</div>
+              <div style={{ marginTop: 14, background: "linear-gradient(135deg, var(--cr) 0%, #f3fbe4 100%)", border: "1px solid rgba(71,152,24,.25)", borderRadius: 14, padding: "18px 16px", textAlign: "center", boxShadow: "0 6px 20px rgba(71,152,24,.12)" }}>
+                <div style={{ fontSize: 30, marginBottom: 6 }}>🎉</div>
+                <div style={{ fontFamily: "'Manrope',sans-serif", fontWeight: 900, fontSize: 19, letterSpacing: "-.3px", color: "var(--n)", marginBottom: 3 }}>
+                  ¡Trato completado <span style={{ color: "var(--g2)" }}>con éxito</span>!
+                </div>
+                <div style={{ fontSize: 12.5, color: "var(--s600)" }}>El pago fue liberado al vendedor. Gracias por confiar en TratoYa 💚</div>
               </div>
             )}
           </div>

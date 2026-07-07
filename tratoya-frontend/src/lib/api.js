@@ -35,6 +35,23 @@ export const getSavedUser = () => {
   }
 };
 
+// Normaliza URLs de archivos (comprobantes, pruebas de entrega): si vienen
+// relativas o apuntando al dominio del frontend, las re-ancla al API para que
+// el SPA no las capture y redirija al inicio.
+export const resolveFileUrl = (url) => {
+  if (!url) return url;
+  const s = String(url);
+  const apiOrigin = API_URL.replace(/\/api\/?$/, "");
+  if (s.startsWith("/api/")) return apiOrigin ? `${apiOrigin}${s}` : s;
+  try {
+    const u = new URL(s);
+    if (u.pathname.startsWith("/api/files/") && !/^api\./i.test(u.hostname) && apiOrigin) {
+      return `${apiOrigin}${u.pathname}${u.search}`;
+    }
+  } catch { /* URL relativa u opaca: se deja igual */ }
+  return s;
+};
+
 export const api = {
   _tok: () => sessionStore().getItem("ty_token"),
   _refresh: () => sessionStore().getItem("ty_refresh"),

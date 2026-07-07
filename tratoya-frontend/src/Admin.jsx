@@ -18,6 +18,22 @@ const API_URL = (() => {
   return "/api";
 })();
 
+// Normaliza URLs de archivos (comprobantes): si vienen relativas o apuntando al
+// dominio del frontend, las re-ancla al API para que el SPA no las capture.
+const resolveFileUrl = (url) => {
+  if (!url) return url;
+  const s = String(url);
+  const apiOrigin = API_URL.replace(/\/api\/?$/, "");
+  if (s.startsWith("/api/")) return apiOrigin ? `${apiOrigin}${s}` : s;
+  try {
+    const u = new URL(s);
+    if (u.pathname.startsWith("/api/files/") && !/^api\./i.test(u.hostname) && apiOrigin) {
+      return `${apiOrigin}${u.pathname}${u.search}`;
+    }
+  } catch { /* URL relativa u opaca: se deja igual */ }
+  return s;
+};
+
 const api = {
   _tok: () => localStorage.getItem("ty_admin_token_v2"),
   _ref: () => localStorage.getItem("ty_admin_refresh_v2"),
@@ -1360,6 +1376,8 @@ function AdminTratoDetailModal({ detail, loading, onClose, onRefresh, onLiberar,
   const [destino, setDestino] = useState("ambos");
   const [mensaje, setMensaje] = useState("");
   const [sending, setSending] = useState(false);
+  // El admin debe ABRIR el comprobante (verificarlo con el banco) antes de poder validarlo.
+  const [receiptOpened, setReceiptOpened] = useState(false);
   const data = detail || {};
   const t = data.trato || {};
   const publicUrl = t.link_compartir ? publicTratoUrl(t.link_compartir) : null;
@@ -1451,7 +1469,6 @@ function AdminTratoDetailModal({ detail, loading, onClose, onRefresh, onLiberar,
                       <span>ID de operación: {manualPayment.payment_reference_required || t.codigo || "—"}</span>
                       <span>Transacción: {manualPayment.transaction_ref || "—"}</span>
                       <span>Método: {manualPayment.method || "—"} · Esperado: {fmt(manualPayment.amount_expected)}</span>
-                      {manualPayment.receipt_url && <a href={manualPayment.receipt_url} target="_blank" rel="noreferrer">Abrir comprobante del comprador</a>}
                     </div>
                   )}
                   <div className="admin-unified-flow">
@@ -1467,9 +1484,50 @@ function AdminTratoDetailModal({ detail, loading, onClose, onRefresh, onLiberar,
                     ))}
                   </div>
                   {t.estado === "pago_pendiente" && retentionPayment?.estado !== "aprobado" && (
-                    <button className="btn bp" style={{ width: "100%", marginBottom: 12 }} onClick={validateReceipt}>
-                      Validar comprobante y actualizar flujo
-                    </button>
+                    <div style={{ background: "var(--s50)", border: "1px solid var(--s200)", borderRadius: 12, padding: 12, marginBottom: 12 }}>
+                      <div style={{ fontSize: 12, fontWeight: 800, color: "var(--s600)", textTransform: "uppercase", letterSpacing: .4, marginBottom: 10 }}>
+                        Validación del pago — sigue el orden
+                      </div>
+                      {/* Paso 1: abrir el comprobante */}
+                      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
+                        <span style={{ flexShrink: 0, width: 26, height: 26, borderRadius: 8, display: "grid", placeItems: "center", fontWeight: 900, fontSize: 12, background: receiptOpened ? "var(--g2)" : "var(--n)", color: "#fff" }}>{receiptOpened ? "✓" : "1"}</span>
+                        {manualPayment?.receipt_url ? (
+                          <a
+                            className="btn bp"
+                            style={{ flex: 1, textAlign: "center", fontWeight: 800 }}
+                            href={resolveFileUrl(manualPayment.receipt_url)}
+                            target="_blank"
+                            rel="noreferrer"
+                            onClick={() => setReceiptOpened(true)}
+                          >
+                            📄 Abrir comprobante del comprador
+                          </a>
+                        ) : (
+                          <span style={{ flex: 1, fontSize: 12.5, color: "var(--s500)" }}>El comprador aún no adjuntó comprobante.</span>
+                        )}
+                      </div>
+                      {/* Paso 2: verificación con el banco */}
+                      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
+                        <span style={{ flexShrink: 0, width: 26, height: 26, borderRadius: 8, display: "grid", placeItems: "center", fontWeight: 900, fontSize: 12, background: "var(--n)", color: "#fff" }}>2</span>
+                        <span style={{ flex: 1, fontSize: 12.5, color: "var(--s600)", lineHeight: 1.4 }}>Verifica en el banco que la transferencia coincida: <strong>{fmt(manualPayment?.amount_expected)}</strong> con referencia <strong>{t.codigo}</strong>.</span>
+                      </div>
+                      {/* Paso 3: validar (bloqueado hasta abrir el comprobante) */}
+                      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                        <span style={{ flexShrink: 0, width: 26, height: 26, borderRadius: 8, display: "grid", placeItems: "center", fontWeight: 900, fontSize: 12, background: "var(--n)", color: "#fff" }}>3</span>
+                        <button
+                          className="btn bp"
+                          style={{ flex: 1, opacity: receiptOpened || !manualPayment?.receipt_url ? 1 : .5 }}
+                          disabled={Boolean(manualPayment?.receipt_url) && !receiptOpened}
+                          title={manualPayment?.receipt_url && !receiptOpened ? "Primero abre el comprobante (paso 1)" : undefined}
+                          onClick={validateReceipt}
+                        >
+                          ✅ Validar comprobante y actualizar flujo
+                        </button>
+                      </div>
+                      {manualPayment?.receipt_url && !receiptOpened && (
+                        <div style={{ fontSize: 11.5, color: "var(--or)", marginTop: 8, textAlign: "center" }}>⚠️ Debes abrir el comprobante antes de poder validarlo.</div>
+                      )}
+                    </div>
                   )}
                   <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
                     {["comprador","vendedor","ambos"].map(x => <button key={x} className={`btn bsm ${destino === x ? "bp" : "bg_"}`} onClick={() => setDestino(x)}>{x}</button>)}
@@ -1521,7 +1579,7 @@ function AdminTratoDetailModal({ detail, loading, onClose, onRefresh, onLiberar,
               </div>
 
               {[
-                ["Pagos registrados", data.pagos, p => [p.tipo, fmt(p.monto), p.pasarela, p.estado, p.referencia_externa || "—", p.metadata?.receipt_url ? <a href={p.metadata.receipt_url} target="_blank" rel="noreferrer">Comprobante</a> : "—", fmtTime(p.createdAt)]],
+                ["Pagos registrados", data.pagos, p => [p.tipo, fmt(p.monto), p.pasarela, p.estado, p.referencia_externa || "—", p.metadata?.receipt_url ? <a href={resolveFileUrl(p.metadata.receipt_url)} target="_blank" rel="noreferrer">Comprobante</a> : "—", fmtTime(p.createdAt)]],
                 ["Intenciones de pago", data.payment_intents, p => [p.provider, p.reference, fmt(p.amount_cop), p.status, p.wompi_transaction_id || p.raw_response?.ref_payco || p.raw_response?.transaction_id || "—", fmtTime(p.updatedAt || p.createdAt || p.updated_at || p.created_at)]],
                 ["Eventos pasarela", data.payment_events, e => [e.provider, e.event_type, e.reference, e.status, e.is_valid_signature ? "Firma OK" : "Sin firma/pendiente", fmtTime(e.received_at)]],
                 ["Ledger", data.ledger, l => [l.type, fmt((l.amount_cents || 0) / 100), l.description || "—", fmtTime(l.created_at)]],
@@ -1772,7 +1830,7 @@ function PagosAdmin({ toast, currentAdmin }) {
               <div className="confirm-pay-icon">✓</div>
               <h2>{confirmTarget.Trato?.codigo || "Trato"}</h2>
               <p>Confirma que recibiste exactamente <strong>{fmt(confirmTarget.monto)}</strong>.</p>
-              {confirmTarget.metadata?.receipt_url && <a className="btn bo" href={confirmTarget.metadata.receipt_url} target="_blank" rel="noreferrer">Abrir comprobante</a>}
+              {confirmTarget.metadata?.receipt_url && <a className="btn bo" href={resolveFileUrl(confirmTarget.metadata.receipt_url)} target="_blank" rel="noreferrer">Abrir comprobante</a>}
             </div>
             <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", padding: 16 }}>
               <button className="btn bg_" onClick={() => setConfirmTarget(null)}>Cancelar</button>
@@ -1961,8 +2019,8 @@ function PagosAdmin({ toast, currentAdmin }) {
                 <span>2. Confirma que llegó exactamente {fmt(selected.monto)} para {selected.Trato?.codigo || "el trato"}.</span>
                 <span>3. Al confirmar, el vendedor entrega. Solo cuando el comprador confirme la recepción podrás consignar y completar el trato.</span>
                 {selected.metadata?.transfer_concept && <span>Concepto enviado: {selected.metadata.transfer_concept}</span>}
-                {selected.metadata?.receipt_url && <a href={selected.metadata.receipt_url} target="_blank" rel="noreferrer">Abrir comprobante adjunto</a>}
-                {selected.metadata?.release_receipt_url && <a href={selected.metadata.release_receipt_url} target="_blank" rel="noreferrer">Abrir comprobante de consignación al vendedor</a>}
+                {selected.metadata?.receipt_url && <a href={resolveFileUrl(selected.metadata.receipt_url)} target="_blank" rel="noreferrer">Abrir comprobante adjunto</a>}
+                {selected.metadata?.release_receipt_url && <a href={resolveFileUrl(selected.metadata.release_receipt_url)} target="_blank" rel="noreferrer">Abrir comprobante de consignación al vendedor</a>}
                 {selected.metadata?.notes && <span>Nota comprador: {selected.metadata.notes}</span>}
               </div>
               {selected.Trato?.monto ? (() => {
@@ -2124,14 +2182,14 @@ function Logs({ toast }) {
 
 function Configuracion({ toast, currentAdmin }) {
   const isSuper = currentAdmin?.rol === "superadmin";
-  const [config, setConfig] = useState(() => ({ comision_min: localStorage.getItem("ty_cfg_comision_min") || "1500", limite_diario: localStorage.getItem("ty_cfg_limite_diario") || "50000000", dias_inspeccion_default: localStorage.getItem("ty_cfg_dias_inspeccion") || "7", meta_mensual_comisiones: localStorage.getItem("ty_admin_monthly_goal") || "200000", kyc_aviso_dias: localStorage.getItem("ty_cfg_kyc_aviso") || "5", kyc_gracia_dias: localStorage.getItem("ty_cfg_kyc_gracia") || "30", admin_delete_requires_code: localStorage.getItem("ty_cfg_delete_code") !== "false", auditoria_retencion_dias: localStorage.getItem("ty_cfg_auditoria_retencion") || "365", mantenimiento: localStorage.getItem("ty_cfg_mantenimiento") === "true" }));
+  const [config, setConfig] = useState(() => ({ comision_min: localStorage.getItem("ty_cfg_comision_min") || "1500", limite_diario: localStorage.getItem("ty_cfg_limite_diario") || "50000000", dias_inspeccion_default: localStorage.getItem("ty_cfg_dias_inspeccion") || "7", meta_mensual_comisiones: localStorage.getItem("ty_admin_monthly_goal") || "200000", kyc_aviso_dias: localStorage.getItem("ty_cfg_kyc_aviso") || "5", kyc_gracia_dias: localStorage.getItem("ty_cfg_kyc_gracia") || "30", admin_delete_requires_code: localStorage.getItem("ty_cfg_delete_code") !== "false", auditoria_retencion_dias: localStorage.getItem("ty_cfg_auditoria_retencion") || "365", mantenimiento: localStorage.getItem("ty_cfg_mantenimiento") === "true", notif_popups: localStorage.getItem("ty_admin_popups") !== "false", notif_popup_sonido: localStorage.getItem("ty_admin_popup_sound") !== "false" }));
   const [loading, setLoading] = useState(false);
   const sc = (k, v) => setConfig(c => ({ ...c, [k]: v }));
-  const guardar = async () => { if (!isSuper) return toast("Solo superadmin puede modificar configuracion", "error"); setLoading(true); try { localStorage.setItem("ty_cfg_comision_min", config.comision_min); localStorage.setItem("ty_cfg_limite_diario", config.limite_diario); localStorage.setItem("ty_cfg_dias_inspeccion", config.dias_inspeccion_default); localStorage.setItem("ty_admin_monthly_goal", config.meta_mensual_comisiones); localStorage.setItem("ty_cfg_kyc_aviso", config.kyc_aviso_dias); localStorage.setItem("ty_cfg_kyc_gracia", config.kyc_gracia_dias); localStorage.setItem("ty_cfg_delete_code", String(config.admin_delete_requires_code)); localStorage.setItem("ty_cfg_auditoria_retencion", config.auditoria_retencion_dias); localStorage.setItem("ty_cfg_mantenimiento", String(config.mantenimiento)); await api.put("/admin/configuracion", config); toast("Configuracion guardada", "success"); } catch (e) { toast(e.message, "error"); } setLoading(false); };
+  const guardar = async () => { if (!isSuper) return toast("Solo superadmin puede modificar configuracion", "error"); setLoading(true); try { localStorage.setItem("ty_cfg_comision_min", config.comision_min); localStorage.setItem("ty_cfg_limite_diario", config.limite_diario); localStorage.setItem("ty_cfg_dias_inspeccion", config.dias_inspeccion_default); localStorage.setItem("ty_admin_monthly_goal", config.meta_mensual_comisiones); localStorage.setItem("ty_cfg_kyc_aviso", config.kyc_aviso_dias); localStorage.setItem("ty_cfg_kyc_gracia", config.kyc_gracia_dias); localStorage.setItem("ty_cfg_delete_code", String(config.admin_delete_requires_code)); localStorage.setItem("ty_cfg_auditoria_retencion", config.auditoria_retencion_dias); localStorage.setItem("ty_cfg_mantenimiento", String(config.mantenimiento)); localStorage.setItem("ty_admin_popups", String(config.notif_popups)); localStorage.setItem("ty_admin_popup_sound", String(config.notif_popup_sonido)); await api.put("/admin/configuracion", config); toast("Configuracion guardada", "success"); } catch (e) { toast(e.message, "error"); } setLoading(false); };
   if (!isSuper) return <div className="page fi"><div className="card" style={{ padding: 24, maxWidth: 620 }}><h1 style={{ fontSize: 20, marginBottom: 8 }}>Configuracion del sistema</h1><p style={{ color: "var(--s600)", fontSize: 13 }}>Este modulo es exclusivo para superadmin.</p></div></div>;
   const Field = ({ label, k, type = "number", help }) => <div className="fg"><label className="fl">{label}</label><input className="inp" type={type} value={config[k]} onChange={e => sc(k, e.target.value)} />{help && <div style={{ fontSize: 11.5, color: "var(--s500)", marginTop: 4 }}>{help}</div>}</div>;
   const Toggle = ({ label, k, help }) => <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, padding: "10px 0" }}><div><div style={{ fontWeight: 700, fontSize: 13 }}>{label}</div>{help && <div style={{ fontSize: 12, color: "var(--s600)" }}>{help}</div>}</div><div onClick={() => sc(k, !config[k])} style={{ width: 44, height: 24, borderRadius: 12, background: config[k] ? "var(--g)" : "var(--s200)", cursor: "pointer", position: "relative", transition: "background .2s" }}><div style={{ width: 18, height: 18, borderRadius: "50%", background: "#fff", position: "absolute", top: 3, left: config[k] ? 23 : 3, transition: "left .2s", boxShadow: "0 1px 4px rgba(0,0,0,.2)" }} /></div></div>;
-  return <div className="page fi"><h1 style={{ fontSize: 20, marginBottom: 16 }}>Configuracion del sistema</h1><div className="g2" style={{ alignItems: "start" }}><div className="card" style={{ padding: "18px 20px" }}><h3 style={{ fontSize: 14, marginBottom: 14 }}>Comisiones y limites</h3><Field label="Comision minima (COP)" k="comision_min" /><Field label="Meta mensual de comisiones (COP)" k="meta_mensual_comisiones" help="Alimenta el panel de Comisiones TratoYA." /><Field label="Limite diario por usuario (COP)" k="limite_diario" /></div><div className="card" style={{ padding: "18px 20px" }}><h3 style={{ fontSize: 14, marginBottom: 14 }}>Verificacion premium</h3><Field label="Avisar vencimiento antes de (dias)" k="kyc_aviso_dias" /><Field label="Retirar marca despues de vencida (dias)" k="kyc_gracia_dias" /><Field label="Dias de inspeccion por defecto" k="dias_inspeccion_default" /></div><div className="card" style={{ padding: "18px 20px" }}><h3 style={{ fontSize: 14, marginBottom: 14 }}>Seguridad admin</h3><Toggle label="Exigir clave para eliminar usuarios" k="admin_delete_requires_code" help="La clave vive en variables de entorno del backend, no en Git." /><Field label="Retencion de logs/auditoria (dias)" k="auditoria_retencion_dias" /></div><div className="card" style={{ padding: "18px 20px" }}><h3 style={{ fontSize: 14, marginBottom: 14 }}>Operacion</h3><Toggle label="Activar modo mantenimiento" k="mantenimiento" help="Bloquea operaciones de pago temporalmente." /><div style={{ fontSize: 12, color: "var(--s600)", lineHeight: 1.5, marginTop: 8 }}>Roles: admin valida y comunica; superadmin paga, reembolsa, cancela y configura.</div></div></div><button className="btn bp blg" style={{ width: "100%", maxWidth: 680, marginTop: 14 }} onClick={guardar} disabled={loading}>{loading ? <><div className="spin" /> Guardando...</> : "Guardar configuracion"}</button></div>;
+  return <div className="page fi"><h1 style={{ fontSize: 20, marginBottom: 16 }}>Configuracion del sistema</h1><div className="g2" style={{ alignItems: "start" }}><div className="card" style={{ padding: "18px 20px" }}><h3 style={{ fontSize: 14, marginBottom: 14 }}>Comisiones y limites</h3><Field label="Comision minima (COP)" k="comision_min" /><Field label="Meta mensual de comisiones (COP)" k="meta_mensual_comisiones" help="Alimenta el panel de Comisiones TratoYA." /><Field label="Limite diario por usuario (COP)" k="limite_diario" /></div><div className="card" style={{ padding: "18px 20px" }}><h3 style={{ fontSize: 14, marginBottom: 14 }}>Verificacion premium</h3><Field label="Avisar vencimiento antes de (dias)" k="kyc_aviso_dias" /><Field label="Retirar marca despues de vencida (dias)" k="kyc_gracia_dias" /><Field label="Dias de inspeccion por defecto" k="dias_inspeccion_default" /></div><div className="card" style={{ padding: "18px 20px" }}><h3 style={{ fontSize: 14, marginBottom: 14 }}>Seguridad admin</h3><Toggle label="Exigir clave para eliminar usuarios" k="admin_delete_requires_code" help="La clave vive en variables de entorno del backend, no en Git." /><Field label="Retencion de logs/auditoria (dias)" k="auditoria_retencion_dias" /></div><div className="card" style={{ padding: "18px 20px" }}><h3 style={{ fontSize: 14, marginBottom: 14 }}>Operacion</h3><Toggle label="Activar modo mantenimiento" k="mantenimiento" help="Bloquea operaciones de pago temporalmente." /><Toggle label="Pop-ups de novedades en el panel" k="notif_popups" help="Muestra avisos flotantes cuando un trato cambia de estado." /><Toggle label="Sonido de las notificaciones" k="notif_popup_sonido" help="Campanita al llegar una novedad (requiere pop-ups activos)." /><div style={{ fontSize: 12, color: "var(--s600)", lineHeight: 1.5, marginTop: 8 }}>Roles: admin valida y comunica; superadmin paga, reembolsa, cancela y configura.</div></div></div><button className="btn bp blg" style={{ width: "100%", maxWidth: 680, marginTop: 14 }} onClick={guardar} disabled={loading}>{loading ? <><div className="spin" /> Guardando...</> : "Guardar configuracion"}</button></div>;
 }
 
 function ResenasAdmin({ toast }) {
@@ -2844,12 +2902,23 @@ function AdminLogin({ onLogin, toast }) {
 }
 
 // ─── ROOT ─────────────────────────────────────────────
+// Preferencias de notificaciones del panel (configurable en Ajustes)
+const adminPopupsEnabled = () => localStorage.getItem("ty_admin_popups") !== "false";
+const adminPopupSoundEnabled = () => localStorage.getItem("ty_admin_popup_sound") !== "false";
+
 function AdminOpsNotifier({ active, onOpen }) {
   const [items, setItems] = useState([]);
   const [collapsed, setCollapsed] = useState(false);
   const [closed, setClosed] = useState(false);
+  const [popups, setPopups] = useState([]); // pop-ups en tiempo real (novedades)
   const seenRef = useRef(new Set());
   const firstLoadRef = useRef(true);
+
+  const pushPopup = useCallback((t) => {
+    const key = `${t.id}:${t.estado}:${Date.now()}`;
+    setPopups((p) => [...p.slice(-2), { ...t, _key: key }]);
+    setTimeout(() => setPopups((p) => p.filter((x) => x._key !== key)), 7000);
+  }, []);
 
   const beep = useCallback(() => {
     try {
@@ -2880,11 +2949,14 @@ function AdminOpsNotifier({ active, onOpen }) {
       const next = incoming.slice(0, 6);
       const fresh = next.filter((t) => !seenRef.current.has(`${t.id}:${t.estado}`));
       next.forEach((t) => seenRef.current.add(`${t.id}:${t.estado}`));
-      if (!firstLoadRef.current && fresh.length) beep();
+      if (!firstLoadRef.current && fresh.length && adminPopupsEnabled()) {
+        if (adminPopupSoundEnabled()) beep();
+        fresh.slice(0, 3).forEach(pushPopup);
+      }
       firstLoadRef.current = false;
       setItems(next);
     } catch { /* silencioso */ }
-  }, [active, beep]);
+  }, [active, beep, pushPopup]);
 
   useEffect(() => {
     load();
@@ -2892,8 +2964,30 @@ function AdminOpsNotifier({ active, onOpen }) {
     return () => clearInterval(id);
   }, [load]);
 
-  if (!active || !items.length || closed) return null;
+  if (!active) return null;
   return (
+    <>
+      {/* Pop-ups en tiempo real (novedades de tratos) */}
+      {popups.length > 0 && (
+        <div style={{ position: "fixed", top: 16, right: 16, zIndex: 10001, display: "flex", flexDirection: "column", gap: 8, maxWidth: 340 }}>
+          {popups.map((p) => (
+            <button
+              key={p._key}
+              type="button"
+              onClick={() => { setPopups((x) => x.filter((y) => y._key !== p._key)); onOpen?.(p.id); }}
+              style={{ display: "flex", alignItems: "center", gap: 10, textAlign: "left", cursor: "pointer", background: "linear-gradient(160deg,#0c2f2a,#071918)", border: "1px solid rgba(168,196,0,.35)", borderRadius: 14, padding: "11px 13px", boxShadow: "0 12px 34px rgba(0,0,0,.4)", animation: "adm-pop-in .35s cubic-bezier(.22,1.3,.36,1) both", color: "#fff" }}
+            >
+              <span style={{ flexShrink: 0, width: 34, height: 34, borderRadius: 10, display: "grid", placeItems: "center", background: "linear-gradient(140deg,#A8C400,#479818)", fontSize: 16 }}>🔔</span>
+              <span style={{ minWidth: 0 }}>
+                <strong style={{ display: "block", fontSize: 12.5, color: "#dfff60", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.codigo || "Trato"} · {tratoLabel(p.estado)}</strong>
+                <span style={{ display: "block", fontSize: 11.5, color: "rgba(255,255,255,.75)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.titulo || "Sin título"} · {fmt(p.monto || 0)}</span>
+              </span>
+            </button>
+          ))}
+          <style>{`@keyframes adm-pop-in{from{opacity:0;transform:translateX(60px)}to{opacity:1;transform:translateX(0)}}`}</style>
+        </div>
+      )}
+      {(!items.length || closed) ? null : (
     <div className="admin-ops-notifier">
       <div className="admin-ops-notifier-hd">
         <span>🔔 Tratos en seguimiento</span>
@@ -2913,6 +3007,8 @@ function AdminOpsNotifier({ active, onOpen }) {
         </div>
       )}
     </div>
+      )}
+    </>
   );
 }
 

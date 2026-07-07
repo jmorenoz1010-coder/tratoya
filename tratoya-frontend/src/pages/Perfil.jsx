@@ -59,6 +59,8 @@ export default function Perfil({ user, setUser, toast }) {
       setAccounts((p) => [r.data, ...p]);
       setBank({ banco: "", tipo: "ahorros", numero: "", titular: `${user?.nombre || ""} ${user?.apellido || ""}`.trim() });
       toast("Información bancaria registrada", "success");
+      // Notifica al shell (dispara el retorno automático si venía a completar datos)
+      setUser({ ...user });
     } catch (e) { toast(e.message, "error"); }
     setLoading(false);
   };

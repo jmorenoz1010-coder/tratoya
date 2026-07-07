@@ -45,6 +45,16 @@ function verifyFileAccess(token) {
   return { key, userId, dealId: dealId || null, exp };
 }
 
+/** Base pública del API. Sanea valores mal configurados que apunten al frontend
+ *  (causarían que el SPA "capture" el link y redirija al inicio). */
+function apiBaseUrl() {
+  let base = String(process.env.API_PUBLIC_URL || process.env.BACKEND_URL || '').trim().replace(/\/$/, '');
+  base = base.replace(/\/api$/, ''); // tolera valores que ya incluyan /api
+  if (/^https?:\/\/(www\.)?tratoya\.com$/i.test(base)) base = ''; // dominio del frontend: inválido
+  if (!base && process.env.NODE_ENV === 'production') base = 'https://api.tratoya.com';
+  return base;
+}
+
 /** Reemplaza URLs de archivos sensibles por tokens de acceso temporal. */
 function wrapFileUrl(urlOrKey, userId, dealId) {
   if (!urlOrKey) return null;
@@ -53,7 +63,7 @@ function wrapFileUrl(urlOrKey, userId, dealId) {
   if (!key) return null;
   const token = signFileAccess(key, userId, dealId);
   if (!token) return null;
-  const apiBase = (process.env.API_PUBLIC_URL || process.env.BACKEND_URL || '').replace(/\/$/, '');
+  const apiBase = apiBaseUrl();
   return apiBase ? `${apiBase}/api/files/${token}` : `/api/files/${token}`;
 }
 
