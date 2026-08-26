@@ -1,5 +1,21 @@
 # TratoYA — Guía de despliegue a producción
 
+## Estado actual (agosto 2026)
+
+La beta **ya está pública** en Vercel, no hace falta crear otro proyecto ni otro dominio:
+
+| Pieza | URL | Notas |
+|---|---|---|
+| Frontend | https://www.tratoya.com | `tratoya.com` hace 308 a `www` |
+| API | https://api.tratoya.com | `GET /health` → `{"status":"ok"}` |
+| Auth | `/login` y `/register` | Rutas de la SPA; el build de producción usa `VITE_API_URL=https://api.tratoya.com/api` |
+
+Despliegue: push a `main` → GitHub Actions (`.github/workflows/deploy.yml`) verifica y publica frontend + backend en los proyectos Vercel ya enlazados (`VERCEL_ORG_ID` + `VERCEL_PROJECT_ID` en el workflow). No importar el repo otra vez en un team Vercel vacío: eso duplica el sitio y no actualiza `tratoya.com`.
+
+El resto de esta guía sirve para **recrear** el stack (Neon, Redis, Railway como alternativa al API en Vercel) o para rotar secretos.
+
+---
+
 ## Stack recomendado (mejor costo-beneficio)
 
 | Servicio | Proveedor | Costo/mes | Propósito |
