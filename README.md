@@ -1,11 +1,20 @@
 # TratoYA
 
-Beta funcional de TratoYA: plataforma de tratos seguros con custodia, pagos sandbox, chat, disputas, reputacion, KYC y panel administrativo.
+Beta pública de TratoYA: plataforma colombiana de tratos seguros con custodia, pagos sandbox, chat, disputas, reputación, KYC y panel administrativo.
+
+## URLs públicas
+
+- Frontend: https://www.tratoya.com (`tratoya.com` redirige a `www`)
+- API: https://api.tratoya.com (`GET /health` debe responder `{"status":"ok",...}`)
+- Auth: https://www.tratoya.com/login y https://www.tratoya.com/register
+
+El frontend en Vercel llama a `https://api.tratoya.com/api`. Login, tratos, chat y pagos dependen de ese backend y de PostgreSQL.
 
 ## Estructura
 
 - `tratoya-frontend/`: app React + Vite.
 - `tratoya-backend/`: API Express + PostgreSQL + Sequelize.
+- `tratoya-app/`: app móvil React Native + Expo (fundación).
 
 ## Desarrollo local
 
@@ -32,16 +41,8 @@ URLs locales:
 
 ## Variables de entorno
 
-No subir `.env` al repositorio. Usa `tratoya-backend/.env.example` como plantilla.
+No subir `.env` al repositorio. Usa `tratoya-backend/.env.example` y `tratoya-frontend/.env.example` como plantilla. Guía de SSO: `ENV_SETUP.md`. Guía de hosting: `DEPLOYMENT.md`.
 
-Para produccion se necesita:
+## Despliegue
 
-- `DATABASE_URL`
-- `JWT_SECRET`
-- `JWT_REFRESH_SECRET`
-- `FRONTEND_URL`
-- llaves sandbox/produccion de Wompi cuando aplique
-
-## Estado beta
-
-El frontend puede desplegarse en Vercel, pero para que login, tratos, chat y pagos funcionen publicamente tambien debe existir un backend publico con PostgreSQL publico.
+Un push a `main` dispara GitHub Actions (`.github/workflows/deploy.yml`): verifica backend/frontend y despliega ambos proyectos a Vercel. `VITE_API_URL` de producción es `https://api.tratoya.com/api`.

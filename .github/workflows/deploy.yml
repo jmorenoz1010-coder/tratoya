@@ -27,7 +27,7 @@ jobs:
           cache-dependency-path: tratoya-backend/package-lock.json
       - run: npm ci
       - name: Syntax check
-        run: node --check src/index.js
+        run: node --check src/index.js && node --check src/routes/auth.js && node scripts/check-oauth-state.js
 
   # ── Verificar que el frontend compila ──────────────────
   build-frontend:

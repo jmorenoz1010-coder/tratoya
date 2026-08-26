@@ -4,6 +4,7 @@ import logo from "../assets/tratoya-logo.png";
 import { API_URL, api, saveSession } from "../lib/api";
 import { track } from "../lib/analytics";
 import { passwordChecks, strongPasswordOk, normalizeHandle, DOC_TYPES, FINANCIAL_ENTITIES, getBankType } from "../lib/utils";
+import { pathForAuthMode } from "../lib/routes";
 import "../styles/auth-slide.css";
 
 const EASE = [0.22, 1, 0.36, 1];
@@ -73,7 +74,7 @@ function playWelcomeSound() {
   } catch { /* silencioso */ }
 }
 
-export default function Auth({ setSession, toast, initialMode = "login" }) {
+export default function Auth({ setSession, toast, initialMode = "login", onBack }) {
   const [mode, setMode] = useState(initialMode === "register" ? "register" : "login");
   const [panelDir, setPanelDir] = useState(1);
   const [step, setStep] = useState(1);
@@ -117,6 +118,19 @@ export default function Auth({ setSession, toast, initialMode = "login" }) {
     }
     return undefined;
   }, [mode, forgotMode, panelKey]);
+
+  useEffect(() => {
+    const reason = new URLSearchParams(window.location.search).get("sso");
+    if (!reason) return;
+    const messages = {
+      denied: "Cancelaste el inicio de sesión social.",
+      invalid: "La sesión de Google/Facebook expiró. Intenta de nuevo.",
+      error: "No se pudo completar el inicio de sesión social. Intenta de nuevo.",
+    };
+    toast(messages[reason] || messages.error, reason === "denied" ? "info" : "error");
+    const next = `${window.location.pathname}`;
+    window.history.replaceState(null, "", next);
+  }, [toast]);
 
   const login = async (e) => {
     e?.preventDefault();
@@ -168,13 +182,24 @@ export default function Auth({ setSession, toast, initialMode = "login" }) {
 
   const switchMode = () => {
     setPanelDir(mode === "login" ? 1 : -1);
-    setMode(mode === "login" ? "register" : "login");
+    const next = mode === "login" ? "register" : "login";
+    setMode(next);
     setStep(1);
     setForgotMode(false);
     setF_((p) => ({ ...p, password: "", confirm_password: "" }));
+    const keepPath = window.location.pathname.startsWith("/t/")
+      || ["/pagos/respuesta", "/pago/resultado"].includes(window.location.pathname);
+    if (!keepPath) {
+      const url = pathForAuthMode(next);
+      if (window.location.pathname !== url) window.history.replaceState({ auth: next }, "", url);
+    }
   };
 
   const goBack = () => {
+    if (typeof onBack === "function") {
+      onBack();
+      return;
+    }
     if (window.history.length > 1) window.history.back();
     else window.location.href = "/";
   };

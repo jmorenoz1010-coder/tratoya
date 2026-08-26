@@ -21,6 +21,7 @@ Guía de las variables de entorno necesarias para producción, con foco en el
 3. **APIs y servicios → Credenciales → Crear credenciales → ID de cliente de OAuth**
    - Tipo de aplicación: **Aplicación web**.
    - **Orígenes de JavaScript autorizados:**
+     - `https://www.tratoya.com`
      - `https://tratoya.com`
      - `http://localhost:5173` (solo para desarrollo)
    - **URIs de redirección autorizados:**
@@ -35,7 +36,7 @@ API_PUBLIC_URL=https://api.tratoya.com
 GOOGLE_CLIENT_ID=xxxxxxxx.apps.googleusercontent.com
 GOOGLE_CLIENT_SECRET=xxxxxxxx
 GOOGLE_REDIRECT_URI=https://api.tratoya.com/api/auth/oauth/google/callback
-FRONTEND_URL=https://tratoya.com
+FRONTEND_URL=https://www.tratoya.com
 ```
 
 > `GOOGLE_REDIRECT_URI` debe coincidir **exactamente** con el URI registrado en Google,

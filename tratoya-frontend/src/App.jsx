@@ -10,7 +10,7 @@ import PublicTratoPage from "./pages/PublicTratoPage";
 import PaymentResultPage from "./pages/PaymentResultPage";
 import LegalPage from "./pages/LegalPage";
 import ResetPassword from "./pages/ResetPassword";
-import { ADMIN_ENTRY_PATH } from "./lib/routes";
+import { ADMIN_ENTRY_PATH, authModeFromPath, pathForAuthMode } from "./lib/routes";
 import "./styles/main.css";
 
 const TratoYaAdmin = lazy(() => import("./Admin"));
@@ -23,8 +23,38 @@ export default function TratoYaApp() {
     const t = window.localStorage.getItem("ty_token");
     return u && t ? { user: u, token: t } : null;
   });
-  const [authMode, setAuthMode] = useState(null);
+  const [authMode, setAuthMode] = useState(() => authModeFromPath(window.location.pathname));
   const toast = useCallback((m, type = "info") => show(m, type), [show]);
+
+  const goAuth = useCallback((mode) => {
+    setAuthMode(mode);
+    const path = window.location.pathname;
+    const keepPath = path.startsWith("/t/") || ["/pagos/respuesta", "/pago/resultado"].includes(path);
+    if (keepPath) return;
+    const next = pathForAuthMode(mode);
+    if (path !== next) window.history.pushState({ auth: mode }, "", next);
+  }, []);
+
+  const leaveAuth = useCallback(() => {
+    setAuthMode(null);
+    if (window.location.pathname !== "/") {
+      window.history.pushState({ auth: null }, "", "/");
+    }
+  }, []);
+
+  useEffect(() => {
+    const onPop = () => setAuthMode(authModeFromPath(window.location.pathname));
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, []);
+
+  useEffect(() => {
+    if (!session) return;
+    if (authModeFromPath(window.location.pathname)) {
+      window.history.replaceState(null, "", "/");
+      setAuthMode(null);
+    }
+  }, [session]);
 
   // Mensaje de cierre de sesión (se setea antes del redirect duro en logout).
   useEffect(() => {
@@ -73,8 +103,8 @@ export default function TratoYaApp() {
     <>
       {toastNodes}
       {authMode && !session
-        ? <Auth setSession={setSession} toast={toast} initialMode={authMode} />
-        : <PublicTratoPage link={publicMatch[1]} session={session} goAuth={setAuthMode} toast={toast} />}
+        ? <Auth setSession={setSession} toast={toast} initialMode={authMode} onBack={() => setAuthMode(null)} />
+        : <PublicTratoPage link={publicMatch[1]} session={session} goAuth={goAuth} toast={toast} />}
     </>
   );
 
@@ -82,8 +112,8 @@ export default function TratoYaApp() {
     <>
       {toastNodes}
       {authMode && !session
-        ? <Auth setSession={setSession} toast={toast} initialMode={authMode} />
-        : <PaymentResultPage session={session} goAuth={setAuthMode} toast={toast} />}
+        ? <Auth setSession={setSession} toast={toast} initialMode={authMode} onBack={() => setAuthMode(null)} />
+        : <PaymentResultPage session={session} goAuth={goAuth} toast={toast} />}
     </>
   );
 
@@ -110,8 +140,8 @@ export default function TratoYaApp() {
       {session
         ? <AppShell session={session} setSession={setSession} toast={toast} />
         : authMode
-          ? <Auth setSession={setSession} toast={toast} initialMode={authMode} />
-          : <Landing goAuth={setAuthMode} />}
+          ? <Auth setSession={setSession} toast={toast} initialMode={authMode} onBack={leaveAuth} />
+          : <Landing goAuth={goAuth} />}
     </>
   );
 }

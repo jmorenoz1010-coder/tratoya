@@ -9,6 +9,7 @@ const { User } = require('../config/database');
 const { sendEmail } = require('../services/emailService');
 const { registerLimiter, refreshLimiter } = require('../middleware/rateLimiters');
 const { issueOAuthCode, consumeOAuthCode } = require('../utils/oauthCodes');
+const { createOauthState, readOauthState } = require('../utils/oauthState');
 const logger = require('../utils/logger');
 
 // S-10: límites estrictos en endpoints sensibles (fuerza bruta / abuso).
@@ -98,9 +99,15 @@ const publicUser = (user) => {
   };
 };
 
-const frontendUrl = () => (process.env.FRONTEND_URL || 'http://localhost:5173').replace(/\/$/, '');
+const frontendUrl = () => {
+  const raw = (process.env.FRONTEND_URL || 'http://localhost:5173').replace(/\/$/, '');
+  // El sitio canónico es www; el apex redirige 308 y perdería un hop extra en SSO.
+  if (raw === 'https://tratoya.com') return 'https://www.tratoya.com';
+  return raw;
+};
 const callbackUrl = (provider) => process.env.API_PUBLIC_URL ? `${process.env.API_PUBLIC_URL.replace(/\/$/, '')}/api/auth/oauth/${provider}/callback` : null;
 const localCallbackUrl = (req, provider) => `${req.protocol}://${req.get('host')}/api/auth/oauth/${provider}/callback`;
+const ssoFailureRedirect = (reason = 'error') => `${frontendUrl()}/login?sso=${encodeURIComponent(reason)}`;
 
 const socialRedirect = async (res, user) => {
   const rol = user.rol || (user.is_admin ? 'admin' : 'user');
@@ -177,6 +184,7 @@ router.get('/oauth/:provider', (req, res) => {
       response_type: 'code',
       scope: 'openid email profile',
       prompt: 'select_account',
+      state: createOauthState('google'),
     });
     return res.redirect(`https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`);
   }
@@ -190,14 +198,20 @@ router.get('/oauth/:provider', (req, res) => {
     redirect_uri: redirectUri,
     scope: 'email public_profile',
     response_type: 'code',
+    state: createOauthState('facebook'),
   });
   return res.redirect(`https://www.facebook.com/v18.0/dialog/oauth?${params.toString()}`);
 });
 
 router.get('/oauth/google/callback', async (req, res, next) => {
   try {
-    const { code } = req.query;
-    if (!code) return res.status(400).json({ success: false, message: 'Código OAuth requerido' });
+    const { code, state, error } = req.query;
+    if (error) return res.redirect(ssoFailureRedirect(error === 'access_denied' ? 'denied' : 'error'));
+    const stateData = readOauthState(state);
+    if (!stateData || stateData.p !== 'google') {
+      return res.redirect(ssoFailureRedirect('invalid'));
+    }
+    if (!code) return res.redirect(ssoFailureRedirect('error'));
     const redirectUri = process.env.GOOGLE_REDIRECT_URI || callbackUrl('google') || localCallbackUrl(req, 'google');
     const tokenResp = await fetch('https://oauth2.googleapis.com/token', {
       method: 'POST',
@@ -211,12 +225,12 @@ router.get('/oauth/google/callback', async (req, res, next) => {
       }),
     });
     const tokenData = await tokenResp.json();
-    if (!tokenResp.ok) return res.status(400).json({ success: false, message: tokenData.error_description || 'Google no autorizó el inicio de sesión' });
+    if (!tokenResp.ok) return res.redirect(ssoFailureRedirect('error'));
     const profileResp = await fetch('https://openidconnect.googleapis.com/v1/userinfo', {
       headers: { Authorization: `Bearer ${tokenData.access_token}` },
     });
     const profile = await profileResp.json();
-    if (!profileResp.ok) return res.status(400).json({ success: false, message: 'No se pudo obtener el perfil de Google' });
+    if (!profileResp.ok) return res.redirect(ssoFailureRedirect('error'));
     const user = await upsertSocialUser({
       email: profile.email,
       nombre: profile.given_name || profile.name,
@@ -229,8 +243,13 @@ router.get('/oauth/google/callback', async (req, res, next) => {
 
 router.get('/oauth/facebook/callback', async (req, res, next) => {
   try {
-    const { code } = req.query;
-    if (!code) return res.status(400).json({ success: false, message: 'Código OAuth requerido' });
+    const { code, state, error } = req.query;
+    if (error) return res.redirect(ssoFailureRedirect(error === 'access_denied' ? 'denied' : 'error'));
+    const stateData = readOauthState(state);
+    if (!stateData || stateData.p !== 'facebook') {
+      return res.redirect(ssoFailureRedirect('invalid'));
+    }
+    if (!code) return res.redirect(ssoFailureRedirect('error'));
     const redirectUri = process.env.FACEBOOK_REDIRECT_URI || callbackUrl('facebook') || localCallbackUrl(req, 'facebook');
 
     // Obtener access token
@@ -245,15 +264,15 @@ router.get('/oauth/facebook/callback', async (req, res, next) => {
       }),
     });
     const tokenData = await tokenResp.json();
-    if (!tokenResp.ok) return res.status(400).json({ success: false, message: tokenData.error?.message || 'Facebook no autorizó el inicio de sesión' });
+    if (!tokenResp.ok) return res.redirect(ssoFailureRedirect('error'));
 
     const accessToken = tokenData.access_token;
-    if (!accessToken) return res.status(400).json({ success: false, message: 'No se pudo obtener el token de acceso' });
+    if (!accessToken) return res.redirect(ssoFailureRedirect('error'));
 
     // Obtener perfil del usuario
     const profileResp = await fetch(`https://graph.facebook.com/me?fields=id,name,email,picture&access_token=${accessToken}`);
     const profile = await profileResp.json();
-    if (!profileResp.ok) return res.status(400).json({ success: false, message: 'No se pudo obtener el perfil de Facebook' });
+    if (!profileResp.ok) return res.redirect(ssoFailureRedirect('error'));
 
     const user = await upsertSocialUser({
       email: profile.email,

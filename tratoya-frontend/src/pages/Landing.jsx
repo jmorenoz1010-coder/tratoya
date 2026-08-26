@@ -42,7 +42,7 @@ const WHAT_IS = [
 const TRANSFER_BRANDS = [
   { name: "Nequi", src: "/brand-nequi.svg", cls: "ty-pay-logo--nequi" },
   { name: "Bancolombia", src: "/brand-bancolombia.svg", cls: "ty-pay-logo--bancolombia" },
-  { name: "PSE", src: "/brand-pse.png", cls: "ty-pay-logo--pse" },
+  { name: "PSE", src: "/brand-pse.svg", cls: "ty-pay-logo--pse" },
 ];
 
 const SAFETY_SHOW = [
