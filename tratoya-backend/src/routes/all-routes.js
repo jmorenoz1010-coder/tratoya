@@ -2481,21 +2481,14 @@ adminRouter.delete('/users/:id', async (req, res, next) => {
     } = require('../config/database');
     // trim(): los CLI/paneles suelen guardar la variable con un salto de línea
     // final invisible que rompería la comparación exacta.
-    const confirmationCode = String(req.body?.confirmation_code || '').trim();
+    const confirmacion = String(req.body?.confirmation_code || '').trim();
     const expectedCode = String(process.env.ADMIN_DELETE_USER_CODE || '').trim();
-    if (!expectedCode) {
-      return res.status(503).json({ success: false, message: 'Eliminación de usuarios deshabilitada: falta ADMIN_DELETE_USER_CODE en el servidor.' });
-    }
-    // Cualquier admin autenticado puede eliminar si presenta el código de
-    // confirmación (segundo factor). El gate del router ya exige rol admin.
     const rolActual = (req.user.rol || (req.user.is_admin ? 'admin' : 'user')).toLowerCase();
-    const canDelete = req.user.email === 'admin@tratoya.com' || ['admin', 'superadmin'].includes(rolActual);
+    const esSuper = rolActual === 'superadmin' || req.user.email === 'admin@tratoya.com';
+    const canDelete = esSuper || rolActual === 'admin';
 
     if (!canDelete) {
       return res.status(403).json({ success: false, message: 'Solo un administrador puede eliminar usuarios.' });
-    }
-    if (confirmationCode !== expectedCode) {
-      return res.status(403).json({ success: false, message: 'Código de confirmación incorrecto.' });
     }
     if (req.user.id === req.params.id) {
       return res.status(400).json({ success: false, message: 'No puedes eliminar tu propia cuenta administrativa.' });
@@ -2504,6 +2497,30 @@ adminRouter.delete('/users/:id', async (req, res, next) => {
     const user = await UserModel.findByPk(req.params.id);
     if (!user) {
       return res.status(404).json({ success: false, message: 'Usuario no encontrado.' });
+    }
+
+    // Segundo factor. El superadmin confirma escribiendo el email exacto del
+    // usuario a eliminar: es explícito, verificable y no depende de que una
+    // variable de entorno esté bien configurada. Los admins no-superadmin
+    // siguen necesitando ADMIN_DELETE_USER_CODE.
+    const emailObjetivo = String(user.email || '').trim().toLowerCase();
+    const confirmoEmail = Boolean(emailObjetivo) && confirmacion.toLowerCase() === emailObjetivo;
+    const confirmoCodigo = Boolean(expectedCode) && confirmacion === expectedCode;
+
+    if (esSuper) {
+      if (!confirmoEmail && !confirmoCodigo) {
+        return res.status(403).json({
+          success: false,
+          message: `Para confirmar, escribe el email exacto del usuario: ${user.email}`,
+        });
+      }
+    } else {
+      if (!expectedCode) {
+        return res.status(503).json({ success: false, message: 'Eliminación de usuarios deshabilitada: falta ADMIN_DELETE_USER_CODE en el servidor.' });
+      }
+      if (!confirmoCodigo) {
+        return res.status(403).json({ success: false, message: 'Código de confirmación incorrecto.' });
+      }
     }
     const activeDeals = await Trato.count({
       where: {

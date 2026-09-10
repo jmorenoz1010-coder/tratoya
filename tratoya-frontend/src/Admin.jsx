@@ -488,7 +488,7 @@ function AdminDashboard({ toast, setPage }) {
   </div>;
 }
 
-function Usuarios({ toast }) {
+function Usuarios({ toast, currentAdmin }) {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [q, setQ] = useState("");
@@ -574,8 +574,15 @@ function Usuarios({ toast }) {
     setBusy(false);
   };
 
+  // El superadmin confirma escribiendo el email del usuario (no depende de que
+  // ADMIN_DELETE_USER_CODE esté bien configurado en el servidor).
+  const isSuperDelete = currentAdmin?.rol === "superadmin" || currentAdmin?.email === "admin@tratoya.com";
+
   const deleteUser = async () => {
-    if (!selected || !deleteCode) { toast("Ingresa el código de confirmación", "error"); return; }
+    if (!selected || !deleteCode) {
+      toast(isSuperDelete ? "Escribe el email del usuario para confirmar" : "Ingresa el código de confirmación", "error");
+      return;
+    }
     setBusy(true);
     try {
       await api.del(`/admin/users/${selected.id}`, { confirmation_code: deleteCode });
@@ -789,8 +796,23 @@ function Usuarios({ toast }) {
                 Se anonimizarán los datos personales de <strong>{selected.nombre} {selected.apellido}</strong>. No se permite eliminar usuarios con tratos activos.
               </div>
               <div className="fg">
-                <label className="fl">Código de confirmación</label>
-                <input className="inp" type="password" autoComplete="off" value={deleteCode} onChange={e => setDeleteCode(e.target.value)} onKeyDown={e => { if (e.key === "Enter" && deleteCode && !busy) deleteUser(); }} placeholder="Ingresa el código administrativo" />
+                <label className="fl">{isSuperDelete ? "Escribe el email del usuario para confirmar" : "Código de confirmación"}</label>
+                <input
+                  className="inp"
+                  type={isSuperDelete ? "text" : "password"}
+                  autoComplete="off"
+                  autoCapitalize="none"
+                  spellCheck={false}
+                  value={deleteCode}
+                  onChange={e => setDeleteCode(e.target.value)}
+                  onKeyDown={e => { if (e.key === "Enter" && deleteCode && !busy) deleteUser(); }}
+                  placeholder={isSuperDelete ? selected.email : "Ingresa el código administrativo"}
+                />
+                {isSuperDelete && (
+                  <div style={{ fontSize: 11.5, color: "var(--s600)", marginTop: 6 }}>
+                    Debe coincidir exactamente con <strong>{selected.email}</strong>
+                  </div>
+                )}
               </div>
             </div>
             <div className="modal-ft">
@@ -3074,7 +3096,7 @@ export default function TratoYaAdmin() {
   const PAGES = {
     dashboard:      <AdminDashboard toast={toast} setPage={goPage} />,
     actividad:      <ActividadEnVivo toast={toast} />,
-    usuarios:       <Usuarios toast={toast} />,
+    usuarios:       <Usuarios toast={toast} currentAdmin={admin} />,
     roles:          <RolesAdmin toast={toast} currentAdmin={admin} />,
     kyc:            <KYCVerificaciones toast={toast} />,
     baneos:         <Baneados toast={toast} />,
