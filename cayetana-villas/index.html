@@ -1,0 +1,731 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Cayetana Villas · Exclusividad en el Caribe · Barú, Cartagena</title>
+  <meta name="description" content="Cayetana Villas: condominio de playa de arquitectura mediterránea en Barú, Cartagena. Villas y lotes a borde de agua con lago privado y beach club. Maqueta virtual 3D, disponibilidad en vivo y simulador de inversión." />
+  <meta name="theme-color" content="#2c2420" />
+  <meta property="og:title" content="Cayetana Villas · Exclusividad en el Caribe" />
+  <meta property="og:description" content="Villas mediterráneas y lotes frente al agua en Punta Nativa, Barú. Explore la maqueta 3D y elija su lote." />
+  <meta property="og:image" content="img/hero-aerial.webp" />
+  <meta property="og:type" content="website" />
+  <link rel="icon" type="image/png" href="img/logo-white.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Nunito+Sans:opsz,wght@6..12,300;6..12,400;6..12,600;6..12,700;6..12,800&display=swap" rel="stylesheet" />
+  <link rel="preload" as="image" href="img/hero-aerial.webp" />
+  <script type="application/ld+json">
+  {"@context":"https://schema.org","@type":"Residence","name":"Cayetana Villas","description":"Condominio de playa de arquitectura mediterránea en Barú, Cartagena, Colombia.","address":{"@type":"PostalAddress","addressLocality":"Barú, Cartagena","addressCountry":"CO","streetAddress":"Ensenada de los Vásquez, Punta Nativa"},"email":"info@cayetanavillas.com"}
+  </script>
+</head>
+<body>
+  <!-- Pantalla de carga -->
+  <div class="loader" id="loader" aria-hidden="true">
+    <img src="img/logo-white.png" alt="" class="loader-logo" />
+    <div class="loader-bar"><span></span></div>
+    <p class="loader-txt">Barú · Cartagena · Colombia</p>
+  </div>
+
+  <div class="cursor" aria-hidden="true"><span></span></div>
+
+  <!-- Navegación -->
+  <header class="nav" id="nav">
+    <a href="#top" class="nav-logo" aria-label="Cayetana Villas, inicio"><img src="img/logo-white.png" alt="Cayetana Villas" /></a>
+    <nav class="nav-links" aria-label="Principal">
+      <a href="#destino">Destino</a>
+      <a href="#concepto">Concepto</a>
+      <a href="#maqueta">Maqueta 3D</a>
+      <a href="#villas">Villas</a>
+      <a href="#inversion">Inversión</a>
+      <a href="#avance">Avance</a>
+    </nav>
+    <div class="nav-tools">
+      <div class="seg seg-sm" id="currency" role="group" aria-label="Moneda">
+        <button data-c="COP">COP</button><button data-c="USD">USD</button><button data-c="EUR">EUR</button>
+      </div>
+      <button class="icon-btn" id="soundBtn" aria-label="Sonido ambiente del mar" title="Sonido ambiente"><i data-icon="mute"></i></button>
+      <button class="icon-btn fav-btn" id="favOpen" aria-label="Mis favoritos" title="Mis favoritos"><i data-icon="heart"></i><b id="favCount">0</b></button>
+      <a href="#contacto" class="btn btn-gold btn-sm magnetic">Agendar visita</a>
+      <button class="burger" id="burger" aria-label="Abrir menú" aria-expanded="false"><span></span><span></span></button>
+    </div>
+  </header>
+  <div class="mobile-menu" id="mobileMenu">
+    <a href="#destino">Destino</a><a href="#concepto">Concepto</a><a href="#maqueta">Maqueta 3D</a><a href="#villas">Villas</a><a href="#inversion">Inversión</a><a href="#avance">Avance</a><a href="#contacto">Agendar visita</a>
+  </div>
+
+  <main id="top">
+    <!-- HERO -->
+    <section class="hero" id="hero">
+      <div class="hero-media">
+        <img src="img/hero-aerial.webp" alt="Vista aérea de Cayetana con playa, canal de kayaks y bosque tropical en Barú" />
+      </div>
+      <div class="hero-shade"></div>
+      <div class="hero-content">
+        <p class="eyebrow light">Barú · Cartagena · Colombia</p>
+        <h1 class="hero-title split">Exclusividad<br /><em>en el Caribe.</em></h1>
+        <p class="hero-sub">Villas mediterráneas y lotes a borde de agua, con lago privado, beach club y muelle propio, dentro del master plan Punta Nativa.</p>
+        <div class="hero-ctas">
+          <a href="#maqueta" class="btn btn-gold magnetic"><i data-icon="cube"></i> Explorar maqueta 3D</a>
+          <a href="#villas" class="btn btn-ghost magnetic">Ver villas</a>
+        </div>
+      </div>
+      <div class="hero-live">
+        <span class="pulse"></span>
+        <div><b id="liveAvail">—</b> unidades disponibles hoy<small>Disponibilidad en vivo · 190 unidades</small></div>
+      </div>
+      <div class="hero-stats">
+        <div><b data-count="11.6" data-dec="1">0</b><span>hectáreas</span></div>
+        <div><b data-count="190">0</b><span>lotes en 2 etapas</span></div>
+        <div><b data-count="13260">0</b><span>m² de lago privado</span></div>
+        <div><b data-count="51">0</b><span>lotes frente al agua</span></div>
+      </div>
+      <a href="#recorrido" class="scroll-cue" aria-label="Desplazarse"><span></span></a>
+    </section>
+
+    <!-- MARQUEE -->
+    <div class="marquee" aria-hidden="true"><div class="marquee-track">
+      <span>Bosque seco tropical</span><span>✦</span><span>Ciénaga de los Vásquez</span><span>✦</span><span>Mar Caribe</span><span>✦</span><span>Arquitectura mediterránea</span><span>✦</span><span>Lago privado</span><span>✦</span><span>Beach club</span><span>✦</span>
+      <span>Bosque seco tropical</span><span>✦</span><span>Ciénaga de los Vásquez</span><span>✦</span><span>Mar Caribe</span><span>✦</span><span>Arquitectura mediterránea</span><span>✦</span><span>Lago privado</span><span>✦</span><span>Beach club</span><span>✦</span>
+    </div></div>
+
+    <!-- RECORRIDO / ÍNDICE -->
+    <section class="section intro" id="recorrido">
+      <div class="intro-img reveal-img"><img src="img/sunset-kayak.webp" alt="Atardecer con kayak frente al club de playa" loading="lazy" />
+        <p class="intro-quote">Bosque seco tropical, ciénaga y mar Caribe. Tres paisajes extraordinarios en un solo lugar.</p>
+      </div>
+      <div class="intro-body">
+        <p class="eyebrow">El recorrido</p>
+        <h2 class="h2 reveal">Del destino a la entrega de su villa: todo lo que necesita para imaginarse en Cayetana y decidir con confianza.</h2>
+        <ol class="toc">
+          <li><a href="#destino"><b>02</b><span>Destino</span><small>¿Por qué aquí?</small></a></li>
+          <li><a href="#concepto"><b>03</b><span>Concepto</span><small>¿Qué estamos creando?</small></a></li>
+          <li><a href="#maqueta"><b>04</b><span>Maqueta 3D</span><small>Elija su lote</small></a></li>
+          <li><a href="#villas"><b>05</b><span>Tipologías</span><small>Encuentre la suya</small></a></li>
+          <li><a href="#experiencia"><b>06</b><span>La experiencia</span><small>Más que una casa en Barú</small></a></li>
+          <li><a href="#inversion"><b>07</b><span>Inversión</span><small>Simule su retorno</small></a></li>
+          <li><a href="#rentabilidad"><b>08</b><span>Rentabilidad</span><small>Cómo trabaja su villa</small></a></li>
+          <li><a href="#respaldo"><b>09</b><span>Respaldo</span><small>Quiénes lo hacen posible</small></a></li>
+          <li><a href="#avance"><b>10</b><span>El avance</span><small>Dónde estamos</small></a></li>
+        </ol>
+      </div>
+    </section>
+
+    <!-- DESTINO -->
+    <section class="section destino dark" id="destino">
+      <div class="bg-parallax"><img src="img/cartagena.webp" alt="" loading="lazy" /></div>
+      <div class="container">
+        <p class="eyebrow light">02 · Destino</p>
+        <h2 class="h1 reveal">Cartagena, potencia internacional de valorización inmobiliaria.</h2>
+        <div class="stats4">
+          <div class="stat"><b><span data-count="2.2" data-dec="1">0</span><small> millones</small></b><p>De pasajeros aéreos llegaron a Cartagena entre enero y julio de 2026, un 3% más que en el mismo período de 2025.</p></div>
+          <div class="stat"><b><span data-count="1.3" data-dec="1">0</span><small> millones</small></b><p>De visitantes recibió Cartagena en la temporada de diciembre 2025 a enero 2026.</p></div>
+          <div class="stat"><b><span data-count="5.5" data-dec="1">0</span><small> millones</small></b><p>De pasajeros movilizados registró Cartagena en 2025 por vía aérea, terrestre y cruceros.</p></div>
+          <div class="stat"><b><span data-count="446000">0</span></b><p>Visitantes y 182 recaladas en la temporada de cruceros 2025–2026.</p></div>
+        </div>
+        <div class="award"><i data-icon="trophy"></i><b>Mejor Destino Turístico de Colombia 2026</b><span>World Travel Awards</span></div>
+        <p class="source">Fuentes: World Travel Awards; datos de puerto y aeropuerto de Cartagena.</p>
+      </div>
+    </section>
+
+    <section class="section baru">
+      <div class="container baru-grid">
+        <div>
+          <p class="eyebrow">02 · Destino</p>
+          <h2 class="h2 reveal">Barú: locación exclusiva de mayor valorización en el Caribe.</h2>
+          <div class="cards6">
+            <article class="card-i reveal"><i data-icon="waves"></i><h3>Naturaleza</h3><p>Ensenada de mar de aguas cristalinas, playas vírgenes y bosque nativo tropical.</p></article>
+            <article class="card-i reveal"><i data-icon="chart"></i><h3>Valorización</h3><p>Zona en pleno desarrollo, con proyectos de las mejores constructoras del país que consolidan el destino.</p></article>
+            <article class="card-i reveal"><i data-icon="key"></i><h3>Rentas</h3><p>Turismo nacional e internacional que busca villas privadas: alta demanda para renta corta.</p></article>
+            <article class="card-i reveal"><i data-icon="plane"></i><h3>Conectividad</h3><p>21 destinos directos · 16+ aerolíneas · 547 vuelos semanales · 113 vuelos internacionales por semana.</p></article>
+            <article class="card-i reveal"><i data-icon="globe"></i><h3>Internacional</h3><p>Miami, Panamá, Lima, Ciudad de México, Nueva York, Ámsterdam, Fort Lauderdale y Atlanta.</p></article>
+            <article class="card-i reveal"><i data-icon="sail"></i><h3>Punta Nativa</h3><p>Rodeado por Four Seasons, Sofitel Barú Calablanca, Decamerón Barú y Marina Argos de Barú.</p></article>
+          </div>
+        </div>
+        <aside class="why-now">
+          <img src="img/beach-portrait.webp" alt="" loading="lazy" />
+          <div>
+            <p class="eyebrow light">¿Por qué ahora?</p>
+            <h3 class="h3">El momento de entrar es antes de que el destino termine de consolidarse.</h3>
+            <ul>
+              <li><i data-icon="plane"></i><b>Vuelos</b><span>Más rutas y frecuencias hacia Cartagena.</span></li>
+              <li><i data-icon="ship"></i><b>Cruceros</b><span>Navieras de élite con escala en la ciudad.</span></li>
+              <li><i data-icon="users"></i><b>Turismo</b><span>Visitantes nacionales e internacionales en crecimiento.</span></li>
+            </ul>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <!-- UBICACIÓN -->
+    <section class="section ubicacion" id="ubicacion">
+      <div class="container ubi-grid">
+        <div>
+          <p class="eyebrow">02 · Ubicación estratégica</p>
+          <h2 class="h2 reveal">Punta Nativa – Barú: la bahía más cristalina a minutos de Cartagena.</h2>
+          <p class="addr"><i data-icon="pin"></i> Cayetana – Ensenada de los Vásquez, Barú</p>
+          <div class="route-switch seg" role="tablist" aria-label="Ruta">
+            <button class="on" data-route="car">En vehículo</button><button data-route="boat">En bote</button>
+          </div>
+          <div class="ubi-times">
+            <div data-r="car" class="on"><b><span data-count="55">0</span><small>min</small></b><p><i data-icon="car"></i> Desde el aeropuerto internacional Rafael Núñez en vehículo</p></div>
+            <div data-r="boat"><b><span data-count="35">0</span><small>min</small></b><p><i data-icon="sail"></i> Desde Centro de convenciones / Bocagrande en bote</p></div>
+          </div>
+          <p class="eyebrow mt">Muelle privado</p>
+          <p class="lead-i">Vivir el estilo de vida de moda de Cartagena y despertar en la paz de tu villa.</p>
+          <div class="pill-note">Parte del Master Plan Argos — Punta Nativa <b>+1.094 ha</b></div>
+          <a class="link-arrow" href="#" id="mapsLink" target="_blank" rel="noopener">Abrir en Google Maps <i data-icon="arrow"></i></a>
+        </div>
+        <div class="route-map" aria-label="Esquema de ruta desde Cartagena a Cayetana">
+          <svg viewBox="0 0 600 560" role="img">
+            <defs>
+              <linearGradient id="sea" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#cfe6ea"/><stop offset="1" stop-color="#a9d3db"/></linearGradient>
+            </defs>
+            <rect width="600" height="560" fill="url(#sea)" rx="24"/>
+            <path class="land" d="M330 0 C 360 60 340 120 380 170 C 420 220 470 230 480 290 C 490 350 450 400 470 460 C 480 500 520 530 540 560 L600 560 L600 0 Z"/>
+            <path class="land" d="M250 330 C 300 310 350 330 380 360 C 410 395 400 440 430 470 C 445 490 440 530 420 560 L180 560 C 200 520 170 480 200 450 C 225 420 210 360 250 330 Z"/>
+            <path class="land" d="M120 120 C 160 110 210 140 220 180 C 230 220 190 250 150 240 C 110 230 90 160 120 120 Z" opacity=".75"/>
+            <g class="lbl"><circle cx="420" cy="90" r="7"/><text x="434" y="95">Cartagena</text></g>
+            <g class="lbl"><circle cx="470" cy="40" r="5"/><text x="484" y="45">Aeropuerto R. Núñez</text></g>
+            <g class="lbl"><circle cx="350" cy="150" r="5"/><text x="232" y="146">Bocagrande</text></g>
+            <g class="lbl gold"><circle cx="300" cy="420" r="9"/><text x="160" y="425">Cayetana · Barú</text></g>
+            <path id="routeCar" class="route on" d="M470 40 C 450 80 430 120 440 180 C 455 250 470 300 450 360 C 435 400 360 430 300 420"/>
+            <path id="routeBoat" class="route boat" d="M350 150 C 320 220 260 260 270 320 C 275 360 290 390 300 420"/>
+            <text x="24" y="540" class="note">Esquema ilustrativo, no a escala</text>
+          </svg>
+        </div>
+      </div>
+    </section>
+
+    <!-- CONCEPTO -->
+    <section class="concept" id="concepto">
+      <div class="concept-media"><img src="img/concept-aerial.webp" alt="Vista aérea de villas, canal de kayaks y playa" loading="lazy" /></div>
+      <div class="concept-shade"></div>
+      <div class="container concept-body">
+        <p class="eyebrow light">03 · Concepto · ¿Qué estamos creando?</p>
+        <h2 class="mega split">Tu lugar en el <em>Caribe.</em></h2>
+        <p class="concept-p reveal">Un condominio exclusivo de playa, de arquitectura mediterránea española, elegante, atemporal y altamente valorizable, asegurando la exclusividad, privacidad y personalización de cada uno de nuestros clientes con todas las comodidades de un condominio de lujo conectado con el bienestar y la naturaleza.</p>
+      </div>
+    </section>
+
+    <section class="pillars" aria-label="Cuatro pilares">
+      <article class="pillar on"><img src="img/pillar-filosofia.webp" alt="" loading="lazy" /><div><i data-icon="sun"></i><h3>Filosofía</h3><p>El mayor y más valioso lujo es tener tiempo. Inviértelo de la mejor manera en Cayetana.</p></div></article>
+      <article class="pillar"><img src="img/pillar-arquitectura.webp" alt="" loading="lazy" /><div><i data-icon="home"></i><h3>Arquitectura</h3><p>Mediterránea española en el Caribe: arcos, luz natural, espacios abiertos en altura, interacción con el entorno natural, acabado de lujo.</p></div></article>
+      <article class="pillar"><img src="img/pillar-paisajismo.webp" alt="" loading="lazy" /><div><i data-icon="waves"></i><h3>Paisajismo</h3><p>El agua como protagonista: lago privado, casas a borde de agua, el mar conectado con el condominio, villas con vista al mar.</p></div></article>
+      <article class="pillar"><img src="img/pillar-experiencia.webp" alt="" loading="lazy" /><div><i data-icon="sparkle"></i><h3>Experiencia</h3><p>Desconectar de lo urbano: salud, descanso, privacidad, naturaleza y exclusividad.</p></div></article>
+    </section>
+
+    <section class="quote-band">
+      <img src="img/bedroom-sea.webp" alt="" loading="lazy" />
+      <blockquote class="container">
+        <p class="eyebrow light">03 · Filosofía</p>
+        <p class="q split">“El mayor y más valioso lujo es tener tiempo.”</p>
+        <cite>Inviértelo de la mejor manera en Cayetana.</cite>
+      </blockquote>
+    </section>
+
+    <section class="section arch">
+      <div class="container">
+        <div class="arch-head">
+          <div><p class="eyebrow">03 · Arquitectura</p><h2 class="h1 reveal">Mediterránea española en el Caribe.</h2></div>
+          <p class="lead">Arcos, luz natural, espacios abiertos en altura, interacción con el entorno natural, acabado de lujo. Elegante, atemporal y altamente valorizable.</p>
+        </div>
+        <div class="arch-grid">
+          <figure class="tilt"><img src="img/arcos.webp" alt="Fachada con arcos iluminada al anochecer" loading="lazy" /><figcaption><b>Arcos</b>La firma mediterránea de cada fachada.</figcaption></figure>
+          <figure class="tilt"><img src="img/luz-natural.webp" alt="Habitación con arcos y vista al mar" loading="lazy" /><figcaption><b>Luz natural</b>Espacios abiertos que miran al paisaje.</figcaption></figure>
+          <figure class="tilt"><img src="img/acabados.webp" alt="Baño con celosías y piso en baldosa" loading="lazy" /><figcaption><b>Acabado de lujo</b>Celosías, piedra y madera en cada detalle.</figcaption></figure>
+        </div>
+      </div>
+    </section>
+
+    <!-- MAQUETA VIRTUAL -->
+    <section class="section maqueta" id="maqueta">
+      <div class="container-wide">
+        <div class="mq-head">
+          <div>
+            <p class="eyebrow">04 · Maqueta virtual · Planta general</p>
+            <h2 class="h1 reveal">Del bosque al agua. <em>Elija su lote.</em></h2>
+          </div>
+          <div class="mq-kpis" id="mqKpis"></div>
+        </div>
+
+        <div class="mq-bar">
+          <div class="seg" id="viewSeg" role="tablist" aria-label="Vista">
+            <button class="on" data-view="2d"><i data-icon="map"></i> Plano</button>
+            <button data-view="3d"><i data-icon="cube"></i> Maqueta 3D</button>
+            <button data-view="list"><i data-icon="list"></i> Lista</button>
+          </div>
+          <div class="seg" id="etapaSeg" aria-label="Etapa">
+            <button class="on" data-etapa="all">Todo</button>
+            <button data-etapa="1">Etapa 1 · Villas</button>
+            <button data-etapa="2">Etapa 2 · Lotes</button>
+          </div>
+          <div class="chips" id="typeChips" aria-label="Tipología"></div>
+          <div class="chips" id="statusChips" aria-label="Estado"></div>
+          <label class="toggle"><input type="checkbox" id="waterOnly" /><span></span>Frente al agua</label>
+          <div class="seg seg-sm" id="colorSeg" title="Colorear plano por"><button class="on" data-c="estado">Color: Estado</button><button data-c="tipo">Tipología</button></div>
+          <label class="range-f">Precio máx. <output id="maxPriceOut">Todos</output><input type="range" id="maxPrice" min="300" max="4000" step="50" value="4000" /></label>
+        </div>
+
+        <div class="mq-stage">
+          <div class="mq-view on" id="view2d"></div>
+          <div class="mq-view" id="view3d">
+            <div class="mq3d-canvas" id="mp3d"></div>
+            <div class="mq3d-tools">
+              <div class="seg seg-dark" id="modeSeg">
+                <button class="on" data-mode="dia" title="Día"><i data-icon="sun"></i></button>
+                <button data-mode="atardecer" title="Atardecer"><i data-icon="sunset"></i></button>
+                <button data-mode="noche" title="Noche"><i data-icon="moon"></i></button>
+              </div>
+              <label class="toggle dark"><input type="checkbox" id="builtToggle" /><span></span>Simular proyecto construido</label>
+              <button class="btn btn-sm btn-dark" id="reset3d"><i data-icon="rotate"></i> Vista general</button>
+            </div>
+            <p class="mq3d-hint">Arrastre para orbitar · rueda / pellizco para acercar · clic en un lote</p>
+          </div>
+          <div class="mq-view" id="viewList">
+            <div class="table-wrap"><table class="lot-table" id="lotTable">
+              <thead><tr><th data-k="n">Unidad</th><th data-k="etapa">Etapa</th><th data-k="t">Tipología</th><th data-k="a">Área lote</th><th data-k="w">Agua</th><th data-k="price">Precio ref.</th><th data-k="status">Estado</th><th></th></tr></thead>
+              <tbody></tbody>
+            </table></div>
+          </div>
+          <div class="mq-legend">
+            <span><i style="--c:#2f9e6e"></i>Disponible</span><span><i style="--c:#e0a235"></i>Reservado</span><span><i class="hatch"></i>Vendido</span>
+            <span class="sep"></span>
+            <span><b class="sw" style="--c:#3e6a35"></b>Eivissa</span><span><b class="sw" style="--c:#80a65b"></b>Macarella</span><span><b class="sw" style="--c:#c8dca6"></b>Savina</span>
+            <span><b class="sw" style="--c:#f3edaf"></b>Aqua</span><span><b class="sw" style="--c:#e8d97a"></b>Vista</span><span><b class="sw" style="--c:#d3b94a"></b>Altezza</span>
+          </div>
+        </div>
+        <p class="fine">Disponibilidad y precios de referencia con fines de simulación comercial. Imagen ilustrativa: áreas y linderos aproximados, sujetos a ajustes del diseño definitivo y de la licencia.</p>
+      </div>
+    </section>
+
+    <!-- PROYECTO EN CIFRAS -->
+    <section class="water-band">
+      <img src="img/lake-sunset.webp" alt="Lago privado de Cayetana al atardecer con kayaks y paddle" loading="lazy" />
+      <div class="container"><p class="eyebrow light">04 · El proyecto</p><h2 class="mega split">Un proyecto pensado desde el agua.</h2></div>
+    </section>
+    <section class="figures">
+      <div class="container figs">
+        <div><b data-count="60">0</b><p>villas en la Etapa 1</p></div>
+        <div><b data-count="130">0</b><p>lotes en la Etapa 2</p></div>
+        <div><b><span data-count="13260">0</span> m²</b><p>Lago privado (13.260,1 m²)</p></div>
+        <div><b data-count="51">0</b><p>lotes de 130 con frente de agua</p></div>
+        <div><b>Beach club</b><p>y Sede Social de 2.134,6 m²</p></div>
+        <div><b>3 opciones</b><p>Villas de 110, 170 o 230 m² · Lotes de 250 a 950 m²</p></div>
+      </div>
+    </section>
+
+    <!-- AMENIDADES -->
+    <section class="section amen" id="amenidades">
+      <div class="container amen-grid">
+        <div class="amen-left">
+          <p class="eyebrow">04 · Amenidades</p>
+          <h2 class="h1 reveal">Más que amenidades, experiencias que se viven.</h2>
+          <p class="lead-i">Todo lo que hace especial un resort de clase mundial, a pasos de su puerta y para uso de los propietarios y sus huéspedes.</p>
+          <div class="areas">
+            <div class="dark"><b>3.800 m²</b><span>De club de playa privado en la ciénaga de los Vásquez.</span></div>
+            <div><b>9.267,61 m²</b><span>De zonas verdes tratadas.</span></div>
+            <div><b>1.647,98 m²</b><span>De áreas comunes en zona social C1 (piscina, juegos, canchas, top golf).</span></div>
+            <div><b>1.068,45 m²</b><span>De playa social interna en C2.</span></div>
+            <div class="gold wide"><b>41,7 m²</b><span>de zona social por lote (incluye club de playa).</span></div>
+          </div>
+        </div>
+        <div class="amen-icons">
+          <div><i data-icon="umbrella"></i><span>Lago con Beach Club</span></div>
+          <div><i data-icon="waves"></i><span>Piscinas infinitas privadas</span></div>
+          <div><i data-icon="flower"></i><span>Spa &amp; Wellness</span></div>
+          <div><i data-icon="dumbbell"></i><span>Gimnasio</span></div>
+          <div><i data-icon="trophy"></i><span>Pádel &amp; Tenis</span></div>
+          <div><i data-icon="flag"></i><span>Golf Cage</span></div>
+          <div><i data-icon="anchor"></i><span>Muelle</span></div>
+          <div><i data-icon="steps"></i><span>Senderos ecológicos</span></div>
+          <div><i data-icon="smile"></i><span>Zona niños</span></div>
+          <div><i data-icon="fish"></i><span>Buceo</span></div>
+          <div><i data-icon="coffee"></i><span>Lounge Café</span></div>
+          <div><i data-icon="sail"></i><span>Watersports</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section entorno">
+      <div class="container entorno-grid">
+        <img src="img/rooftop-jacuzzi.webp" alt="Jacuzzi en rooftop al atardecer" loading="lazy" class="reveal-img" />
+        <div>
+          <p class="eyebrow">04 · El entorno</p>
+          <h2 class="h2 reveal">Arquitectura dentro del paisaje del mar.</h2>
+          <ul class="feat">
+            <li><i data-icon="eye"></i><div><b>Vistas</b><p>15 villas frente al mar y 51 lotes con frente de agua: vistas democráticas, no solo para las unidades premium.</p></div></li>
+            <li><i data-icon="trophy"></i><div><b>Deporte</b><p>Pádel, tenis, golf cage y deportes náuticos en el lago y en el mar.</p></div></li>
+            <li><i data-icon="glass"></i><div><b>Lifestyle</b><p>Private luxury villas con piscinas con vista infinita, beach club, wellness &amp; spa, rooftops para un estilo de vida de lujo íntimo.</p></div></li>
+            <li><i data-icon="leaf"></i><div><b>Naturaleza</b><p>Ninguna vía vehicular entre el lote y el agua, senderos ecológicos dentro del bosque nativo tropical y mar de aguas cristalinas con arrecifes y museo submarino.</p></div></li>
+          </ul>
+          <p class="lead-i">Tu vida de lujo en el mar.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- VILLAS -->
+    <section class="villa-hero" id="villas">
+      <img src="img/villa-hero.webp" alt="Villa Macarella con arcos y pérgola al atardecer" loading="lazy" />
+      <div class="container"><p class="eyebrow light">05 · Las villas · Etapa 1</p><h2 class="mega split">Cayetana Villas</h2><p class="hero-sub">60 villas · Arquitectura mediterránea en el Caribe · Luxury beach lifestyle</p></div>
+    </section>
+
+    <section class="section tipos">
+      <div class="container">
+        <p class="eyebrow">05 · Tipologías · Etapa 1</p>
+        <h2 class="h1 reveal">Tres formas de vivir Cayetana.</h2>
+        <div class="tipo-cards" id="tipoCards"></div>
+        <p class="fine">Precios de lista en COP, sujetos a cambio sin previo aviso. Valores en USD de referencia a TRM $3.200 (oct. 2026); el precio oficial se liquida en COP.</p>
+      </div>
+    </section>
+
+    <!-- CONFIGURADOR 3D -->
+    <section class="section studio dark" id="estudio3d">
+      <div class="container-wide studio-grid">
+        <div class="studio-side">
+          <p class="eyebrow light">Recorrido 3D · Configurador</p>
+          <h2 class="h2">Recorra su villa antes de que exista.</h2>
+          <p class="muted">Modelo 3D interactivo de cada tipología. Cambie la hora del día, los acabados de fachada y madera, y entre al interior.</p>
+          <div class="ctl"><label>Tipología</label><div class="seg seg-dark" id="stType"><button class="on" data-t="Eivissa">Eivissa</button><button data-t="Macarella">Macarella</button><button data-t="Savina">Savina</button></div></div>
+          <div class="ctl"><label>Hora del día <output id="stHourOut">16:30</output></label><input type="range" id="stHour" min="5.5" max="21" step="0.25" value="16.5" /></div>
+          <div class="ctl"><label>Fachada</label><div class="swatches" id="stFacade"></div></div>
+          <div class="ctl"><label>Madera</label><div class="swatches" id="stWood"></div></div>
+          <div class="ctl"><label>Cámara</label><div class="cams" id="stCams">
+            <button data-p="aerea">Aérea</button><button data-p="fachada">Fachada</button><button data-p="piscina">Piscina</button><button data-p="rooftop">Rooftop</button>
+          </div></div>
+          <div class="ctl row">
+            <button class="btn btn-ghost btn-sm" id="stInterior"><i data-icon="layers"></i> Ver interior</button>
+            <button class="btn btn-ghost btn-sm" id="stShot"><i data-icon="camera"></i> Capturar</button>
+          </div>
+          <div class="studio-spec" id="stSpec"></div>
+        </div>
+        <div class="studio-canvas" id="studio"><div class="studio-ph">Cargando modelo 3D…</div></div>
+      </div>
+    </section>
+
+    <section class="section detalle">
+      <div class="container detalle-grid">
+        <div>
+          <p class="eyebrow">05 · Tipologías</p>
+          <h2 class="h1 reveal">Cada detalle, pensado para el Caribe.</h2>
+          <p class="sm-b">Lo que ya forma parte de las villas de Cayetana:</p>
+          <div class="incl">
+            <span><i data-icon="waves"></i>Piscina infinita</span><span><i data-icon="sunrise"></i>Rooftop con vista al agua</span>
+            <span><i data-icon="coffee"></i>Cocina abierta integrada</span><span><i data-icon="home"></i>Diseño mediterráneo</span>
+            <span><i data-icon="bath"></i>Habitaciones baño privado</span><span><i data-icon="bed"></i>Habitaciones con balcón</span>
+          </div>
+          <dl class="dl"><dt>Acabados</dt><dd>Acabados premium, pérgolas, carpintería arquitectónica, cocina, baños y accesorios incluidos: su villa se entrega lista para habitar.</dd>
+          <dt>Personalización</dt><dd>Dentro de nuestro manual arquitectónico personaliza el diseño interior a tu gusto y estilo.</dd></dl>
+        </div>
+        <div class="ba" id="beforeAfter" aria-label="Comparador de interiores">
+          <img src="img/bedroom-garden.webp" alt="Habitación con vista al jardín" />
+          <div class="ba-top"><img src="img/luz-natural.webp" alt="Habitación con arcos y vista al mar" /></div>
+          <input type="range" min="0" max="100" value="50" aria-label="Comparar ambientes" />
+          <span class="ba-handle"></span>
+          <em class="ba-l">Vista mar</em><em class="ba-r">Vista jardín</em>
+        </div>
+      </div>
+    </section>
+
+    <!-- ETAPA 2 -->
+    <section class="villa-hero lotes-hero">
+      <img src="img/aerial-canal.webp" alt="Vista aérea del canal y lotes a borde de agua" loading="lazy" />
+      <div class="container"><p class="eyebrow light">05 · Tipologías · Etapa 2 · Solo lote</p><h2 class="mega split">Lago privado. Lotes a borde de agua.</h2><p class="hero-sub">Segunda vivienda, descanso, privacidad, naturaleza y exclusividad.</p></div>
+    </section>
+    <section class="section lotes">
+      <div class="container">
+        <div class="lotes-top">
+          <div><p class="eyebrow">05 · Etapa 2 · Tipologías de lote</p><h2 class="h1 reveal">Tres tamaños, un mismo entorno.</h2></div>
+          <div class="ratio"><b>51/130</b><span>lotes con frente de agua</span></div>
+        </div>
+        <div class="size-cards" id="sizeCards"></div>
+        <h3 class="h3 mt">Etapa 1 y Etapa 2: un solo condominio.</h3>
+        <div class="table-wrap"><table class="cmp">
+          <thead><tr><th></th><th class="d">Etapa 1 · Villa</th><th class="c">Etapa 2 · Solo lote</th></tr></thead>
+          <tbody>
+            <tr><th>Qué incluye</th><td>Villa terminada, lista para habitar + lote escriturable</td><td>Lote urbanizado + borde de agua, vista al lago, beach club</td></tr>
+            <tr><th>Inversión desde</th><td><b data-money="1711"></b><small data-money-alt="1711"></small></td><td><b data-money="300"></b><small data-money-alt="300"></small></td></tr>
+            <tr><th>Ideal para</th><td>Vivir en Cayetana o inversión para rentas cortas</td><td>Quien quiere asegurar el activo ahora y construir después</td></tr>
+            <tr><th>Tiempo de entrega</th><td><b>2 años</b></td><td><b>3 años</b></td></tr>
+            <tr><th>Plan de pago</th><td>Cuota inicial de 30%, saldo hasta en 36 cuotas</td><td>Separación de $5 MM COP (≈ USD 1.560), saldo hasta en 48 cuotas</td></tr>
+          </tbody>
+        </table></div>
+      </div>
+    </section>
+
+    <!-- EXPERIENCIA -->
+    <section class="journey dark" id="experiencia">
+      <img src="img/experience.webp" alt="" loading="lazy" />
+      <div class="container">
+        <p class="eyebrow light">06 · La experiencia</p>
+        <div class="journey-head"><h2 class="h1">Mucho más que una casa en Barú.</h2><p class="muted">Así se vive Cayetana, desde que cruza la entrada hasta que su villa empieza a trabajar para usted.</p></div>
+        <ol class="steps7">
+          <li><i data-icon="car"></i><b>Llegar</b><p>35 min desde Cartagena al paraíso de Barú.</p></li>
+          <li><i data-icon="sunrise"></i><b>Desconectarse</b><p>Agua de mar cristalina, espejos de agua privados, bosque nativo tropical.</p></li>
+          <li><i data-icon="waves"></i><b>Disfrutar</b><p>Playas vírgenes, piscina infinita, beach club, watersports, tenis, pádel y spa a pasos.</p></li>
+          <li><i data-icon="users"></i><b>Compartir</b><p>Cocinas integradas, decks, pérgolas y rooftops, piscina familiar y lounge café.</p></li>
+          <li><i data-icon="leaf"></i><b>Vivir</b><p>Wellness, paz, aire puro, aguas cristalinas, fauna y flora marítima, ciclorrutas.</p></li>
+          <li class="g"><i data-icon="diamond"></i><b>Invertir</b><p>Punta Nativa: valorización donde está la mayor exclusividad del país.</p></li>
+          <li class="g"><i data-icon="key"></i><b>Rentar</b><p>Cuando no estás, tu villa produce dinero sin preocuparte por nada.</p></li>
+        </ol>
+        <p class="lead-i gold-t">Exclusividad, playa, naturaleza y una propiedad de lujo fuera del entorno urbano tradicional.</p>
+      </div>
+    </section>
+
+    <section class="hscroll" id="dia">
+      <div class="hscroll-pin">
+        <div class="hscroll-intro">
+          <p class="eyebrow">06 · La experiencia</p>
+          <h2 class="h1">Un día en Cayetana.</h2>
+          <p class="muted-d">Recorrido por orden de ingreso a la villa. Desplácese →</p>
+        </div>
+        <div class="hscroll-track">
+          <figure><img src="img/day-social.webp" alt="" loading="lazy" /><figcaption><b>01</b> Espacios sociales<span>8:00 · Desayuno bajo la pérgola</span></figcaption></figure>
+          <figure><img src="img/day-pool.webp" alt="" loading="lazy" /><figcaption><b>02</b> Piscina y terrazas<span>11:00 · Piscina infinita privada</span></figcaption></figure>
+          <figure><img src="img/day-bedroom.webp" alt="" loading="lazy" /><figcaption><b>03</b> Habitaciones<span>15:00 · Siesta con brisa del mar</span></figcaption></figure>
+          <figure><img src="img/day-rooftop.webp" alt="" loading="lazy" /><figcaption><b>04</b> Vistas y rooftop<span>18:00 · Atardecer en el jacuzzi</span></figcaption></figure>
+          <figure><img src="img/day-beach.webp" alt="" loading="lazy" /><figcaption><b>05</b> Playa y naturaleza<span>Siempre · El Caribe a pasos</span></figcaption></figure>
+        </div>
+      </div>
+    </section>
+
+    <section class="section why dark">
+      <img src="img/why-aerial.webp" alt="" loading="lazy" class="why-bg" />
+      <div class="container">
+        <p class="eyebrow light">Por qué Cayetana</p>
+        <h2 class="h1">Lo que nos hace distintos en Barú.</h2>
+        <div class="why-grid">
+          <article><b>01</b><h3>Bahía de los Vásquez</h3><p>Tenemos una laguna de mar con playas vírgenes dentro de un ecosistema de conservación que lo hace un paraíso natural.</p></article>
+          <article><b>02</b><h3>Mayoría de lotes frente al agua</h3><p>Vistas democráticas, no solo para las unidades premium.</p></article>
+          <article><b>03</b><h3>Punta Nativa</h3><p>Dentro de un macroproyecto privado de +1.094 hectáreas con marina, golf, arrecifes, urbanismo privado y altísima valorización.</p></article>
+          <article class="g"><b>04</b><h3>Frente a la competencia</h3><p>El único proyecto frente a la bahía de los Vásquez que tiene una laguna privada dentro del condominio y villas premium listas para habitar.</p></article>
+        </div>
+      </div>
+    </section>
+
+    <!-- INVERSIÓN -->
+    <section class="section inversion" id="inversion">
+      <div class="container">
+        <p class="eyebrow">07 · Inversión</p>
+        <h2 class="h1 reveal">Invertir en Cayetana: una oportunidad.</h2>
+        <div class="inv-grid">
+          <div class="values dark-card">
+            <p class="eyebrow light">Valores de entrada</p>
+            <div class="vrow"><span>Lotes · Etapa 2</span><div><b class="gold-t">desde <span data-money="300"></span></b><small data-money-alt="300"></small></div></div>
+            <div class="vrow"><span>Savina</span><div><b data-money="1711"></b><small data-money-alt="1711"></small></div></div>
+            <div class="vrow"><span>Eivissa</span><div><b data-money="2485"></b><small data-money-alt="2485"></small></div></div>
+            <div class="vrow"><span>Macarella</span><div><b data-money="3220"></b><small data-money-alt="3220"></small></div></div>
+            <p class="fine light">Precios desde. Sujetos a cambio. Referencia TRM $3.200.</p>
+          </div>
+          <div>
+            <p class="eyebrow">Plan de pago</p>
+            <div class="plan4">
+              <div><em>1</em><span>Separación</span><b>$5.000.000</b><small>≈ USD 1.560</small></div>
+              <div><em>2</em><span>Cuota inicial</span><b>30%</b></div>
+              <div><em>3</em><span>Cuotas durante obra</span><b>Hasta 3 años</b></div>
+              <div><em>4</em><span>Escrituración</span><b>Inmediata</b></div>
+            </div>
+            <div class="note-card"><i data-icon="chart"></i><div><b>Potencial de valorización</b><p>Único proyecto de agua luxury de Barú – proyecto dolarizable – urbanismo y seguridad garantizada.</p></div></div>
+            <div class="note-card"><i data-icon="calendar"></i><div><b>Cronograma de inversión y entrega</b><p>Entrega de urbanismo en octubre 2028 — entrega primeras villas diciembre 2028.</p></div></div>
+          </div>
+        </div>
+
+        <div class="sim" id="simulador">
+          <div class="sim-head">
+            <div><p class="eyebrow">Simulador de inversión</p><h3 class="h2">Calcule su plan de pagos y retorno.</h3></div>
+            <div class="seg" id="simProduct"></div>
+          </div>
+          <div class="sim-grid">
+            <div class="sim-in">
+              <label>Precio de la unidad <output id="simPriceOut"></output><input type="range" id="simPrice" min="300" max="4500" step="10" /></label>
+              <label>Cuota inicial <output id="simDownOut"></output><input type="range" id="simDown" min="10" max="60" step="5" value="30" /></label>
+              <label>Plazo de cuotas <output id="simTermOut"></output><input type="range" id="simTerm" min="12" max="48" step="6" value="36" /></label>
+              <label class="rent">Ocupación esperada <output id="simOccOut"></output><input type="range" id="simOcc" min="30" max="90" step="5" value="65" /></label>
+              <label class="rent">Tarifa por noche <output id="simRateOut"></output><input type="range" id="simRate" min="250" max="1500" step="25" /></label>
+              <label>Valorización anual estimada <output id="simAppOut"></output><input type="range" id="simApp" min="0" max="15" step="0.5" value="8" /></label>
+            </div>
+            <div class="sim-out">
+              <div class="sim-kpis" id="simKpis"></div>
+              <div class="sim-chart"><p class="sim-chart-t">Proyección de patrimonio a 10 años</p><svg id="simChart" viewBox="0 0 600 240" preserveAspectRatio="none"></svg>
+                <div class="sim-legend"><span><i class="a"></i>Valor del activo</span><span><i class="b"></i>Rentas netas acumuladas</span></div></div>
+            </div>
+          </div>
+          <p class="fine">Proyecciones estimadas; no constituyen garantía de rentabilidad. Operador: Soy Local (20% de comisión de operación supuesta), administración y mantenimiento según tipología. Valores en COP; USD de referencia a TRM $3.200 (oct. 2026).</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- RENTABILIDAD -->
+    <section class="section renta" id="rentabilidad">
+      <div class="container">
+        <p class="eyebrow">08 · Modelo de rentabilidad</p>
+        <h2 class="h1 reveal">Su villa también puede trabajar para usted.</h2>
+        <p class="lead">Renta corta, explicada de forma simple: usted es dueño, nosotros nos encargamos del resto.</p>
+        <div class="flow4">
+          <article><i data-icon="key"></i><b>01</b><h3>Usted compra</h3><p>Un lote, una villa lista para habitar, áreas comunes, amenidades, naturaleza.</p></article>
+          <article><i data-icon="hammer"></i><b>02</b><h3>Construimos</h3><p>CH2 gerencia y construye con rigor y calidad de lujo.</p></article>
+          <article><i data-icon="building"></i><b>03</b><h3>Operamos</h3><p>Desde Soy Local, parte de nuestro grupo, operamos rentas cortas: reservas, huéspedes y promoción internacional.</p></article>
+          <article class="d"><i data-icon="coins"></i><b>04</b><h3>Rentabilidad</h3><p>Usted recibe excelente renta mensual y usa su villa cuando quiera.</p></article>
+        </div>
+        <div class="renta-nums">
+          <div class="sl-logo">SOY<br />LO<i>-</i><br />CAL</div>
+          <div><b><span data-count="65">0</span>%</b><p>ocupación esperada</p></div>
+          <div><b>$25 – 45 MM</b><small>≈ USD 7.800 – 14.100</small><p>ingresos netos proyectados por tipología</p></div>
+          <div><b>$1 – 2 MM</b><small>≈ USD 310 – 625</small><p>administración según villa</p></div>
+          <div><b>$0,9 – 1,7 MM</b><small>≈ USD 280 – 530</small><p>mantenimiento según tamaño</p></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- RESPALDO -->
+    <section class="section respaldo" id="respaldo">
+      <div class="container">
+        <p class="eyebrow">09 · Quiénes lo hacen posible</p>
+        <h2 class="h1 reveal">El respaldo detrás de Cayetana.</h2>
+        <p class="lead">Un equipo con experiencia en cada eslabón: desarrollo, diseño, construcción, promoción y operación.</p>
+        <div class="partners">
+          <article><div class="wm brau">BRAU<sup>®</sup></div><small>Desarrollo y ventas</small><h3>Brau Group</h3><p>Worldwide properties. Spain | Andorra | Colombia. Propiedades exclusivas en regiones exclusivas.</p><b>11 años de experiencia en el sector inmobiliario europeo</b></article>
+          <article><div class="wm xform">X.FORM<span>beyond design</span></div><small>Diseño arquitectónico</small><h3>X.Form</h3><p>Estudio de arquitectura y diseño. Proyectos integrales: arquitectura, interiorismo, urbanismo y paisajismo.</p><b>Creatividad, rigor técnico y coordinación</b></article>
+          <article><div class="wm ch2">CH2</div><small>Gerencia y construcción</small><h3>CH2</h3><p>Empresa colombiana de gerencia y diseño inmobiliario enfocada en el sector residencial y hotelero moderno, basada en Medellín.</p><b>Experiencia constructiva con más de 20 años</b></article>
+          <article><div class="wm figo">FIGO</div><small>Promoción</small><h3>FIGO Investment Group</h3><p>Fondo de capital privado. Promoción de proyectos inmobiliarios.</p><b>Gestiona USD 249 MM en activos (≈ $797.000 MM COP)</b></article>
+          <article><div class="wm sl">SOY<br />LO-<br />CAL</div><small>Operador hotelero</small><h3>Soy Local</h3><p>Hoteles con identidad, diseñados para cada tipo de viajero.</p><b>13 hoteles y 5 casas coloniales de rentas cortas</b></article>
+        </div>
+      </div>
+    </section>
+
+    <!-- AVANCE -->
+    <section class="section avance dark" id="avance">
+      <img src="img/avance.webp" alt="" loading="lazy" class="why-bg" />
+      <div class="container">
+        <p class="eyebrow light">10 · El avance</p>
+        <div class="avance-head">
+          <div><h2 class="h1">Dónde estamos y hacia dónde vamos.</h2><p class="muted">Transparencia total sobre el estado del proyecto.</p></div>
+          <div class="ring" style="--p:30"><svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="52"/><circle cx="60" cy="60" r="52" class="fg"/></svg><div><b><span data-count="30">0</span>%</b><small>urbanismo</small></div></div>
+        </div>
+        <ol class="timeline">
+          <li class="done"><time>Oct 2026</time><b>Licencias y permisos</b><p>Desenglobe realizado, licencia de parcelación, matrículas inmobiliarias individuales con cédula catastral.</p></li>
+          <li class="done"><time>Oct 2026</time><b>Avance de obra</b><p>Iniciamos movimientos de tierra. Superamos punto de equilibrio. Avance de urbanismo del 30%. Servicios públicos y redes instalados.</p></li>
+          <li><time>Ago 2027</time><b>Próximo hito</b><p>Vías y portería.</p></li>
+          <li><time>Oct 2028</time><b>Entrega Etapa 1</b><p>Fecha estimada.</p></li>
+          <li><time>Oct 2029</time><b>Etapa 2</b><p>Urbanismo y beach club.</p></li>
+        </ol>
+        <p class="fine light">Estado con corte a octubre de 2026.</p>
+      </div>
+    </section>
+
+    <!-- FICHA TÉCNICA -->
+    <section class="section ficha">
+      <div class="container">
+        <p class="eyebrow">Ficha técnica</p>
+        <h2 class="h1 reveal">Cayetana en cifras.</h2>
+        <div class="ficha-grid">
+          <dl><p class="eyebrow">El proyecto</p><dt>Ubicación</dt><dd>Ensenada de los Vásquez, Barú · Cartagena</dd><dt>Área total</dt><dd>11,6 ha (C1 43.469 m² · C2 73.067 m²)</dd><dt>Unidades</dt><dd>190 lotes en 2 etapas</dd><dt>Etapa 1</dt><dd>60 villas: Eivissa 37 · Macarella 18 · Savina 5</dd><dt>Etapa 2</dt><dd>130 lotes: 44 · 50 · 36</dd></dl>
+          <dl class="dark-card"><p class="eyebrow light">Áreas comunes</p><dt>Lago privado</dt><dd>13.260,1 m²</dd><dt>Club de playa</dt><dd>3.800 m² en la ciénaga</dd><dt>Zonas verdes</dt><dd>9.267,61 m²</dd><dt>Zona social C1</dt><dd>1.647,98 m² + 360,3 m² construidos</dd><dt>Vías privadas</dt><dd>7.309,3 m² + andenes 4.333,6 m²</dd></dl>
+          <dl><p class="eyebrow">Estado y fechas</p><dt>Licencias</dt><dd>Desenglobe y licencia de parcelación</dd><dt>Avance</dt><dd>Urbanismo 30% · punto de equilibrio superado</dd><dt>Vías y portería</dt><dd>Agosto 2027</dd><dt>Entrega Etapa 1</dt><dd>Octubre 2028 (estimada)</dd><dt>Etapa 2</dt><dd>Urbanismo y beach club, octubre 2029</dd></dl>
+        </div>
+      </div>
+    </section>
+
+    <!-- CONTACTO -->
+    <section class="contact" id="contacto">
+      <img src="img/final-sunset.webp" alt="" loading="lazy" />
+      <div class="container contact-grid">
+        <div class="contact-copy">
+          <img src="img/logo-white.png" alt="Cayetana Villas" class="c-logo" />
+          <h2 class="h1">Tu lugar en el Caribe te espera.</h2>
+          <p>Villas de lujo con mayor respaldo, exclusividad, valorización y dinamismo de precios en el Caribe colombiano.</p>
+          <div class="c-links">
+            <a class="btn btn-ghost" id="waLink" href="#" target="_blank" rel="noopener"><i data-icon="whatsapp"></i> WhatsApp</a>
+            <a class="btn btn-ghost" id="mailLink" href="mailto:info@cayetanavillas.com"><i data-icon="send"></i> info@cayetanavillas.com</a>
+          </div>
+        </div>
+        <form class="form" id="contactForm" novalidate>
+          <h3>Agende su visita</h3>
+          <div class="seg seg-dark" id="visitType" role="radiogroup" aria-label="Tipo de visita">
+            <button type="button" class="on" data-v="Visita presencial">Presencial</button>
+            <button type="button" data-v="Videollamada con tour 3D">Tour 3D en vivo</button>
+            <button type="button" data-v="Llamada con asesor">Llamada</button>
+          </div>
+          <div class="f2"><label>Nombre<input name="nombre" required autocomplete="name" /></label><label>Teléfono<input name="tel" type="tel" required autocomplete="tel" placeholder="+57" /></label></div>
+          <label>Correo<input name="email" type="email" required autocomplete="email" /></label>
+          <div class="f2"><label>Interés<select name="interes" id="interes"><option>Villa Eivissa</option><option>Villa Macarella</option><option>Villa Savina</option><option>Lote Etapa 2</option><option>Aún no lo sé</option></select></label>
+          <label>Fecha preferida<input name="fecha" type="date" id="fecha" /></label></div>
+          <label>Mensaje<textarea name="msg" rows="3" id="msg" placeholder="Cuéntenos qué busca…"></textarea></label>
+          <label class="chk"><input type="checkbox" required /> Acepto el tratamiento de mis datos personales.</label>
+          <button class="btn btn-gold w100" type="submit">Agende su visita <i data-icon="arrow"></i></button>
+          <p class="form-ok" hidden>¡Gracias! Un asesor le contactará en menos de 24 horas.</p>
+        </form>
+      </div>
+      <p class="tagline">Barú · Cartagena · Colombia</p>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <img src="img/logo-white.png" alt="Cayetana Villas" />
+    <a href="mailto:info@cayetanavillas.com">info@cayetanavillas.com</a>
+    <p>Las imágenes, renders y planos de este sitio son ilustrativos y pueden variar respecto al proyecto final. Áreas y linderos aproximados, sujetos a ajustes del diseño definitivo y de las licencias. Precios en pesos colombianos, sujetos a cambio sin previo aviso; los valores en USD son de referencia a TRM $3.200 (octubre 2026). Las proyecciones de rentabilidad son estimadas y no constituyen garantía. Este sitio es informativo y no constituye una oferta comercial vinculante.</p>
+  </footer>
+
+  <!-- PANEL DE LOTE -->
+  <aside class="drawer" id="lotDrawer" aria-hidden="true" aria-labelledby="ldTitle" role="dialog">
+    <div class="drawer-bg" data-close></div>
+    <div class="drawer-panel">
+      <header class="ld-head">
+        <div><p class="eyebrow" id="ldEyebrow"></p><h3 id="ldTitle"></h3></div>
+        <div class="ld-actions">
+          <button class="icon-btn" id="ldFav" aria-label="Guardar en favoritos"><i data-icon="heart"></i></button>
+          <button class="icon-btn" id="ldShare" aria-label="Compartir"><i data-icon="share"></i></button>
+          <button class="icon-btn" data-close aria-label="Cerrar"><i data-icon="close"></i></button>
+        </div>
+      </header>
+      <nav class="ld-tabs" role="tablist">
+        <button class="on" data-tab="res">Resumen</button>
+        <button data-tab="3d"><i data-icon="cube"></i> Recorrido 3D</button>
+        <button data-tab="img">Renders</button>
+        <button data-tab="fin">Financiación</button>
+      </nav>
+      <div class="ld-body">
+        <div class="ld-pane on" data-pane="res" id="ldRes"></div>
+        <div class="ld-pane" data-pane="3d">
+          <div class="ld-3d" id="ld3d"></div>
+          <div class="ld-3d-ctl">
+            <div class="seg seg-sm" id="ldModel"></div>
+            <div class="cams" id="ldCams"><button data-p="aerea">Aérea</button><button data-p="fachada">Fachada</button><button data-p="piscina">Piscina</button><button data-p="rooftop">Rooftop</button></div>
+            <label class="hour"><i data-icon="sun"></i><input type="range" id="ldHour" min="5.5" max="21" step="0.25" value="16.5" /><output id="ldHourOut">16:30</output></label>
+            <button class="btn btn-sm btn-ghost-d" id="ldInterior"><i data-icon="layers"></i> Interior</button>
+          </div>
+          <p class="fine">Modelo 3D volumétrico ilustrativo sobre la forma real del lote.</p>
+        </div>
+        <div class="ld-pane" data-pane="img" id="ldImg"></div>
+        <div class="ld-pane" data-pane="fin" id="ldFin"></div>
+      </div>
+      <footer class="ld-foot" id="ldFoot"></footer>
+    </div>
+  </aside>
+
+  <!-- FAVORITOS -->
+  <aside class="drawer" id="favDrawer" aria-hidden="true" role="dialog" aria-label="Mis favoritos">
+    <div class="drawer-bg" data-close></div>
+    <div class="drawer-panel narrow">
+      <header class="ld-head"><div><p class="eyebrow">Shortlist</p><h3>Mis unidades favoritas</h3></div><button class="icon-btn" data-close aria-label="Cerrar"><i data-icon="close"></i></button></header>
+      <div class="fav-body" id="favBody"></div>
+    </div>
+  </aside>
+
+  <!-- CONCIERGE -->
+  <div class="concierge" id="concierge">
+    <button class="cg-fab" id="cgFab" aria-label="Abrir Cayetana Concierge"><i data-icon="sparkle"></i><span>Concierge</span></button>
+    <div class="cg-panel" role="dialog" aria-label="Cayetana Concierge">
+      <header><div class="cg-av"><img src="img/logo-white.png" alt="" /></div><div><b>Cayetana Concierge</b><small><span class="dot"></span> Asistente virtual · responde al instante</small></div><button class="icon-btn" id="cgClose" aria-label="Cerrar"><i data-icon="close"></i></button></header>
+      <div class="cg-log" id="cgLog" aria-live="polite"></div>
+      <div class="cg-quick" id="cgQuick"></div>
+      <form class="cg-in" id="cgForm"><input id="cgInput" placeholder="Pregunte por precios, lotes, entrega…" autocomplete="off" /><button aria-label="Enviar"><i data-icon="send"></i></button></form>
+    </div>
+  </div>
+
+  <div class="toast" id="toast" role="status"></div>
+  <div class="admin-bar" id="adminBar" hidden>Modo asesor: clic en un lote cambia su estado · <button id="adminExport">Exportar JSON</button></div>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
