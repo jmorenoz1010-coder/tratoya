@@ -396,8 +396,8 @@ $('#stShot').addEventListener('click', async () => {
 const drawer = $('#lotDrawer');
 let current = null, ldViewer = null, ldModel = null;
 const imgsFor = l => l.etapa === 1
-  ? [VILLAS[l.t].img, '/img/day-pool.webp', '/img/luz-natural.webp', '/img/day-rooftop.webp', '/img/acabados.webp']
-  : ['/img/lote-agua.webp', '/img/aerial-lake.webp', '/img/lake-beach.webp', '/img/aerial-canal.webp', '/img/lake-sunset.webp'];
+  ? [VILLAS[l.t].img, 'img/day-pool.webp', 'img/luz-natural.webp', 'img/day-rooftop.webp', 'img/acabados.webp']
+  : ['img/lote-agua.webp', 'img/aerial-lake.webp', 'img/lake-beach.webp', 'img/aerial-canal.webp', 'img/lake-sunset.webp'];
 
 function miniMap(l) {
   const pad = 300;
@@ -405,7 +405,7 @@ function miniMap(l) {
   const x0 = Math.min(...xs) - pad, y0 = Math.min(...ys) - pad, w = Math.max(...xs) - x0 + pad, h = Math.max(...ys) - y0 + pad;
   const near = lots.filter(q => q.cx > x0 && q.cx < x0 + w && q.cy > y0 && q.cy < y0 + h);
   return `<svg class="mini-map" viewBox="${x0} ${y0} ${w} ${h}" preserveAspectRatio="xMidYMid meet">
-    <image href="/img/lot-map-1800.webp" x="0" y="0" width="${MAP.w}" height="${MAP.h}" opacity=".9"/>
+    <image href="img/lot-map-1800.webp" x="0" y="0" width="${MAP.w}" height="${MAP.h}" opacity=".9"/>
     ${near.map(q => `<polygon class="${q === l ? 'me' : ''}" points="${q.pts.map(p => p.join(',')).join(' ')}" ${q === l ? '' : 'fill-opacity="0"'}/>`).join('')}</svg>`;
 }
 

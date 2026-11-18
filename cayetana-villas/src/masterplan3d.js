@@ -43,7 +43,7 @@ export function createMasterplan3D(container, { onSelect, onHover } = {}) {
   scene.add(sun, sun.target);
 
   // Plano base con el mapa de lotes del brochure
-  const tex = new THREE.TextureLoader().load('/img/lot-map.webp');
+  const tex = new THREE.TextureLoader().load('img/lot-map.webp');
   tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = renderer.capabilities.getMaxAnisotropy();
   const W = MAP.w * S, H = MAP.h * S;
   const base = new THREE.Mesh(new THREE.PlaneGeometry(W, H), new THREE.MeshStandardMaterial({ map: tex, roughness: 1 }));

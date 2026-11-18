@@ -15,19 +15,19 @@ export const CONFIG = {
 export const VILLAS = {
   Savina: {
     name: 'Savina', etapa: 1, count: 5, built: 110, outdoor: 116, floors: '1 planta + rooftop',
-    rooms: 2, baths: 2, priceFrom: 1711, minLot: 464, img: '/img/savina.webp',
+    rooms: 2, baths: 2, priceFrom: 1711, minLot: 464, img: 'img/savina.webp',
     features: ['1 planta + rooftop', '2 habitaciones con walk-in closet', 'Deck con piscina infinita'],
     nightUSD: 500, adminMM: 1.0, maintMM: 0.9,
   },
   Eivissa: {
     name: 'Eivissa', etapa: 1, count: 37, built: 168, outdoor: 228, floors: '2 plantas',
-    rooms: 3, baths: 3, priceFrom: 2485, minLot: 390, img: '/img/eivissa.webp',
+    rooms: 3, baths: 3, priceFrom: 2485, minLot: 390, img: 'img/eivissa.webp',
     features: ['2 plantas', '3 habitaciones + baño privado', 'TV room / Home office'],
     nightUSD: 650, adminMM: 1.5, maintMM: 1.3,
   },
   Macarella: {
     name: 'Macarella', etapa: 1, count: 18, built: 233, outdoor: 300, floors: '2 plantas + rooftop',
-    rooms: 4, baths: 4, priceFrom: 3220, minLot: 390, img: '/img/macarella.webp',
+    rooms: 4, baths: 4, priceFrom: 3220, minLot: 390, img: 'img/macarella.webp',
     features: ['2 plantas · rooftop', '4 habitaciones', 'Family room – cuarto de servicio'],
     nightUSD: 850, adminMM: 2.0, maintMM: 1.7,
   },

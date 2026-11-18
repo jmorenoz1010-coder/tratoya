@@ -8,7 +8,7 @@ export function createMasterplan2D(root, { onSelect, onHover, money }) {
   root.innerHTML = `
     <div class="mp2d-stage">
       <div class="mp2d-world">
-        <img class="mp2d-img" src="/img/lot-map-1800.webp" alt="Plano general de lotes de Cayetana" draggable="false" />
+        <img class="mp2d-img" src="img/lot-map-1800.webp" alt="Plano general de lotes de Cayetana" draggable="false" />
         <svg class="mp2d-svg" viewBox="0 0 ${MAP.w} ${MAP.h}" preserveAspectRatio="none"></svg>
       </div>
     </div>
@@ -77,7 +77,7 @@ export function createMasterplan2D(root, { onSelect, onHover, money }) {
     clamp();
     world.style.transition = anim ? 'transform .6s cubic-bezier(.2,.8,.2,1)' : 'none';
     world.style.transform = `translate(${tx}px,${ty}px) scale(${z})`;
-    if (z > 1.8 && !img.dataset.hi) { img.dataset.hi = 1; img.src = '/img/lot-map.webp'; }
+    if (z > 1.8 && !img.dataset.hi) { img.dataset.hi = 1; img.src = 'img/lot-map.webp'; }
     root.style.setProperty('--z', z);
   }
   function reset(anim = true) {
