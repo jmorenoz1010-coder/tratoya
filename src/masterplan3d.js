@@ -183,7 +183,8 @@ export function createMasterplan3D(container, { onSelect, onHover } = {}) {
     selLine.geometry.dispose(); selLine.geometry = new THREE.BufferGeometry().setFromPoints(pts); selLine.visible = true;
     const tx = toX(l.cx), tz = toZ(l.cy);
     gsap.to(controls.target, { x: tx, y: 0, z: tz, duration: 1.6, ease: 'power3.inOut' });
-    gsap.to(camera.position, { x: tx + 60, y: 70, z: tz + 90, duration: 1.6, ease: 'power3.inOut' });
+    const far = container.clientWidth < 700 ? 1.8 : 1;
+    gsap.to(camera.position, { x: tx + 60 * far, y: 70 * far, z: tz + 90 * far, duration: 1.6, ease: 'power3.inOut' });
   }
   function clearSelection() { const p = selected; selected = null; if (p) styleLot(p); selLine.visible = false; }
 
@@ -230,7 +231,9 @@ export function createMasterplan3D(container, { onSelect, onHover } = {}) {
   }
   loop(); refresh();
   // vuelo de entrada
-  gsap.fromTo(camera.position, { x: -200, y: 950, z: 850 }, { x: 160, y: 380, z: 520, duration: 3.2, ease: 'power2.inOut' });
+  // encuadre según el ancho: en móvil la cámara se aleja para ver todo el masterplan
+  const HOME = () => (container.clientWidth < 700 ? { x: 60, y: 720, z: 560 } : { x: 160, y: 380, z: 520 });
+  gsap.fromTo(camera.position, { x: -200, y: 950, z: 850 }, { ...HOME(), duration: 3.2, ease: 'power2.inOut' });
 
   return {
     refresh, focus, clearSelection, setMode,
@@ -238,7 +241,7 @@ export function createMasterplan3D(container, { onSelect, onHover } = {}) {
     resetView() {
       clearSelection();
       gsap.to(controls.target, { x: 40, y: 0, z: 40, duration: 1.4, ease: 'power3.inOut' });
-      gsap.to(camera.position, { x: 160, y: 380, z: 520, duration: 1.4, ease: 'power3.inOut' });
+      gsap.to(camera.position, { ...HOME(), duration: 1.4, ease: 'power3.inOut' });
     },
     dispose() { cancelAnimationFrame(raf); ro.disconnect(); io.disconnect(); renderer.dispose(); container.innerHTML = ''; },
   };

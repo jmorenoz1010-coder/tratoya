@@ -116,7 +116,9 @@ ScrollTrigger.matchMedia({
 // ---------- navegación ----------
 const nav = $('#nav');
 let lastY = 0;
+document.body.classList.add('at-top');
 function onScroll(y) {
+  document.body.classList.toggle('at-top', y < innerHeight * 0.6);
   nav.classList.toggle('scrolled', y > 60);
   nav.classList.toggle('hide', y > lastY && y > 700 && !$('.mobile-menu.open'));
   lastY = y;
@@ -482,9 +484,11 @@ async function mount3D() {
   if (!current) return;
   const { createVillaViewer } = await import('./villa3d.js');
   const t = ldModel === 'Solo lote' ? 'Eivissa' : ldModel;
+  const sameLot = ldViewer && ldViewer._lot === current;
   if (!ldViewer) ldViewer = createVillaViewer($('#ld3d'), { typology: t, lot: current });
-  else { ldViewer.setLot(current); ldViewer.setTypology(t); }
-  ldViewer.showVilla(ldModel !== 'Solo lote');
+  ldViewer.configure({ lot: current, typology: t, showVilla: ldModel !== 'Solo lote', resetCamera: !sameLot });
+  ldViewer._lot = current;
+  $('#ldInterior').classList.toggle('on', ldViewer.interior);
 }
 $('#ldModel').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; ldModel = b.dataset.m; $$('#ldModel button').forEach(x => x.classList.toggle('on', x === b)); mount3D(); });
 $('#ldCams').addEventListener('click', e => { const b = e.target.closest('button'); if (b) ldViewer?.preset(b.dataset.p); });
@@ -561,6 +565,7 @@ const sim = initSimulator();
 initConcierge({ openLot: n => openLot(n), goTo });
 
 // ---------- enlace profundo #lote-NN ----------
+addEventListener('hashchange', () => { const h = location.hash.match(/^#lote-(\d+)/); if (h && (!current || current.n !== +h[1])) openLot(+h[1]); });
 const m = location.hash.match(/^#lote-(\d+)/);
 if (m) setTimeout(() => { goTo('#maqueta'); setTimeout(() => openLot(+m[1]), 900); }, 1600);
 

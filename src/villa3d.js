@@ -91,7 +91,7 @@ export function createVillaViewer(container, opts = {}) {
   container.appendChild(renderer.domElement);
 
   const scene = new THREE.Scene();
-  scene.fog = new THREE.Fog(0xcfd8d6, 90, 260);
+  scene.fog = new THREE.Fog(0xcfd8d6, 70, 230);
   const camera = new THREE.PerspectiveCamera(42, 1, 0.1, 2000);
   camera.position.set(26, 18, 30);
   const controls = new OrbitControls(camera, renderer.domElement);
@@ -131,7 +131,7 @@ export function createVillaViewer(container, opts = {}) {
   };
   mats.lattice.alphaMap.repeat.set(2, 5);
 
-  const ground = new THREE.Mesh(new THREE.CircleGeometry(400, 64), new THREE.MeshStandardMaterial({ color: 0x8c9a64, roughness: 1 }));
+  const ground = new THREE.Mesh(new THREE.CircleGeometry(400, 64), new THREE.MeshStandardMaterial({ color: 0xa7ab7f, roughness: 1 }));
   ground.rotation.x = -Math.PI / 2; ground.receiveShadow = true; scene.add(ground);
 
   const root = new THREE.Group(); scene.add(root);
@@ -328,35 +328,49 @@ export function createVillaViewer(container, opts = {}) {
     // dimensiones
     const bb = new THREE.Box2().setFromPoints(pts);
     g.userData = { width: bb.max.x - bb.min.x, depth: bb.max.y - bb.min.y, cy: (bb.max.y + bb.min.y) / 2, minY: bb.min.y, maxY: bb.max.y };
-    // palmeras en el perímetro
-    for (let i = 0; i < 5; i++) {
-      const p = pts[Math.floor(Math.random() * pts.length)];
-      const palm = makePalm(0.9, mats); palm.position.set(p.x * 0.85, 0.2, p.y * 0.9); g.add(palm);
-    }
+    g.userData.pts = pts;
     return g;
   }
 
+  // números pseudoaleatorios estables por lote (la escena no "salta" al reconstruir)
+  let seed = 1;
+  const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+
+  function disposeTree(o) {
+    o.traverse(c => { if (c.geometry && !c.userData.shared) c.geometry.dispose(); });
+  }
+
   function rebuild() {
-    root.clear();
+    disposeTree(root); root.clear();
+    seed = (current.lot?.n || 7) * 9973 + 1;
     lotGroup = buildLot(current.lot); root.add(lotGroup);
     villaGroup = null;
+    const L = lotGroup.userData;
+    let vz = 0, vr = 0;
     if (current.showVilla) {
       villaGroup = buildVilla(current.type);
-      const L = lotGroup.userData, V = villaGroup.userData;
+      const V = villaGroup.userData;
       // escala suave si el lote es más angosto que la villa
       const sc = Math.min(1, (L.width - 1.5) / (V.w + 2), (L.depth - 1) / (V.d + 13));
       villaGroup.scale.setScalar(Math.max(0.7, sc));
       // villa al fondo del lote, piscina hacia el frente
-      villaGroup.position.z = L.minY + (V.d / 2 + 1.2) * villaGroup.scale.x;
+      vz = L.minY + (V.d / 2 + 1.2) * villaGroup.scale.x;
+      villaGroup.position.z = vz;
+      vr = Math.hypot(V.w, V.d + 9) / 2 * villaGroup.scale.x;
       root.add(villaGroup);
     }
-    // envolvente de la vegetación lejana
-    const ring = new THREE.Group();
-    for (let i = 0; i < 26; i++) {
-      const a = (i / 26) * Math.PI * 2, r = 32 + Math.random() * 25;
-      const palm = makePalm(1 + Math.random() * 0.3, mats); palm.position.set(Math.cos(a) * r, 0, Math.sin(a) * r); ring.add(palm);
+    // palmeras en las esquinas del lote, nunca encima de la villa
+    let placed = 0;
+    L.pts.filter(p => Math.hypot(p.x, p.y - (vz + 4)) > vr + 2.5).forEach(p => {
+      if (placed >= 4) return;
+      const palm = makePalm(0.85 + rnd() * 0.25, mats); palm.position.set(p.x * 0.82, 0.2, p.y * 0.86); root.add(palm); placed++;
+    });
+    // vegetación lejana alrededor
+    for (let i = 0; i < 22; i++) {
+      const a = (i / 22) * Math.PI * 2 + rnd() * 0.2, r = Math.max(L.width, L.depth) / 2 + 14 + rnd() * 22;
+      const palm = makePalm(1 + rnd() * 0.3, mats); palm.position.set(Math.cos(a) * r, 0, Math.sin(a) * r); root.add(palm);
     }
-    root.add(ring);
+    scene.fog.near = Math.max(L.width, L.depth) + 40; scene.fog.far = scene.fog.near + 160;
     setTime(current.hour);
     setInterior(current.interior, true);
   }
@@ -406,18 +420,38 @@ export function createVillaViewer(container, opts = {}) {
     upperGroup.traverse(o => { if (o.material && o.material !== mats.glass) { o.material.transparent = false; } });
   }
 
+  // Cámaras calculadas a partir de la villa y del lote reales
+  function geom() {
+    const L = lotGroup.userData;
+    if (!villaGroup) return { L, s: 1, vz: 0, w: 10, d: 10, top: 1, poolZ: 6 };
+    const V = villaGroup.userData, sc = villaGroup.scale.x, vz = villaGroup.position.z;
+    return { L, s: sc, vz, w: V.w * sc, d: V.d * sc, top: V.top * sc, poolZ: vz + V.poolZ * sc };
+  }
   const PRESETS = {
-    aerea: () => ({ pos: [24, 22, 30], target: [0, 2, 0] }),
-    fachada: () => { const z = villaGroup ? villaGroup.position.z : 0; return { pos: [0, 3.4, z + 30], target: [0, 4, z] }; },
-    piscina: () => { const z = villaGroup ? villaGroup.position.z + villaGroup.userData.poolZ * villaGroup.scale.x : 8; return { pos: [-9, 2.2, z + 6], target: [2, 2, z - 6] }; },
-    rooftop: () => { const z = villaGroup ? villaGroup.position.z : 0; const y = villaGroup ? villaGroup.userData.top * villaGroup.scale.x + 1.6 : 8; return { pos: [-2, y, z - 1], target: [1, y - 1.2, z + 18] }; },
+    aerea: () => {
+      const g = geom(), R = Math.max(g.L.width, g.L.depth, 22) * 0.5 + 10;
+      return { pos: [R * 0.95, R * 0.85, g.vz + R * 1.2], target: [0, 2.5, g.vz + 3], min: 6 };
+    },
+    fachada: () => { const g = geom(); return { pos: [0, 3.3, g.poolZ + 16], target: [0, g.top * 0.45, g.vz], min: 6 }; },
+    piscina: () => { const g = geom(); return { pos: [-g.w * 0.55, 1.7, g.poolZ + 4.5], target: [g.w * 0.15, 2.4, g.vz], min: 2 }; },
+    rooftop: () => {
+      const g = geom();
+      return { pos: [-g.w * 1.25, g.top + 8, g.poolZ + 7], target: [0, g.top * 0.55, g.vz + 1], min: 2 };
+    },
   };
-  function preset(name) {
+  let lastPreset = 'aerea';
+  function preset(name, instant = false) {
     const p = PRESETS[name]?.(); if (!p) return;
+    lastPreset = name;
     controls.autoRotate = false;
-    gsap.to(camera.position, { x: p.pos[0], y: p.pos[1], z: p.pos[2], duration: 1.6, ease: 'power3.inOut' });
-    gsap.to(controls.target, { x: p.target[0], y: p.target[1], z: p.target[2], duration: 1.6, ease: 'power3.inOut' });
-    if (name === 'rooftop') controls.minDistance = 0.5; else controls.minDistance = 6;
+    controls.minDistance = p.min;
+    gsap.killTweensOf(camera.position); gsap.killTweensOf(controls.target);
+    // en pantallas verticales (celular) la cámara se aleja para que la villa quepa completa
+    const k = name === 'piscina' ? 1 : Math.min(1.7, Math.max(1, 1.25 / camera.aspect));
+    p.pos = p.pos.map((v, i) => p.target[i] + (v - p.target[i]) * k);
+    const d = instant ? 0 : 1.6;
+    gsap.to(camera.position, { x: p.pos[0], y: p.pos[1], z: p.pos[2], duration: d, ease: 'power3.inOut' });
+    gsap.to(controls.target, { x: p.target[0], y: p.target[1], z: p.target[2], duration: d, ease: 'power3.inOut' });
   }
 
   function setFinish(kind, name) {
@@ -442,13 +476,23 @@ export function createVillaViewer(container, opts = {}) {
     controls.update();
     renderer.render(scene, camera);
   }
-  rebuild(); loop();
+  rebuild(); preset('aerea', true); controls.autoRotate = true; loop();
   renderer.domElement.addEventListener('pointerdown', () => (controls.autoRotate = false));
 
   return {
-    setTypology(t) { current.type = t; rebuild(); },
-    setLot(l) { current.lot = l; rebuild(); },
-    showVilla(v) { current.showVilla = v; rebuild(); },
+    // Cambia lote / tipología / villa visible con una sola reconstrucción
+    configure({ lot, typology, showVilla, resetCamera = false } = {}) {
+      if (lot !== undefined) current.lot = lot;
+      if (typology) current.type = typology;
+      if (showVilla !== undefined) current.showVilla = showVilla;
+      if (resetCamera) current.interior = false;
+      rebuild();
+      if (resetCamera) { preset('aerea', true); controls.autoRotate = true; } else preset(lastPreset, true);
+    },
+    setTypology(t) { this.configure({ typology: t }); },
+    setLot(l) { this.configure({ lot: l, resetCamera: true }); },
+    showVilla(v) { this.configure({ showVilla: v }); },
+    get interior() { return current.interior; },
     setTime, setFinish, preset,
     toggleInterior() { setInterior(!current.interior); return current.interior; },
     autoRotate(v) { controls.autoRotate = v; },
