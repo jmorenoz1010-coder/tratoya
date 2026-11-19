@@ -1,6 +1,6 @@
 {
-  "framework": "vite",
-  "installCommand": "npm ci",
-  "buildCommand": "npm run build",
+  "framework": null,
+  "installCommand": "echo sitio desactivado",
+  "buildCommand": "rm -rf dist && mkdir -p dist && cp offline/404.html dist/404.html",
   "outputDirectory": "dist"
 }

@@ -26,3 +26,7 @@ npm run build    # genera dist/ (sitio estático)
 - **Datos de lotes**: `src/data/masterplan.json` (coordenadas en px del plano de 3600×2989, escala 5,15 px/m).
 
 > Imágenes, renders y planos ilustrativos. Precios de referencia sujetos a cotización.
+
+## Estado: DESACTIVADO TEMPORALMENTE
+El `vercel.json` publica solo `offline/404.html` (todas las rutas responden 404). Para reactivar el sitio, restaurar en `vercel.json`:
+`"framework": "vite"`, `"installCommand": "npm ci"`, `"buildCommand": "npm run build"`.
